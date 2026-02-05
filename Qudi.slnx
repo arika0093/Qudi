@@ -1,0 +1,22 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/examples/">
+    <Project Path="examples/Qudi.Example.Core/Qudi.Example.Core.csproj" Id="6a51cc5a-3ea8-41ad-8f4d-623601625bde" />
+    <Project Path="examples/Qudi.Example.Worker/Qudi.Example.Worker.csproj" Id="41f26876-b769-4c78-9c87-92b2a748795f" />
+  </Folder>
+  <Folder Name="/src/">
+    <File Path="src/Directory.Build.props" />
+    <Project Path="src/Qudi.Core/Qudi.Core.csproj" />
+    <Project Path="src/Qudi.Generator/Qudi.Generator.csproj" />
+    <Project Path="src/Qudi/Qudi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <File Path="tests/Directory.Build.props" />
+    <Project Path="tests/Qudi.Tests.Deps/Qudi.Tests.Deps.csproj" />
+    <Project Path="tests/Qudi.Tests/Qudi.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Qudi.Tests.Deps\Qudi.Tests.Deps.csproj" />
+  </ItemGroup>
+</Project>
