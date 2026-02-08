@@ -78,12 +78,19 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Restore dependencies
+        run: dotnet restore 
+
+      - name: Build
+        run: dotnet build --no-restore
+
       - name: Packing the package
         run: |
           dotnet pack -c Release -o nupkg
-
-      - name: Test Qudi.Example.Readme 
+          
+      - name: Test Qudi.Example.Readme (Copy)
         run: |
-          cd examples/Qudi.Example.Readme
+          cp -r examples/Qudi.Example.Readme tmp/Qudi.Example.Readme
+          cd tmp/Qudi.Example.Readme
           dotnet add package Qudi --source ../../nupkg
           dotnet run
