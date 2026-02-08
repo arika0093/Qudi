@@ -28,8 +28,10 @@ public sealed class DepsInterfaceCallingTest
         services.AddQudiServices(conf => conf.UseSelfImplementsOnly());
 
         var provider = services.BuildServiceProvider();
-        var service = provider.GetService<IDependencyAction>();
+        var dependencyService = provider.GetService<IDependencyAction>();
+        var localService = provider.GetRequiredService<ISingletonSample>();
 
-        service.ShouldBeNull();
+        dependencyService.ShouldBeNull();
+        localService.Name.ShouldBe("singleton");
     }
 }

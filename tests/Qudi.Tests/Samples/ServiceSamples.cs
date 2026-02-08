@@ -85,3 +85,14 @@ public sealed class KeyedSample : IKeyedSample
 {
     public string Value => "alpha";
 }
+
+public interface IQudiAttributeSample
+{
+    string Value { get; }
+}
+
+[Qudi(Lifetime = Lifetime.Singleton, AsTypes = [typeof(IQudiAttributeSample)])]
+public sealed class QudiAttributeSample : IQudiAttributeSample
+{
+    public string Value => "by-qudi-attribute";
+}

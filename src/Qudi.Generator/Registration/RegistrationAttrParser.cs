@@ -8,7 +8,7 @@ namespace Qudi.Generator.Registration;
 
 internal static class RegistrationAttrParser
 {
-    private const string QudiAttribute = $"Qudi.QudiRegistrationAttribute";
+    private const string QudiAttribute = $"Qudi.QudiAttribute";
     private const string QudiSingletonAttribute = $"Qudi.DISingletonAttribute";
     private const string QudiScopedAttribute = $"Qudi.DIScopedAttribute";
     private const string QudiTransientAttribute = $"Qudi.DITransientAttribute";

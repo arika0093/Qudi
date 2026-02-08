@@ -2,7 +2,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Qudi;
 
-public static class QudiConfigrationExtensions
+public static class QudiConfigurationExtensions
 {
     /// <summary>
     /// Sets a condition key from the host environment.
