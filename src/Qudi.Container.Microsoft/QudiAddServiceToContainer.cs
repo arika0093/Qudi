@@ -4,12 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Qudi;
+namespace Qudi.Container.Microsoft;
 
 /// <summary>
 /// Provides extension methods for registering services in Qudi.
 /// </summary>
-public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
+public static class QudiAddServiceToContainer
 {
     /// <summary>
     /// Registers Qudi-collected service definitions into <paramref name="services" />.

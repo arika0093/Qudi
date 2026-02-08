@@ -2,13 +2,13 @@
 
 namespace Qudi.Generator.Container;
 
-internal class AddServiceForMEDI : AddServiceCore
+internal class AddServiceForMicrosoft : AddServiceCore
 {
     private const string MEDINamespace = "global::Microsoft.Extensions.DependencyInjection";
     private const string IServiceCollection = $"{MEDINamespace}.IServiceCollection";
 
     public override string SupportCheckMetadataName =>
-        "Qudi.QudiAddServiceForMicrosoftExtensionsDependencyInjection";
+        "Qudi.Container.Microsoft.QudiAddServiceToContainer";
 
     public override string ReturnTypeName => IServiceCollection;
 

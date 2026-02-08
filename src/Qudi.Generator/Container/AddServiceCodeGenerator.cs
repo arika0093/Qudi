@@ -6,7 +6,7 @@ namespace Qudi.Generator.Container;
 
 internal static class AddServiceCodeGenerator
 {
-    public static readonly HashSet<AddServiceCore> Generators = [new AddServiceForMEDI()];
+    public static readonly HashSet<AddServiceCore> Generators = [new AddServiceForMicrosoft()];
 
     public static void GenerateAddQudiServicesCode(
         SourceProductionContext context,
