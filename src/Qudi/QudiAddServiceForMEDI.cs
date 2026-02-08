@@ -125,7 +125,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
 
     private static void ApplyDecorator(IServiceCollection services, TypeRegistrationInfo decorator)
     {
-        // Decorators wrap the latest registration for each service type.
+        // Decorators wrap every registration for each service type.
         if (decorator.AsTypes.Count == 0)
         {
             return;
@@ -141,42 +141,44 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
 
         foreach (var asType in decorator.AsTypes)
         {
-            var lastDescriptor = FindLastDescriptor(services, asType);
-            if (lastDescriptor is null)
-            {
-                continue;
-            }
-
-            services.Remove(lastDescriptor);
-            services.Add(
-                ServiceDescriptor.Describe(
-                    asType,
-                    sp =>
-                    {
-                        var inner = CreateFromDescriptor(sp, lastDescriptor);
-                        return ActivatorUtilities.CreateInstance(sp, decorator.Type, inner);
-                    },
-                    lifetime
-                )
-            );
+            ApplyDecoratorToServiceType(services, asType, decorator, lifetime);
         }
     }
 
-    private static ServiceDescriptor? FindLastDescriptor(
+    private static void ApplyDecoratorToServiceType(
         IServiceCollection services,
-        Type serviceType
+        Type serviceType,
+        TypeRegistrationInfo decorator,
+        ServiceLifetime lifetime
     )
     {
-        for (var i = services.Count - 1; i >= 0; i--)
+        var descriptors = new List<(int Index, ServiceDescriptor Descriptor)>();
+        for (var i = 0; i < services.Count; i++)
         {
-            var descriptor = services[i];
-            if (descriptor.ServiceType == serviceType)
+            if (services[i].ServiceType == serviceType)
             {
-                return descriptor;
+                descriptors.Add((i, services[i]));
             }
         }
 
-        return null;
+        if (descriptors.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var (index, descriptor) in descriptors)
+        {
+            var previousDescriptor = descriptor;
+            services[index] = ServiceDescriptor.Describe(
+                serviceType,
+                sp =>
+                {
+                    var inner = CreateFromDescriptor(sp, previousDescriptor);
+                    return ActivatorUtilities.CreateInstance(sp, decorator.Type, inner);
+                },
+                lifetime
+            );
+        }
     }
 
     private static object CreateFromDescriptor(

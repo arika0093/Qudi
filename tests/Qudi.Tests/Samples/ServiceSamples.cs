@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Qudi;
 
 namespace Qudi.Tests;
@@ -73,6 +75,38 @@ public sealed class DecoratorOne(IMessageService inner) : IMessageService
 public sealed class DecoratorTwo(IMessageService inner) : IMessageService
 {
     public string Send(string message) => $"D2({inner.Send(message)})";
+}
+
+public interface ISend
+{
+    string Msg(string a);
+}
+
+[DISingleton]
+public sealed class SendA : ISend
+{
+    public string Msg(string a) => $"A:{a}";
+}
+
+[DISingleton]
+public sealed class SendB : ISend
+{
+    public string Msg(string a) => $"B:{a}";
+}
+
+[QudiDecorator(Lifetime = Lifetime.Singleton)]
+public sealed class SendDecorator(ISend send) : ISend
+{
+    public string Msg(string a) => send.Msg($"MESSAGE IS {a}");
+}
+
+[DISingleton]
+public sealed class SendAll(IEnumerable<ISend> sends)
+{
+    public string[] SendAllMessages(string message)
+    {
+        return sends.Select(s => s.Msg(message)).ToArray();
+    }
 }
 
 public interface IKeyedSample

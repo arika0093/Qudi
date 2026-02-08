@@ -17,4 +17,20 @@ public sealed class DecoratorTests
 
         service.Send("hello").ShouldBe("D2(D1(hello))");
     }
+
+    [Test]
+    public void AppliesDecoratorToAllImplementationsInEnumeration()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var sender = provider.GetRequiredService<SendAll>();
+
+        var results = sender.SendAllMessages("Test");
+
+        results.Length.ShouldBe(2);
+        results.ShouldContain("A:MESSAGE IS Test");
+        results.ShouldContain("B:MESSAGE IS Test");
+    }
 }
