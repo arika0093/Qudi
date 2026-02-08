@@ -236,8 +236,7 @@ When you resolve `IMessageService`, the decorators will be applied in the order 
 
 
 ### Customize Registration
-Are you a customization nerd? No problem.  
-we have plenty of options for you! (though it contradicts the first description :P )
+Are you a customization nerd? You can customize various registration settings using the `[Qudi]` attribute.
 
 ```csharp
 // For example, you can add custom attributes like this:
@@ -263,6 +262,9 @@ public class YourClass : IYourService, IYourOtherService { /* ... */ }
 // [DI*] is just a shorthand for the above [Qudi] attribute, so you can use it like this:
 // [DISingleton(When = [Condition.Development], AsTypes = [typeof(IYourService)], ...)]
 ```
+
+> [!NOTE]
+> If you need to perform more complex tasks, it is recommended to register them manually as before.
 
 
 ## Architecture
