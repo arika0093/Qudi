@@ -24,7 +24,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         IServiceCollection services,
         IReadOnlyList<TypeRegistrationInfo> types,
         QudiConfiguration configuration,
-        QudiAddServicesOptions? options = null
+        QudiAddServicesOptions? options
     )
     {
         if (services is null)
