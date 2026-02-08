@@ -54,30 +54,17 @@ As you can see, just these two steps.
 1. Mark each class with attributes like `[DISingleton]`, `[DITransient]`, etc.
 2. Call `IServiceCollection.AddQudiServices`.
 
-## What happens here?
-The process is very simple.
-It scans all classes marked with attributes like `DISingleton` and `DITransient`, so this library generates the following code.
+When written like this, the following equivalent code is automatically generated and registered in the DI container:
 
 ```csharp
-internal static class QudiServiceCollectionExtensions
-{
-    public static IServiceCollection AddQudiServices(this IServiceCollection services)
-    {
-        // first, register concrete types
-        services.AddSingleton<Altaria>();
-        services.AddTransient<Abomasnow>();
-        // then, register interfaces to concrete types.
-        // (By registering like this, the same instance can be shared, which is often the desired behavior)
-        services.AddSingleton<IPokemon, Altaria>(
-            provider => provider.GetRequiredService<Altaria>()
-        );
-        services.AddTransient<IPokemon, Abomasnow>(
-            provider => provider.GetRequiredService<Abomasnow>()
-        );
-        return services;
-    }
-}
+services.AddSingleton<Altaria>();
+services.AddTransient<Abomasnow>();
+
+services.AddSingleton<IPokemon, Altaria>(provider => provider.GetRequiredService<Altaria>());
+services.AddTransient<IPokemon, Abomasnow>(provider => provider.GetRequiredService<Abomasnow>());
 ```
+
+Want to know more about the internal behavior? See the [Architecture](#architecture) section.
 
 ## Various Usages
 ### In Multiple Projects
@@ -277,40 +264,124 @@ public class YourClass : IYourService, IYourOtherService { /* ... */ }
 // [DISingleton(When = [Condition.Development], AsTypes = [typeof(IYourService)], ...)]
 ```
 
-### Customize Registration
-You can customize the registration process by providing a delegate to the `TypeRegistration` method.
+
+## Architecture
+This library performs the following tasks internally.
+
+### Collecting class information
+First, the source generator scans classes annotated with attributes like `DISingleton` and `DITransient`. Based on the results, it generates code such as the following:
+
+<details>
+<summary>Generated Code (Qudi.Registrations.g.cs)</summary>
 
 ```csharp
-services.AddQudiServices(conf => {
-    // Middleware style customization
-    conf.AddCustomRegistration(args => {
-        var typeInfo = args.TypeInfo;
-        // Here comes the information of the marked class, so feel free to cook it as you like
-        Console.WriteLine($"""
-            Type: {typeInfo.Type.FullName}
-            Namespace: {typeInfo.Type.Namespace}
-            Lifetime: {typeInfo.Lifetime}
-            AsTypes: {string.Join(", ", typeInfo.AsTypes.Select(t => t.FullName))}
-            UsePublic: {typeInfo.UsePublic}
-            Key: {typeInfo.Key}
-            Order: {typeInfo.Order}
-            """);
+#nullable enable
+using System.Linq;
 
-        // Return false to let the subsequent process handle it.
-        return false; 
-    });
-});
+namespace Qudi.Generated
+{
+    // Here we use an easy-to-reference namespace for internal calls
+    internal static partial class QudiInternalRegistrations
+    {
+        public static IReadOnlyList<TypeRegistrationInfo> FetchAll()
+            => Qudi.Generated__D716A886.QudiRegistrations.WithDependencies(fromOther: false);
+    }
+}
+namespace Qudi.Generated__D716A886
+{
+    // Here we use an auto-generated namespace so Qudi can automatically invoke registrations including dependencies
+    public static partial class QudiRegistrations
+    {
+        public static IReadOnlyList<Qudi.TypeRegistrationInfo> WithDependencies(bool fromOther = false)
+        {
+            var list = new List<TypeRegistrationInfo>();
+            // If there are dependencies, they will be added here.
+            // e.g. list.AddRange(Qudi.Generated__Deps1.QudiRegistrations.WithDependencies(fromOther: true));
+            list.AddRange(Self(fromOther: fromOther));
+            return list;
+        }
+        
+        public static IReadOnlyList<TypeRegistrationInfo> Self(bool fromOther = false)
+        {
+            return Original.Where(t => t.UsePublic || !fromOther).ToList();
+        }
+        
+        private static readonly IReadOnlyList<TypeRegistrationInfo> Original = new List<TypeRegistrationInfo>
+        {
+            {
+                Type = typeof(Altaria),
+                Lifetime = "Singleton",
+                When = new List<string> {  },
+                AsTypes = new List<Type> { typeof(IPokemon) },
+                UsePublic = true,
+                Key = null,
+                Order = 0,
+                MarkAsDecorator = false,
+                AssemblyName = "Qudi.Example.Readme"
+            },
+            new Qudi.TypeRegistrationInfo
+            {
+                Type = typeof(Abomasnow),
+                Lifetime = "Transient",
+                When = new List<string> {  },
+                AsTypes = new List<Type> { typeof(IPokemon) },
+                UsePublic = true,
+                Key = null,
+                Order = 0,
+                MarkAsDecorator = false,
+                AssemblyName = "Qudi.Example.Readme"
+            },
+        };
+    }
+}
 ```
 
-## Packages
-This library is divided into several NuGet packages.
+</details>
 
-### Qudi
-このパッケージは`MS.DI`用の拡張メソッドを提供します。
+As shown, information about annotated classes is collected as `TypeRegistrationInfo`. If dependencies exist, those are included automatically. Because this information is DI-container-agnostic, it can be used to support multiple DI containers.
 
+### Invoking registrations for each container
+Next, container-specific `AddQudiServices` extension methods are generated. For example, if Qudi is referenced, an extension for `Microsoft.Extensions.DependencyInjection` is generated:
 
-### Qudi.Core
-This package contains only the attribute definitions and related constants.
+<details>
+<summary>Generated Code (Qudi.AddServices.g.cs)</summary>
 
-### Qudi.Generator
-This package provides a source generator that scans for classes marked with attributes and returns their information as an array.
+```csharp
+namespace Qudi;
+
+internal static partial class QudiAddServiceExtensions
+{
+    public static IServiceCollection AddQudiServices(
+        this IServiceCollection services,
+        Action<QudiConfiguration>? configuration = null
+    )
+    {
+        // Apply user configuration
+        var config = new QudiConfiguration();
+        configuration?.Invoke(config);
+        // Create options to pass to registration handlers
+        var options = new QudiAddServicesOptions
+        {
+            SelfAssemblyName = "Qudi.Example.Readme"
+        };
+        // Fetch registration information
+        var types = Generated.QudiInternalRegistrations.FetchAll();
+        // Call the registration handler for Microsoft.Extensions.DependencyInjection
+        Qudi.QudiAddServiceForMicrosoftExtensionsDependencyInjection.AddQudiServices(services, types, config, options);
+        return services;
+    }
+}
+```
+
+</details>
+
+## Development Guides
+### Testing
+To run tests, simply execute the following command in the root directory:
+
+```bash
+# run normal tests
+dotnet test
+# run AOT tests ( e.g. Windows )
+dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win-x64 && publish\Qudi.Tests.exe 
+```
