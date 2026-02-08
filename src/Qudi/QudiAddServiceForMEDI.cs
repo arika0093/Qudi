@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Qudi;
@@ -221,6 +222,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
     private static void AddKeyedService(
         IServiceCollection services,
         Type serviceType,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         Type implementationType,
         object key,
         ServiceLifetime lifetime
