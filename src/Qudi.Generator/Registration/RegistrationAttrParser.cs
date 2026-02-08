@@ -103,7 +103,7 @@ internal static class RegistrationAttrParser
         return new RegistrationSpec
         {
             // TypeName is should be overwritten later.
-            Lifetime = SGAttributeParser.GetValueAsLiteral(attr, "Lifetime") ?? "",
+            Lifetime = SGAttributeParser.GetValue<string>(attr, "Lifetime") ?? "",
             When = SGAttributeParser.GetValues<string>(attr, "When"),
             AsTypes = SGAttributeParser.GetValueAsTypes(attr, "AsTypes"),
             UsePublic = SGAttributeParser.GetValue<bool?>(attr, "UsePublic") ?? true,

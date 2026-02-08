@@ -168,7 +168,7 @@ internal static class RegistrationCodeGenerator
                     When = new global::System.Collections.Generic.List<string> { {{when}} },
                     AsTypes = new global::System.Collections.Generic.List<global::System.Type> { {{asTypes}} },
                     UsePublic = {{usePublicLiteral}},
-                    Key = {{(reg.KeyLiteral is null ? "null" : $"\"{reg.KeyLiteral}\"")}},
+                    Key = {{(reg.KeyLiteral is null ? "null" : reg.KeyLiteral)}},
                     Order = {{reg.Order}},
                     MarkAsDecorator = {{markAsDecoratorLiteral}},
                     AssemblyName = "{{projectInfo.AssemblyName}}"

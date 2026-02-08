@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Qudi.Generator.Utility;
 
@@ -36,8 +38,63 @@ internal static class SGAttributeParser
     /// </summary>
     public static string? GetValueAsLiteral(AttributeData attribute, string name)
     {
-        var value = GetValue<object?>(attribute, name);
-        return CodeGenerationUtility.ToLiteral(value);
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key == name)
+            {
+                return TypedConstantToLiteral(argument.Value);
+            }
+        }
+        return null;
+    }
+
+    private static string TypedConstantToLiteral(TypedConstant constant)
+    {
+        if (constant.IsNull)
+        {
+            return "null";
+        }
+
+        if (constant.Kind == TypedConstantKind.Type && constant.Value is ITypeSymbol typeSymbol)
+        {
+            var fullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return $"typeof({fullName})";
+        }
+
+        if (constant.Type?.TypeKind == TypeKind.Enum)
+        {
+            if (constant.Type is INamedTypeSymbol enumType)
+            {
+                var member = enumType
+                    .GetMembers()
+                    .OfType<IFieldSymbol>()
+                    .FirstOrDefault(m =>
+                        m.HasConstantValue && Equals(m.ConstantValue, constant.Value)
+                    );
+                if (member is not null)
+                {
+                    var enumName = enumType.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    );
+                    return $"{enumName}.{member.Name}";
+                }
+                var enumTypeName = enumType.ToDisplayString(
+                    SymbolDisplayFormat.FullyQualifiedFormat
+                );
+                var primitive = SymbolDisplay.FormatPrimitive(
+                    constant.Value!,
+                    quoteStrings: true,
+                    useHexadecimalNumbers: false
+                );
+                return $"({enumTypeName}){primitive}";
+            }
+        }
+
+        return SymbolDisplay.FormatPrimitive(
+            constant.Value!,
+            quoteStrings: true,
+            useHexadecimalNumbers: false
+        );
     }
 
     /// <summary>

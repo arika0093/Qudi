@@ -13,7 +13,7 @@ public sealed class KeyedLiteralAndConcreteTests
         services.AddQudiServices();
 
         var provider = services.BuildServiceProvider();
-        var quoted = provider.GetRequiredKeyedService<IKeyedLiteralSample>("a\"b\\c");
+        var quoted = provider.GetRequiredKeyedService<IKeyedLiteralSample>("a\\\"b\\\\c");
         var numeric = provider.GetRequiredKeyedService<IKeyedLiteralSample>(42);
 
         quoted.Value.ShouldBe("quoted");
