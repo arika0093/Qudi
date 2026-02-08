@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Qudi;
@@ -25,7 +25,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         IServiceCollection services,
         IReadOnlyList<TypeRegistrationInfo> types,
         QudiConfiguration configuration,
-        QudiAddServicesOptions? options
+        QudiAddServicesOptions options
     )
     {
         if (services is null)
@@ -41,6 +41,11 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         if (configuration is null)
         {
             throw new ArgumentNullException(nameof(configuration));
+        }
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
         }
 
         var applicable = types
@@ -67,14 +72,14 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
     private static bool ShouldRegister(
         TypeRegistrationInfo registration,
         QudiConfiguration configuration,
-        QudiAddServicesOptions? options
+        QudiAddServicesOptions options
     )
     {
         if (configuration.UseSelfImplementsOnlyEnabled)
         {
             return string.Equals(
                 registration.AssemblyName,
-                options?.SelfAssemblyName,
+                options.SelfAssemblyName,
                 StringComparison.Ordinal
             );
         }
@@ -94,6 +99,12 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
     {
         // Register implementation first, then map interfaces to the same instance path.
         var lifetime = ConvertLifetime(registration.Lifetime);
+
+        if (registration.AsTypes.Count == 0)
+        {
+            services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
+            return;
+        }
 
         if (registration.Key is null)
         {
@@ -138,19 +149,16 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
             return;
         }
 
-        var lifetime = ConvertLifetime(decorator.Lifetime);
-
         foreach (var asType in decorator.AsTypes)
         {
-            ApplyDecoratorToServiceType(services, asType, decorator, lifetime);
+            ApplyDecoratorToServiceType(services, asType, decorator);
         }
     }
 
     private static void ApplyDecoratorToServiceType(
         IServiceCollection services,
         Type serviceType,
-        TypeRegistrationInfo decorator,
-        ServiceLifetime lifetime
+        TypeRegistrationInfo decorator
     )
     {
         var descriptors = new List<(int Index, ServiceDescriptor Descriptor)>();
@@ -170,7 +178,24 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         foreach (var (index, descriptor) in descriptors)
         {
             var previousDescriptor = descriptor;
-            services[index] = ServiceDescriptor.Describe(
+            services[index] = DescribeDecoratedDescriptor(
+                serviceType,
+                previousDescriptor,
+                decorator
+            );
+        }
+    }
+
+    private static ServiceDescriptor DescribeDecoratedDescriptor(
+        Type serviceType,
+        ServiceDescriptor previousDescriptor,
+        TypeRegistrationInfo decorator
+    )
+    {
+        var lifetime = previousDescriptor.Lifetime;
+        if (!previousDescriptor.IsKeyedService)
+        {
+            return ServiceDescriptor.Describe(
                 serviceType,
                 sp =>
                 {
@@ -180,14 +205,52 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
                 lifetime
             );
         }
+
+        var key = previousDescriptor.ServiceKey;
+        return ServiceDescriptor.DescribeKeyed(
+            serviceType,
+            key!,
+            (sp, serviceKey) =>
+            {
+                var inner = CreateFromDescriptor(sp, previousDescriptor, serviceKey);
+                return ActivatorUtilities.CreateInstance(sp, decorator.Type, inner);
+            },
+            lifetime
+        );
     }
 
     private static object CreateFromDescriptor(
         IServiceProvider provider,
-        ServiceDescriptor descriptor
+        ServiceDescriptor descriptor,
+        object? serviceKey = null
     )
     {
         // Recreate the previous descriptor exactly as DI would have produced it.
+        if (descriptor.IsKeyedService)
+        {
+            if (descriptor.KeyedImplementationInstance is not null)
+            {
+                return descriptor.KeyedImplementationInstance;
+            }
+
+            if (descriptor.KeyedImplementationFactory is not null)
+            {
+                return descriptor.KeyedImplementationFactory(provider, serviceKey!);
+            }
+
+            if (descriptor.KeyedImplementationType is not null)
+            {
+                return ActivatorUtilities.CreateInstance(
+                    provider,
+                    descriptor.KeyedImplementationType
+                );
+            }
+
+            throw new InvalidOperationException(
+                $"Unable to create keyed instance for service type '{descriptor.ServiceType}'."
+            );
+        }
+
         if (descriptor.ImplementationInstance is not null)
         {
             return descriptor.ImplementationInstance;
@@ -223,7 +286,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         IServiceCollection services,
         Type serviceType,
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-        Type implementationType,
+            Type implementationType,
         object key,
         ServiceLifetime lifetime
     )
