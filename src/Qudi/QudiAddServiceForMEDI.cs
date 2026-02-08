@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Qudi;
 
@@ -13,12 +11,20 @@ namespace Qudi;
 public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
 {
     /// <summary>
-    /// Registers services using the provided function.
+    /// Registers Qudi-collected service definitions into <paramref name="services" />.
     /// </summary>
+    /// <param name="services">Service collection to register into.</param>
+    /// <param name="types">Collected registrations from source generation.</param>
+    /// <param name="configuration">Runtime registration configuration.</param>
+    /// <param name="options">
+    /// Additional options generated at compile time.
+    /// Used to honor <see cref="QudiConfiguration.UseSelfImplementsOnly" />.
+    /// </param>
     public static IServiceCollection AddQudiServices(
         IServiceCollection services,
         IReadOnlyList<TypeRegistrationInfo> types,
-        QudiConfiguration configuration
+        QudiConfiguration configuration,
+        QudiAddServicesOptions? options = null
     )
     {
         if (services is null)
@@ -37,7 +43,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         }
 
         var applicable = types
-            .Where(t => ShouldRegister(t, configuration))
+            .Where(t => ShouldRegister(t, configuration, options))
             .OrderBy(t => t.Order)
             .ToList();
 
@@ -59,12 +65,17 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
 
     private static bool ShouldRegister(
         TypeRegistrationInfo registration,
-        QudiConfiguration configuration
+        QudiConfiguration configuration,
+        QudiAddServicesOptions? options
     )
     {
         if (configuration.UseSelfImplementsOnlyEnabled)
         {
-            return false;
+            return string.Equals(
+                registration.AssemblyName,
+                options?.SelfAssemblyName,
+                StringComparison.Ordinal
+            );
         }
 
         if (registration.When.Count == 0)
@@ -80,6 +91,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         TypeRegistrationInfo registration
     )
     {
+        // Register implementation first, then map interfaces to the same instance path.
         var lifetime = ConvertLifetime(registration.Lifetime);
 
         if (registration.Key is null)
@@ -113,6 +125,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
 
     private static void ApplyDecorator(IServiceCollection services, TypeRegistrationInfo decorator)
     {
+        // Decorators wrap the latest registration for each service type.
         if (decorator.AsTypes.Count == 0)
         {
             return;
@@ -171,6 +184,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
         ServiceDescriptor descriptor
     )
     {
+        // Recreate the previous descriptor exactly as DI would have produced it.
         if (descriptor.ImplementationInstance is not null)
         {
             return descriptor.ImplementationInstance;

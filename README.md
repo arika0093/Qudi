@@ -54,7 +54,7 @@ As you can see, just these two steps.
 1. Mark each class with attributes like `[DISingleton]`, `[DITransient]`, etc.
 2. Call `IServiceCollection.AddQudiServices`.
 
-### What happens here?
+## What happens here?
 The process is very simple.
 It scans all classes marked with attributes like `DISingleton` and `DITransient`, so this library generates the following code.
 
