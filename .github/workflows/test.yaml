@@ -93,5 +93,5 @@ jobs:
           mkdir -p tmp/Qudi.Example.Readme
           cp -r examples/Qudi.Example.Readme/* tmp/Qudi.Example.Readme
           cd tmp/Qudi.Example.Readme
-          dotnet add package Qudi --source ../../nupkg
+          dotnet add package Qudi --source ../../nupkg --prerelease
           dotnet run
