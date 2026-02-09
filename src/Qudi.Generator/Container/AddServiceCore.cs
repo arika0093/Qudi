@@ -53,6 +53,10 @@ internal abstract class AddServiceCore
                     SelfAssemblyName = "{{info.AssemblyName}}"
                 };
                 var types = {{QudiGeneratedNS}}.QudiInternalRegistrations.FetchAll();
+                foreach (var filter in config.Filters)
+                {
+                    types = types.Where(t => filter(t)).ToList();
+                }
                 {{CalledMethodName}}(services, types, config, options);
                 return services;
             }

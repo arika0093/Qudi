@@ -12,6 +12,9 @@ internal sealed record RegistrationSpec
     // The type name of the service to register.
     public string TypeName { get; init; } = string.Empty;
 
+    // The namespace where the type is defined.
+    public string Namespace { get; init; } = string.Empty;
+
     // The lifetime of the service (e.g., Transient, Scoped, Singleton).
     public string Lifetime { get; init; } = string.Empty;
 

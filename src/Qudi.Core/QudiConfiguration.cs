@@ -9,11 +9,17 @@ namespace Qudi;
 public sealed class QudiConfiguration
 {
     private readonly HashSet<string> _conditions = [];
+    private readonly List<Func<TypeRegistrationInfo, bool>> _filters = [];
 
     /// <summary>
     /// Whether only self-implemented registrations are enabled.
     /// </summary>
     public bool UseSelfImplementsOnlyEnabled { get; private set; } = false;
+
+    /// <summary>
+    /// Filters to modify registrations.
+    /// </summary>
+    public IReadOnlyCollection<Func<TypeRegistrationInfo, bool>> Filters => _filters;
 
     /// <summary>
     /// Condition keys for conditional registrations.
@@ -58,6 +64,15 @@ public sealed class QudiConfiguration
             SetCondition(value);
         }
 
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a filter to modify registrations.
+    /// </summary>
+    public QudiConfiguration AddFilter(Func<TypeRegistrationInfo, bool> filter)
+    {
+        _filters.Add(filter);
         return this;
     }
 }

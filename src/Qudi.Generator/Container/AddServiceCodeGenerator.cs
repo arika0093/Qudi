@@ -17,6 +17,7 @@ internal static class AddServiceCodeGenerator
         builder.AppendLine(
             $$"""
             {{CodeTemplateContents.CommonGeneratedHeader}}
+            using System.Linq;
             namespace Qudi;
 
             {{CodeTemplateContents.EmbeddedAttributeUsage}}

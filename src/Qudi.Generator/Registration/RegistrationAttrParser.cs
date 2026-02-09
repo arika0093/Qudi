@@ -87,9 +87,14 @@ internal static class RegistrationAttrParser
 
         // parse attribute
         var attribute = context.Attributes[0];
+        // fully qualified namespace
         var spec = CreateDefault(attribute);
 
         // overwrite with type information
+        var ns =
+            typeSymbol.ContainingNamespace?.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat
+            ) ?? "";
         var typeFullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var defaultAsTypes = new EquatableArray<string>(
             typeSymbol.AllInterfaces.Select(CodeGenerationUtility.ToTypeOfLiteral)
@@ -98,6 +103,7 @@ internal static class RegistrationAttrParser
         return spec with
         {
             TypeName = typeFullName,
+            Namespace = ns,
             AsTypes = spec.AsTypes.Count > 0 ? spec.AsTypes : defaultAsTypes,
             Lifetime = lifetime ?? spec.Lifetime,
             MarkAsDecorator = asDecorator || spec.MarkAsDecorator,
@@ -112,7 +118,7 @@ internal static class RegistrationAttrParser
     {
         return new RegistrationSpec
         {
-            // TypeName is should be overwritten later.
+            // TypeName, Namespace is should be overwritten later.
             Lifetime = SGAttributeParser.GetValue<string>(attr, "Lifetime") ?? "",
             When = SGAttributeParser.GetValues<string>(attr, "When"),
             AsTypes = SGAttributeParser.GetValueAsTypes(attr, "AsTypes"),

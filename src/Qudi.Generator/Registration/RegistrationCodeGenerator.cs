@@ -173,7 +173,8 @@ internal static class RegistrationCodeGenerator
                     Order = {{reg.Order}},
                     MarkAsDecorator = {{markAsDecoratorLiteral}},
                     MarkAsStrategy = {{markAsStrategyLiteral}},
-                    AssemblyName = "{{projectInfo.AssemblyName}}"
+                    AssemblyName = "{{projectInfo.AssemblyName}}",
+                    Namespace = "{{reg.Namespace}}",
                 },
                 """
             );
