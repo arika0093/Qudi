@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using Qudi;
 using Qudi.Helper;
+using Qudi.Helper.Qudi_Tests_IHelperService;
+using Qudi.Helper.Qudi_Tests_IOrderedService;
+using Qudi.Helper.Qudi_Tests_IStrategyService;
 
 namespace Qudi.Tests;
 
@@ -17,7 +20,7 @@ public sealed class HelperService : IHelperService
 
 [QudiDecorator(Lifetime = Lifetime.Transient, Order = 0, AsTypes = [typeof(IHelperService)])]
 public sealed class HelperDecorator(IHelperService inner)
-    : DecoratorHelper_Qudi_Tests_IHelperService(inner)
+    : Qudi.Helper.Qudi_Tests_IHelperService.DecoratorHelper<IHelperService>(inner)
 {
     public override string Echo(string value) => $"decorator({base.Echo(value)})";
 }
@@ -41,7 +44,7 @@ public sealed class StrategyServiceBeta : IStrategyService
 
 [QudiStrategy(Lifetime = Lifetime.Singleton, Order = 0, AsTypes = [typeof(IStrategyService)])]
 public sealed class StrategySelector(IEnumerable<IStrategyService> services)
-    : StrategyHelper_Qudi_Tests_IStrategyService(services)
+    : Qudi.Helper.Qudi_Tests_IStrategyService.StrategyHelper<IStrategyService>(services)
 {
     protected override StrategyResult ShouldUseService(IStrategyService service)
     {
@@ -66,14 +69,14 @@ public sealed class OrderedService : IOrderedService
 
 [QudiDecorator(Lifetime = Lifetime.Transient, Order = 0, AsTypes = [typeof(IOrderedService)])]
 public sealed class OrderedDecorator(IOrderedService inner)
-    : DecoratorHelper_Qudi_Tests_IOrderedService(inner)
+    : Qudi.Helper.Qudi_Tests_IOrderedService.DecoratorHelper<IOrderedService>(inner)
 {
     public override string Get() => $"decorator({base.Get()})";
 }
 
 [QudiStrategy(Lifetime = Lifetime.Singleton, Order = 0, AsTypes = [typeof(IOrderedService)])]
 public sealed class OrderedStrategy(IEnumerable<IOrderedService> services)
-    : StrategyHelper_Qudi_Tests_IOrderedService(services)
+    : Qudi.Helper.Qudi_Tests_IOrderedService.StrategyHelper<IOrderedService>(services)
 {
     protected override StrategyResult ShouldUseService(IOrderedService service)
     {

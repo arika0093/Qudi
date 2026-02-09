@@ -1,17 +1,14 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Qudi.Generator;
+using Qudi.Generator.Utility;
 
 namespace Qudi.Generator.Helper;
 
 internal static class HelperCodeGenerator
 {
-    private const string HelperNamespace = "Qudi.Helper";
-
     public static void GenerateHelpers(
         SourceProductionContext context,
         ImmutableArray<HelperTarget> targets
@@ -23,132 +20,55 @@ internal static class HelperCodeGenerator
         }
 
         var helpers = targets.ToImmutableArray();
-        var anyStrategy = helpers.Any(t => t.IsStrategy);
-
-        if (anyStrategy)
-        {
-            GenerateStrategyResult(context);
-        }
-
         foreach (var helper in helpers)
         {
-            GenerateHelperForInterface(
-                context,
-                helper.InterfaceSymbol,
-                helper.IsDecorator,
-                helper.IsStrategy
-            );
+            GenerateHelperForInterface(context, helper);
         }
-    }
-
-    private static void GenerateStrategyResult(SourceProductionContext context)
-    {
-        var builder = new IndentedStringBuilder();
-        builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
-        builder.AppendLine($"namespace {HelperNamespace}");
-        builder.AppendLine("{");
-        builder.AppendLine("    public readonly record struct StrategyResult");
-        builder.AppendLine("    {");
-        builder.AppendLine("        public bool UseService { get; init; }");
-        builder.AppendLine("        public bool Continue { get; init; }");
-        builder.AppendLine("    }");
-        builder.AppendLine("}");
-
-        context.AddSource("Qudi.Helper.StrategyResult.g.cs", builder.ToString());
     }
 
     private static void GenerateHelperForInterface(
         SourceProductionContext context,
-        INamedTypeSymbol interfaceSymbol,
-        bool generateDecorator,
-        bool generateStrategy
+        HelperTarget helper
     )
     {
-        if (interfaceSymbol.TypeKind != TypeKind.Interface)
-        {
-            return;
-        }
-
-        var helperNameSuffix = SanitizeIdentifier(
-            interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-        );
-
-        var interfaceName = interfaceSymbol.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
-        var members = CollectInterfaceMembers(interfaceSymbol);
+        var interfaceName = helper.InterfaceName;
+        var members = helper.Members.ToImmutableArray();
+        var namespaceName = $"Qudi.Helper.{helper.HelperNamespaceSuffix}";
 
         var builder = new IndentedStringBuilder();
         builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
+        builder.AppendLine("using System;");
         builder.AppendLine("using System.Collections.Generic;");
+        builder.AppendLine("using Qudi;");
+        builder.AppendLine($"namespace {namespaceName};");
         builder.AppendLine("");
-        builder.AppendLine($"namespace {HelperNamespace}");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
 
-        if (generateDecorator)
+        if (helper.IsDecorator)
         {
-            GenerateDecoratorHelper(builder, interfaceName, helperNameSuffix, members);
+            GenerateDecoratorHelper(builder, interfaceName, members);
             builder.AppendLine("");
         }
 
-        if (generateStrategy)
+        if (helper.IsStrategy)
         {
-            GenerateStrategyHelper(builder, interfaceName, helperNameSuffix, members);
+            GenerateStrategyHelper(builder, interfaceName, members);
         }
 
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-
-        context.AddSource($"Qudi.Helper.{helperNameSuffix}.g.cs", builder.ToString());
-    }
-
-    private static ImmutableArray<ISymbol> CollectInterfaceMembers(INamedTypeSymbol interfaceSymbol)
-    {
-        var members = new List<ISymbol>();
-        var visited = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-
-        foreach (var iface in interfaceSymbol.AllInterfaces.Concat(new[] { interfaceSymbol }))
-        {
-            foreach (var member in iface.GetMembers())
-            {
-                if (!visited.Add(member))
-                {
-                    continue;
-                }
-
-                if (member is IMethodSymbol method && method.MethodKind == MethodKind.Ordinary)
-                {
-                    members.Add(member);
-                    continue;
-                }
-
-                if (member is IPropertySymbol)
-                {
-                    members.Add(member);
-                }
-            }
-        }
-
-        return members.ToImmutableArray();
+        context.AddSource($"Qudi.Helper.{helper.HelperNamespaceSuffix}.g.cs", builder.ToString());
     }
 
     private static void GenerateDecoratorHelper(
         IndentedStringBuilder builder,
         string interfaceName,
-        string helperNameSuffix,
-        ImmutableArray<ISymbol> members
+        ImmutableArray<HelperMember> members
     )
     {
-        builder.AppendLine(
-            $"public abstract class DecoratorHelper_{helperNameSuffix} : {interfaceName}"
-        );
+        builder.AppendLine($"public abstract class DecoratorHelper<T> : {interfaceName}");
+        builder.AppendLine($"    where T : {interfaceName}");
         builder.AppendLine("{");
-        builder.AppendLine($"    protected readonly {interfaceName} _innerService;");
+        builder.AppendLine("    protected readonly T _innerService;");
         builder.AppendLine("");
-        builder.AppendLine(
-            $"    protected DecoratorHelper_{helperNameSuffix}({interfaceName} innerService)"
-        );
+        builder.AppendLine("    protected DecoratorHelper(T innerService)");
         builder.AppendLine("    {");
         builder.AppendLine("        _innerService = innerService;");
         builder.AppendLine("    }");
@@ -156,13 +76,13 @@ internal static class HelperCodeGenerator
 
         foreach (var member in members)
         {
-            if (member is IMethodSymbol method)
+            if (member.Kind == HelperMemberKind.Method)
             {
-                AppendDecoratorMethod(builder, method);
+                AppendDecoratorMethod(builder, member);
             }
-            else if (member is IPropertySymbol property)
+            else if (member.Kind == HelperMemberKind.Property)
             {
-                AppendDecoratorProperty(builder, property);
+                AppendDecoratorProperty(builder, member);
             }
         }
 
@@ -173,37 +93,33 @@ internal static class HelperCodeGenerator
     private static void GenerateStrategyHelper(
         IndentedStringBuilder builder,
         string interfaceName,
-        string helperNameSuffix,
-        ImmutableArray<ISymbol> members
+        ImmutableArray<HelperMember> members
     )
     {
-        builder.AppendLine(
-            $"public abstract class StrategyHelper_{helperNameSuffix} : {interfaceName}"
-        );
+        builder.AppendLine($"public abstract class StrategyHelper<T> : {interfaceName}");
+        builder.AppendLine($"    where T : {interfaceName}");
         builder.AppendLine("{");
-        builder.AppendLine($"    protected readonly IEnumerable<{interfaceName}> _services;");
+        builder.AppendLine("    protected readonly IEnumerable<T> _services;");
         builder.AppendLine("");
-        builder.AppendLine(
-            $"    protected StrategyHelper_{helperNameSuffix}(IEnumerable<{interfaceName}> services)"
-        );
+        builder.AppendLine("    protected StrategyHelper(IEnumerable<T> services)");
         builder.AppendLine("    {");
         builder.AppendLine("        _services = services;");
         builder.AppendLine("    }");
         builder.AppendLine("");
         builder.AppendLine(
-            $"    protected abstract StrategyResult ShouldUseService({interfaceName} service);"
+            "    protected abstract global::Qudi.StrategyResult ShouldUseService(T service);"
         );
         builder.IncreaseIndent();
 
         foreach (var member in members)
         {
-            if (member is IMethodSymbol method)
+            if (member.Kind == HelperMemberKind.Method)
             {
-                AppendStrategyMethod(builder, method);
+                AppendStrategyMethod(builder, member);
             }
-            else if (member is IPropertySymbol property)
+            else if (member.Kind == HelperMemberKind.Property)
             {
-                AppendStrategyProperty(builder, property);
+                AppendStrategyProperty(builder, member);
             }
         }
 
@@ -211,15 +127,14 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendDecoratorMethod(IndentedStringBuilder builder, IMethodSymbol method)
+    private static void AppendDecoratorMethod(IndentedStringBuilder builder, HelperMember method)
     {
-        var returnType = method.ReturnType.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
+        var returnType = method.ReturnTypeName;
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
+        var returnsVoid = returnType == "void";
 
-        if (method.ReturnsVoid)
+        if (returnsVoid)
         {
             builder.AppendLine(
                 $"public virtual void {method.Name}({parameters}) => _innerService.{method.Name}({arguments});"
@@ -234,10 +149,10 @@ internal static class HelperCodeGenerator
 
     private static void AppendDecoratorProperty(
         IndentedStringBuilder builder,
-        IPropertySymbol property
+        HelperMember property
     )
     {
-        var typeName = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var typeName = property.ReturnTypeName;
         var propertyName = property.IsIndexer ? "this" : property.Name;
         var parameters = property.IsIndexer
             ? BuildParameterList(property.Parameters)
@@ -251,7 +166,7 @@ internal static class HelperCodeGenerator
         builder.AppendLine("{");
         builder.IncreaseIndent();
 
-        if (property.GetMethod is not null)
+        if (property.HasGetter)
         {
             builder.AppendLine(
                 property.IsIndexer
@@ -260,7 +175,7 @@ internal static class HelperCodeGenerator
             );
         }
 
-        if (property.SetMethod is not null)
+        if (property.HasSetter)
         {
             builder.AppendLine(
                 property.IsIndexer
@@ -273,20 +188,19 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendStrategyMethod(IndentedStringBuilder builder, IMethodSymbol method)
+    private static void AppendStrategyMethod(IndentedStringBuilder builder, HelperMember method)
     {
-        var returnType = method.ReturnType.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
+        var returnType = method.ReturnTypeName;
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
+        var returnsVoid = returnType == "void";
 
         builder.AppendLine($"public virtual {returnType} {method.Name}({parameters})");
         builder.AppendLine("{");
         builder.IncreaseIndent();
 
-        var resultVar = method.ReturnsVoid ? string.Empty : "result";
-        if (!method.ReturnsVoid)
+        var resultVar = returnsVoid ? string.Empty : "result";
+        if (!returnsVoid)
         {
             builder.AppendLine($"{returnType} {resultVar} = default!;");
             builder.AppendLine("var hasResult = false;");
@@ -299,7 +213,7 @@ internal static class HelperCodeGenerator
         builder.AppendLine("if (decision.UseService)");
         builder.AppendLine("{");
         builder.IncreaseIndent();
-        if (method.ReturnsVoid)
+        if (returnsVoid)
         {
             builder.AppendLine($"service.{method.Name}({arguments});");
         }
@@ -319,7 +233,7 @@ internal static class HelperCodeGenerator
         builder.DecreaseIndent();
         builder.AppendLine("}");
 
-        if (!method.ReturnsVoid)
+        if (!returnsVoid)
         {
             builder.AppendLine("return hasResult ? result : default!;");
         }
@@ -328,12 +242,9 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendStrategyProperty(
-        IndentedStringBuilder builder,
-        IPropertySymbol property
-    )
+    private static void AppendStrategyProperty(IndentedStringBuilder builder, HelperMember property)
     {
-        var typeName = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var typeName = property.ReturnTypeName;
         var propertyName = property.IsIndexer ? "this" : property.Name;
         var parameters = property.IsIndexer
             ? BuildParameterList(property.Parameters)
@@ -347,7 +258,7 @@ internal static class HelperCodeGenerator
         builder.AppendLine("{");
         builder.IncreaseIndent();
 
-        if (property.GetMethod is not null)
+        if (property.HasGetter)
         {
             builder.AppendLine("get");
             builder.AppendLine("{");
@@ -382,7 +293,7 @@ internal static class HelperCodeGenerator
             builder.AppendLine("}");
         }
 
-        if (property.SetMethod is not null)
+        if (property.HasSetter)
         {
             builder.AppendLine("set");
             builder.AppendLine("{");
@@ -417,9 +328,9 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static string BuildParameterList(ImmutableArray<IParameterSymbol> parameters)
+    private static string BuildParameterList(EquatableArray<HelperParameter> parameters)
     {
-        if (parameters.Length == 0)
+        if (parameters.Count == 0)
         {
             return string.Empty;
         }
@@ -432,10 +343,8 @@ internal static class HelperCodeGenerator
                 builder.Append("params ");
             }
 
-            builder.Append(GetRefKindPrefix(parameter.RefKind));
-            builder.Append(
-                parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-            );
+            builder.Append(parameter.RefKindPrefix);
+            builder.Append(parameter.TypeName);
             builder.Append(' ');
             builder.Append(parameter.Name);
             return builder.ToString();
@@ -444,49 +353,15 @@ internal static class HelperCodeGenerator
         return string.Join(", ", parts);
     }
 
-    private static string BuildArgumentList(ImmutableArray<IParameterSymbol> parameters)
+    private static string BuildArgumentList(EquatableArray<HelperParameter> parameters)
     {
-        if (parameters.Length == 0)
+        if (parameters.Count == 0)
         {
             return string.Empty;
         }
 
-        var parts = parameters.Select(parameter =>
-        {
-            var prefix = GetRefKindPrefix(parameter.RefKind);
-            return $"{prefix}{parameter.Name}";
-        });
+        var parts = parameters.Select(parameter => $"{parameter.RefKindPrefix}{parameter.Name}");
 
         return string.Join(", ", parts);
-    }
-
-    private static string GetRefKindPrefix(RefKind refKind)
-    {
-        return refKind switch
-        {
-            RefKind.Ref => "ref ",
-            RefKind.Out => "out ",
-            RefKind.In => "in ",
-            _ => string.Empty,
-        };
-    }
-
-    private static string SanitizeIdentifier(string text)
-    {
-        var span = text.Replace("global::", string.Empty);
-        var builder = new StringBuilder();
-        foreach (var ch in span)
-        {
-            if (char.IsLetterOrDigit(ch))
-            {
-                builder.Append(ch);
-            }
-            else
-            {
-                builder.Append('_');
-            }
-        }
-
-        return builder.ToString();
     }
 }
