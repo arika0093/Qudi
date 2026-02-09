@@ -43,11 +43,6 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
             throw new ArgumentNullException(nameof(configuration));
         }
 
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
-
         var applicable = types
             .Where(t => ShouldRegister(t, configuration, options))
             .OrderBy(t => t.Order)
