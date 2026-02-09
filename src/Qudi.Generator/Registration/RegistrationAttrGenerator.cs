@@ -72,6 +72,11 @@ internal static class RegistrationAttrGenerator
                 /// Whether this registration is a decorator.
                 /// </summary>
                 public bool MarkAsDecorator { get; set; }
+
+                /// <summary>
+                /// Whether this registration is a strategy.
+                /// </summary>
+                public bool MarkAsStrategy { get; set; }
             }
 
             /// <summary>
@@ -101,6 +106,13 @@ internal static class RegistrationAttrGenerator
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             {{AttributeClassUsage}}
             public sealed class QudiDecoratorAttribute : QudiAttribute {}
+
+            /// <summary>
+            /// Shorthand attribute for strategy registration.
+            /// </summary>
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            {{AttributeClassUsage}}
+            public sealed class QudiStrategyAttribute : QudiAttribute {}
         }
         """;
 }

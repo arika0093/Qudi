@@ -52,6 +52,11 @@ public sealed record TypeRegistrationInfo
     public bool MarkAsDecorator { get; init; }
 
     /// <summary>
+    /// Whether this registration is a strategy.
+    /// </summary>
+    public bool MarkAsStrategy { get; init; }
+
+    /// <summary>
     /// The name of the assembly where the type is defined.
     /// </summary>
     public string AssemblyName { get; init; } = string.Empty;

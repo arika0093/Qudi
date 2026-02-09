@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Qudi.Generator.Container;
+using Qudi.Generator.Helper;
 using Qudi.Generator.Registration;
 using Qudi.Generator.Utility;
 
@@ -21,6 +22,8 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
 
         var registrations = RegistrationAttrParser.QudiAttributeRegistration(context);
 
+        var helperTargets = HelperTargetCollector.CollectTargets(context);
+
         var dependencies = DependsCollector.QudiProjectDependencies(context);
 
         var combined = registrations.Combine(dependencies);
@@ -28,6 +31,11 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(
             combined,
             static (spc, source) => Execute(spc, source.Left, source.Right)
+        );
+
+        context.RegisterSourceOutput(
+            helperTargets,
+            static (spc, targets) => HelperCodeGenerator.GenerateHelpers(spc, targets)
         );
     }
 

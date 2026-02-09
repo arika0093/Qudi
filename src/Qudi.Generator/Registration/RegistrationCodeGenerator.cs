@@ -159,6 +159,7 @@ internal static class RegistrationCodeGenerator
             var asTypes = string.Join(", ", reg.AsTypes);
             var usePublicLiteral = reg.UsePublic ? "true" : "false";
             var markAsDecoratorLiteral = reg.MarkAsDecorator ? "true" : "false";
+            var markAsStrategyLiteral = reg.MarkAsStrategy ? "true" : "false";
             builder.AppendLine(
                 $$"""
                 new {{TRInfo}}
@@ -171,6 +172,7 @@ internal static class RegistrationCodeGenerator
                     Key = {{(reg.KeyLiteral is null ? "null" : reg.KeyLiteral)}},
                     Order = {{reg.Order}},
                     MarkAsDecorator = {{markAsDecoratorLiteral}},
+                    MarkAsStrategy = {{markAsStrategyLiteral}},
                     AssemblyName = "{{projectInfo.AssemblyName}}"
                 },
                 """

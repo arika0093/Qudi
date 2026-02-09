@@ -61,33 +61,24 @@ internal static class SGAttributeParser
             return $"typeof({fullName})";
         }
 
-        if (constant.Type?.TypeKind == TypeKind.Enum)
+        if (constant.Type?.TypeKind == TypeKind.Enum && constant.Type is INamedTypeSymbol enumType)
         {
-            if (constant.Type is INamedTypeSymbol enumType)
+            var member = enumType
+                .GetMembers()
+                .OfType<IFieldSymbol>()
+                .FirstOrDefault(m => m.HasConstantValue && Equals(m.ConstantValue, constant.Value));
+            if (member is not null)
             {
-                var member = enumType
-                    .GetMembers()
-                    .OfType<IFieldSymbol>()
-                    .FirstOrDefault(m =>
-                        m.HasConstantValue && Equals(m.ConstantValue, constant.Value)
-                    );
-                if (member is not null)
-                {
-                    var enumName = enumType.ToDisplayString(
-                        SymbolDisplayFormat.FullyQualifiedFormat
-                    );
-                    return $"{enumName}.{member.Name}";
-                }
-                var enumTypeName = enumType.ToDisplayString(
-                    SymbolDisplayFormat.FullyQualifiedFormat
-                );
-                var primitive = SymbolDisplay.FormatPrimitive(
-                    constant.Value!,
-                    quoteStrings: true,
-                    useHexadecimalNumbers: false
-                );
-                return $"({enumTypeName}){primitive}";
+                var enumName = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                return $"{enumName}.{member.Name}";
             }
+            var enumTypeName = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var primitive = SymbolDisplay.FormatPrimitive(
+                constant.Value!,
+                quoteStrings: true,
+                useHexadecimalNumbers: false
+            );
+            return $"({enumTypeName}){primitive}";
         }
 
         return SymbolDisplay.FormatPrimitive(
