@@ -574,7 +574,9 @@ Are you a customization nerd? You can customize various registration settings us
     // Are you concerned about the order of registration? (default is 0, high value means later registration)
     Order = 0,
     // Set true if you want to register as a decorator
-    MarkAsDecorator = false
+    MarkAsDecorator = false,
+    // Set true if you want to register as a strategy
+    MarkAsStrategy = false
 )]
 public class YourClass : IYourService, IYourOtherService { /* ... */ }
 
@@ -585,7 +587,7 @@ public class YourClass : IYourService, IYourOtherService { /* ... */ }
 > [!TIP]
 > If you need to perform more complex tasks, it is recommended to register them manually.
 
-### (TODO) Filtering Registrations
+### Filtering Registrations
 You can filter which registrations to apply by specifying options in the `AddQudiServices` method.
 
 ```csharp
@@ -656,28 +658,33 @@ namespace Qudi.Generated__D716A886
         
         private static readonly IReadOnlyList<TypeRegistrationInfo> Original = new List<TypeRegistrationInfo>
         {
+            new global::Qudi.TypeRegistrationInfo
             {
-                Type = typeof(Altaria),
+                Type = typeof(global::Altaria),
                 Lifetime = "Singleton",
-                When = new List<string> {  },
-                AsTypes = new List<Type> { typeof(IPokemon) },
+                When = new global::System.Collections.Generic.List<string> {  },
+                AsTypes = new global::System.Collections.Generic.List<global::System.Type> { typeof(global::IPokemon) },
                 UsePublic = true,
                 Key = null,
                 Order = 0,
                 MarkAsDecorator = false,
-                AssemblyName = "Qudi.Example.Readme"
+                MarkAsStrategy = false,
+                AssemblyName = "Qudi.Example.Readme",
+                Namespace = "",
             },
-            new Qudi.TypeRegistrationInfo
+            new global::Qudi.TypeRegistrationInfo
             {
-                Type = typeof(Abomasnow),
+                Type = typeof(global::Abomasnow),
                 Lifetime = "Transient",
-                When = new List<string> {  },
-                AsTypes = new List<Type> { typeof(IPokemon) },
+                When = new global::System.Collections.Generic.List<string> {  },
+                AsTypes = new global::System.Collections.Generic.List<global::System.Type> { typeof(global::IPokemon) },
                 UsePublic = true,
                 Key = null,
                 Order = 0,
                 MarkAsDecorator = false,
-                AssemblyName = "Qudi.Example.Readme"
+                MarkAsStrategy = false,
+                AssemblyName = "Qudi.Example.Readme",
+                Namespace = "",
             },
         };
     }
