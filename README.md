@@ -5,7 +5,7 @@
 No assembly scan, AOT friendly.
 
 ## Quick Start
-### First step
+### Overview
 Well, it's easier to show you than to explain it. 😉
 
 ```csharp
@@ -57,14 +57,51 @@ As you can see, just these two steps.
 When written like this, the following equivalent code is automatically generated and registered in the DI container:
 
 ```csharp
-services.AddSingleton<Altaria>();
-services.AddTransient<Abomasnow>();
-
-services.AddSingleton<IPokemon, Altaria>(provider => provider.GetRequiredService<Altaria>());
-services.AddTransient<IPokemon, Abomasnow>(provider => provider.GetRequiredService<Abomasnow>());
+public IServiceCollection AddQudiServices(this IServiceCollection services)
+{
+    // Generated code similar to this:
+    services.AddSingleton<Altaria>();
+    services.AddTransient<Abomasnow>();
+    services.AddSingleton<IPokemon, Altaria>(provider => provider.GetRequiredService<Altaria>());
+    services.AddTransient<IPokemon, Abomasnow>(provider => provider.GetRequiredService<Abomasnow>());
+    return services;
+}
 ```
 
 Want to know more about the internal behavior? See the [Architecture](#architecture) section.
+
+### Installation
+Install `Qudi` from NuGet.
+
+```bash
+dotnet add package Qudi
+```
+
+Alternatively, you can install `Qudi.Core` and `Qudi.Container.*` packages separately.
+
+```bash
+# install Qudi.Core (common models and source generator)
+dotnet add package Qudi.Core
+# install container-specific package (here, Microsoft.Extensions.DependencyInjection)
+dotnet add package Qudi.Container.Microsoft
+```
+
+<details>
+<summary>What is the difference between `Qudi` and `Qudi.Core` ?</summary>
+
+`Qudi` is a meta-package that combines `Qudi.Core` and `Qudi.Container.Microsoft`.
+Additionally, there is a difference in whether `Qudi.Generator` is exposed externally.
+
+* `Qudi`: Dependent projects/libraries can also use `Qudi.Generator`.
+    * In a dependency chain like `Qudi` -> `A` -> `B`, `B` can also use `Qudi.Generator`.
+* `Qudi.Core`: Marked as a development-time dependency, so other projects/libraries cannot use `Qudi.Generator`.
+    * In a dependency chain like `Qudi.Core` -> `A` -> `B`, `B` cannot use `Qudi.Generator`.
+
+Which is preferable depends on your situation.
+For monorepo projects you don't intend to publish externally, using `Qudi` is convenient.
+When publishing as a library, using `Qudi.Core` allows you to avoid forcing the source generator on your users.
+
+</details>
 
 ## Various Usages
 ### In Multiple Projects
