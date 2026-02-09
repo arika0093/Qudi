@@ -396,6 +396,7 @@ namespace Qudi.Generated__D716A886
         
         private static readonly IReadOnlyList<TypeRegistrationInfo> Original = new List<TypeRegistrationInfo>
         {
+            new Qudi.TypeRegistrationInfo
             {
                 Type = typeof(Altaria),
                 Lifetime = "Singleton",
