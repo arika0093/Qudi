@@ -47,6 +47,10 @@ public class Abomasnow : IPokemon
     public string Name => "Abomasnow";
     public IEnumerable<string> Types => ["Grass", "Ice"];
 }
+
+// Output:
+// > Altaria is a Dragon/Flying type Pokémon.
+// > Abomasnow is a Grass/Ice type Pokémon.
 ```
 
 As you can see, just these two steps. 
@@ -57,7 +61,7 @@ As you can see, just these two steps.
 When written like this, the following equivalent code is automatically generated and registered in the DI container:
 
 ```csharp
-public IServiceCollection AddQudiServices(this IServiceCollection services)
+public IServiceCollection AddQudiServices(this IServiceCollection services, Action<QudiConfiguration>? configuration = null)
 {
     // Generated code similar to this:
     services.AddSingleton<Altaria>();
@@ -87,9 +91,9 @@ dotnet add package Qudi.Container.Microsoft
 ```
 
 <details>
-<summary>What is the difference between `Qudi` and `Qudi.Core` ?</summary>
+<summary>What is the difference between Qudi and Qudi.Core ?</summary>
 
-`Qudi` is a meta-package that combines `Qudi.Core` and `Qudi.Container.Microsoft`.
+`Qudi` is a meta-package that combines `Qudi.Core` and `Qudi.Container.Microsoft`.  
 Additionally, there is a difference in whether `Qudi.Generator` is exposed externally.
 
 * `Qudi`: Dependent projects/libraries can also use `Qudi.Generator`.
@@ -97,8 +101,8 @@ Additionally, there is a difference in whether `Qudi.Generator` is exposed exter
 * `Qudi.Core`: Marked as a development-time dependency, so other projects/libraries cannot use `Qudi.Generator`.
     * In a dependency chain like `Qudi.Core` -> `A` -> `B`, `B` cannot use `Qudi.Generator`.
 
-Which is preferable depends on your situation.
-For monorepo projects you don't intend to publish externally, using `Qudi` is convenient.
+Which is preferable depends on your situation.  
+For monorepo projects you don't intend to publish externally, using `Qudi` is convenient.  
 When publishing as a library, using `Qudi.Core` allows you to avoid forcing the source generator on your users.
 
 </details>
@@ -135,7 +139,7 @@ internal class MyService(IDataRepository repository)
 }
 ```
 
-In such cases, first introduce `Qudi` in each project.
+In such cases, first introduce `Qudi`(or `Qudi.Core`) in each project.
 you can create a `Directory.Build.props` file in the parent directory and set it up as follows to share the package reference.
 
 ```xml
@@ -143,10 +147,6 @@ you can create a `Directory.Build.props` file in the parent directory and set it
 <Project>
   <ItemGroup Label="Qudi Packages">
     <PackageReference Include="Qudi" Version="*" />
-    <PackageReference Include="Qudi.Generator" Version="*">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <Using Include="Qudi" />
   </ItemGroup>
 </Project>
@@ -155,11 +155,11 @@ you can create a `Directory.Build.props` file in the parent directory and set it
 Next, mark the implementation class and the dependent class with Qudi attributes.
 
 ```csharp
-// in MyApp.Windows
+// in MyApp.Core
 [DISingleton]
 internal class SqlDataRepository : IDataRepository { /* ... */ }
 
-// in MyApp.Windows
+// in MyApp.Web
 [DITransient]
 internal class MyService(IDataRepository repository) { /* ... */ }
 ```
@@ -216,9 +216,9 @@ then, specify the rules to apply each condition as an argument of the `AddQudiSe
 ```csharp
 builder.Services.AddQudiServices(conf => {
     // Detection from IHostEnvironment
-    conf.SetConditionFromHostEnvironment(builder.Environment);
+    conf.SetCondition(builder.Environment.EnvironmentName);
     // Or set it directly
-    conf.SetCondition(Condition.Development);
+    conf.SetCondition(Condition.Development); // -> "Development"
     conf.SetCondition("testing");
     // Alternatively, you can set conditions based on environment variables
     conf.SetConditionFromEnvironment("ASPNETCORE_ENVIRONMENT");
@@ -303,6 +303,21 @@ public class YourClass : IYourService, IYourOtherService { /* ... */ }
 > [!NOTE]
 > If you need to perform more complex tasks, it is recommended to register them manually as before.
 
+### Use Collected Information Directly
+You can also refer to the collected information only and register it manually to the DI container.
+
+```csharp
+using Qudi.Generated;
+var registrations = QudiInternalRegistrations.FetchAll();
+// registration info like this:
+// {
+//     Type = typeof(Altaria),
+//     Lifetime = "Singleton",
+//     When = new List<string> {  },
+//     AsTypes = new List<Type> { typeof(IPokemon) },
+//     // and so on...
+// },
+```
 
 ## Architecture
 This library performs the following tasks internally.
