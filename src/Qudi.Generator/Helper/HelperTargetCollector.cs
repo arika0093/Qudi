@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Qudi.Generator.Utility;
 
 namespace Qudi.Generator.Helper;
 
@@ -65,7 +67,18 @@ internal static class HelperTargetCollector
                 continue;
             }
 
-            targets.Add(new HelperTarget(iface, isDecorator, isStrategy));
+            var interfaceName = iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var members = CollectInterfaceMembers(iface);
+            var target = new HelperTarget
+            {
+                InterfaceName = interfaceName,
+                HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
+                Members = new EquatableArray<HelperMember>(members),
+                IsDecorator = isDecorator,
+                IsStrategy = isStrategy,
+            };
+
+            targets.Add(target);
         }
 
         return targets.ToImmutableArray();
@@ -78,16 +91,16 @@ internal static class HelperTargetCollector
             return ImmutableArray<HelperTarget>.Empty;
         }
 
-        var map = new Dictionary<INamedTypeSymbol, HelperTarget>(SymbolEqualityComparer.Default);
+        var map = new Dictionary<string, HelperTarget>(StringComparer.Ordinal);
         foreach (var target in targets)
         {
-            if (!map.TryGetValue(target.InterfaceSymbol, out var existing))
+            if (!map.TryGetValue(target.InterfaceName, out var existing))
             {
-                map[target.InterfaceSymbol] = target;
+                map[target.InterfaceName] = target;
                 continue;
             }
 
-            map[target.InterfaceSymbol] = existing with
+            map[target.InterfaceName] = existing with
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
                 IsStrategy = existing.IsStrategy || target.IsStrategy,
@@ -119,5 +132,105 @@ internal static class HelperTargetCollector
         }
 
         return ImmutableArray<INamedTypeSymbol>.Empty;
+    }
+
+    private static IEnumerable<HelperMember> CollectInterfaceMembers(
+        INamedTypeSymbol interfaceSymbol
+    )
+    {
+        var members = new List<HelperMember>();
+        var visited = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+
+        foreach (var iface in interfaceSymbol.AllInterfaces.Concat(new[] { interfaceSymbol }))
+        {
+            foreach (var member in iface.GetMembers())
+            {
+                if (!visited.Add(member))
+                {
+                    continue;
+                }
+
+                if (member is IMethodSymbol method && method.MethodKind == MethodKind.Ordinary)
+                {
+                    members.Add(CreateMethodMember(method));
+                    continue;
+                }
+
+                if (member is IPropertySymbol property)
+                {
+                    members.Add(CreatePropertyMember(property));
+                }
+            }
+        }
+
+        return members;
+    }
+
+    private static HelperMember CreateMethodMember(IMethodSymbol method)
+    {
+        var parameters = method.Parameters.Select(CreateParameter).ToImmutableArray();
+        return new HelperMember()
+        {
+            Kind = HelperMemberKind.Method,
+            Name = method.Name,
+            ReturnTypeName = method.ReturnType.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat
+            ),
+            Parameters = new EquatableArray<HelperParameter>(parameters),
+            HasGetter = false,
+            HasSetter = false,
+            IsIndexer = false,
+        };
+    }
+
+    private static HelperMember CreatePropertyMember(IPropertySymbol property)
+    {
+        var parameters = property.Parameters.Select(CreateParameter).ToImmutableArray();
+        return new HelperMember()
+        {
+            Kind = HelperMemberKind.Property,
+            Name = property.Name,
+            ReturnTypeName = property.Type.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat
+            ),
+            Parameters = new EquatableArray<HelperParameter>(parameters),
+            HasGetter = property.GetMethod is not null,
+            HasSetter = property.SetMethod is not null,
+            IsIndexer = property.IsIndexer,
+        };
+    }
+
+    private static HelperParameter CreateParameter(IParameterSymbol parameter)
+    {
+        return new HelperParameter
+        {
+            TypeName = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            Name = parameter.Name,
+            RefKindPrefix = GetRefKindPrefix(parameter.RefKind),
+            IsParams = parameter.IsParams,
+        };
+    }
+
+    private static string GetRefKindPrefix(RefKind refKind)
+    {
+        return refKind switch
+        {
+            RefKind.Ref => "ref ",
+            RefKind.Out => "out ",
+            RefKind.In => "in ",
+            _ => string.Empty,
+        };
+    }
+
+    private static string SanitizeIdentifier(string text)
+    {
+        var span = text.Replace("global::", string.Empty);
+        var builder = new System.Text.StringBuilder();
+        foreach (var ch in span)
+        {
+            builder.Append(char.IsLetterOrDigit(ch) ? ch : '_');
+        }
+
+        return builder.ToString();
     }
 }
