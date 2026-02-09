@@ -129,7 +129,7 @@ internal class MyService(IDataRepository repository)
 }
 ```
 
-In this case, introduce `Qudi` to `MyApp.Core` (or install `Qudi.Core` to all projects).  
+In this case, introduce `Qudi` (or `Qudi.Core`) to `MyApp.Core`.
 Next, mark the implementation class and the dependent class with Qudi attributes.
 
 ```csharp
