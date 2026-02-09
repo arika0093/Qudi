@@ -91,10 +91,6 @@ internal static class RegistrationAttrParser
         var spec = CreateDefault(attribute);
 
         // overwrite with type information
-        var ns =
-            typeSymbol.ContainingNamespace?.ToDisplayString(
-                SymbolDisplayFormat.FullyQualifiedFormat
-            ) ?? "";
         var typeFullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var defaultAsTypes = new EquatableArray<string>(
             typeSymbol.AllInterfaces.Select(CodeGenerationUtility.ToTypeOfLiteral)
@@ -103,7 +99,7 @@ internal static class RegistrationAttrParser
         return spec with
         {
             TypeName = typeFullName,
-            Namespace = ns,
+            Namespace = DetermineNamespace(typeSymbol),
             AsTypes = spec.AsTypes.Count > 0 ? spec.AsTypes : defaultAsTypes,
             Lifetime = lifetime ?? spec.Lifetime,
             MarkAsDecorator = asDecorator || spec.MarkAsDecorator,
@@ -128,5 +124,17 @@ internal static class RegistrationAttrParser
             MarkAsDecorator = SGAttributeParser.GetValue<bool?>(attr, "MarkAsDecorator") ?? false,
             MarkAsStrategy = SGAttributeParser.GetValue<bool?>(attr, "MarkAsStrategy") ?? false,
         };
+    }
+
+    private static string DetermineNamespace(INamedTypeSymbol typeSymbol)
+    {
+        var ns = typeSymbol.ContainingNamespace?.ToDisplayString(
+            SymbolDisplayFormat.FullyQualifiedFormat
+        );
+        if (ns?.Contains("<global namespace>") != false)
+        {
+            ns = string.Empty;
+        }
+        return ns;
     }
 }
