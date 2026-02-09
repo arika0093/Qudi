@@ -7,12 +7,4 @@
     <ProjectReference Include="..\Qudi.Container.Microsoft\Qudi.Container.Microsoft.csproj" />
     <ProjectReference Include="..\Qudi.Core\Qudi.Core.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None
-      Include="..\Qudi.Generator\$(OutputPath)\Qudi.Generator.dll"
-      Pack="true"
-      PackagePath="analyzers/dotnet/cs"
-      Visible="false"
-    />
-  </ItemGroup>
 </Project>
