@@ -57,6 +57,11 @@ public sealed record TypeRegistrationInfo
     public bool MarkAsStrategy { get; init; }
 
     /// <summary>
+    /// The namespace where the type is defined.
+    /// </summary>
+    public string Namespace { get; init; } = string.Empty;
+
+    /// <summary>
     /// The name of the assembly where the type is defined.
     /// </summary>
     public string AssemblyName { get; init; } = string.Empty;
