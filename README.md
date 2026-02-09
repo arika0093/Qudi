@@ -221,6 +221,7 @@ builder.Services.AddQudiServices(conf => {
 ```
 
 ### Decorator Pattern
+#### Overview
 Decorator pattern is a useful technique to add functionality to existing services without modifying their code.
 You can easily register decorator classes using the `[QudiDecorator]` attribute.
 
@@ -266,6 +267,7 @@ public interface IMessageService
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
 
+#### Using DecoratorHelper
 To quickly create decorator classes, you can also use the `DecoratorHelper` utility.
 You only need to `override` the methods you want to customize; other methods will be automatically generated to simply call the inner service.
 
@@ -273,11 +275,32 @@ You only need to `override` the methods you want to customize; other methods wil
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
 public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IManyFeatureService>(service)
 {
+    // Only override the methods you want to customize
     public override void FeatureA()
     {
         Console.WriteLine("Before FeatureA");
-        service.FeatureA();
+        base.FeatureA();
+        Console.WriteLine("After FeatureA");
     }
+
+    // For other methods, code is automatically generated to simply call innerService.
+    // ------
+
+    // You can also perform operations for all calls at once.
+    // For example, useful for logging and performance measurement.
+    // If you do not write any processing, nothing will be done (the call itself will be skipped).
+    protected override IEnumerable<bool> HookMethodExecution(string methodName, object?[] args)
+    {
+        // before
+        var timer = new System.Diagnostics.Stopwatch();
+        Console.WriteLine("Timer started...");
+        timer.Start();
+        yield return true; // if cancel execution, yield return false;
+        // after
+        timer.Stop();
+        Console.WriteLine($"Execute time is {timer.ElapsedMilliseconds} ms");
+    }
+
 }
 
 public interface IManyFeatureService
@@ -298,11 +321,73 @@ public abstract class DecoratorHelper<T> where T : IManyFeatureService
     {
         _innerService = innerService;
     }
+    
     public virtual void FeatureA() => _innerService.FeatureA();
     public virtual void FeatureB(int val) => _innerService.FeatureB(val);
     public virtual void FeatureC(string msg) => _innerService.FeatureC(msg);
     public virtual void FeatureD(params string[] items) => _innerService.FeatureD(items);
     // and more...
+}
+```
+
+#### Using HookMethodExecution
+In addition to overriding individual methods, you can also use the `HookMethodExecution` method to perform operations for all method calls at once.
+This is useful for logging, performance measurement, and other cross-cutting concerns.
+
+```csharp
+[QudiDecorator(Lifetime = Lifetime.Singleton)]
+public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IManyFeatureService>(service)
+{
+    // add it
+    protected override IEnumerable<bool> HookMethodExecution(string methodName, object?[] args)
+    {
+        // before
+        var timer = new System.Diagnostics.Stopwatch();
+        Console.WriteLine("Timer started...");
+        timer.Start();
+        yield return true; // if cancel execution, yield return false;
+        // after
+        timer.Stop();
+        Console.WriteLine($"Execute time is {timer.ElapsedMilliseconds} ms");
+    }
+
+    // Only override the methods you want to customize
+    public override void FeatureA()
+    {
+        Console.WriteLine("Before FeatureA");
+        base.FeatureA(); // call base method to ensure HookMethodExecution is invoked
+        Console.WriteLine("After FeatureA");
+    }
+    // and more...
+}
+
+// ---------------------
+// generated code
+public abstract class DecoratorHelper<T> where T : IManyFeatureService
+{
+    protected readonly T _innerService;
+    protected DecoratorHelper(T innerService)
+    {
+        _innerService = innerService;
+    }
+
+    public virtual void FeatureA() 
+    {
+        var enumerator = HookMethodExecution(nameof(FeatureA), Array.Empty<object?>());
+        // call hook before execution
+        if (enumerator.MoveNext() && enumerator.Current)
+        {
+            // call the inner service
+            _innerService.FeatureA();
+        }
+    }
+    // and more...
+
+    protected virtual IEnumerable<bool> HookMethodExecution(string methodName, object?[] args)
+    {
+        // default: do nothing, proceed with execution
+        yield return true;
+    }
 }
 ```
 
@@ -396,7 +481,6 @@ namespace Qudi.Generated__D716A886
         
         private static readonly IReadOnlyList<TypeRegistrationInfo> Original = new List<TypeRegistrationInfo>
         {
-            new Qudi.TypeRegistrationInfo
             {
                 Type = typeof(Altaria),
                 Lifetime = "Singleton",
