@@ -90,23 +90,6 @@ dotnet add package Qudi.Core
 dotnet add package Qudi.Container.Microsoft
 ```
 
-<details>
-<summary>What is the difference between Qudi and Qudi.Core ?</summary>
-
-`Qudi` is a meta-package that combines `Qudi.Core` and `Qudi.Container.Microsoft`.  
-Additionally, there is a difference in whether `Qudi.Generator` is exposed externally.
-
-* `Qudi`: Dependent projects/libraries can also use `Qudi.Generator`.
-    * In a dependency chain like `Qudi` -> `A` -> `B`, `B` can also use `Qudi.Generator`.
-* `Qudi.Core`: Marked as a development-time dependency, so other projects/libraries cannot use `Qudi.Generator`.
-    * In a dependency chain like `Qudi.Core` -> `A` -> `B`, `B` cannot use `Qudi.Generator`.
-
-Which is preferable depends on your situation.  
-For monorepo projects you don't intend to publish externally, using `Qudi` is convenient.  
-When publishing as a library, using `Qudi.Core` allows you to avoid forcing the source generator on your users.
-
-</details>
-
 ### Benefits
 Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of this library are as follows:
 
@@ -374,6 +357,7 @@ public abstract class DecoratorHelper<T> where T : IManyFeatureService
 }
 ```
 ### (TODO) Strategy Pattern
+#### Overview
 This is similar to the Decorator pattern, but switches services in a 1-to-many relationship instead of 1-to-1.
 For example, consider a case where you want to switch between multiple implementations of a message service based on conditions.
 
@@ -408,6 +392,7 @@ public class NotificationService(IMessageService messageService)
 }
 ```
 
+#### (TODO) Using StrategyHelper
 A `StrategyHelper` is also provided to facilitate implementation.
 ```csharp
 [QudiStrategy(Lifetime = Lifetime.Singleton)]
@@ -486,55 +471,6 @@ public class SendMessageStrategy(IEnumerable<IMessageService> services) : Strate
 When Order is the same, Decorators are applied first, followed by Strategies.
 
 
-### (TODO) Generics Registration
-For example, consider a case where you want to generically register validation classes for a class `T` representing component information.
-
-* For each `T`, there exists a class implementing `IValidator<T>`.
-* As a fallback in case `T` is not registered, you call `NullValidator<T>` which always returns a success result.
-
-In such cases, you can perform generic registration as follows.
-
-
-```csharp
-// in IComponent.cs
-public interface IComponent { /* ... */ }
-public class Battery : IComponent { /* ... */ }
-public class Resistor : IComponent { /* ... */ }
-// and more...
-
-// ---------------------
-// in IValidator.cs
-[QudiGenerics(FallbackType = typeof(NullValidator<>))]
-public interface IValidator<T> where T : IComponent
-{
-    ValidationResult Validate(T item);
-}
-[DISingleton]
-internal class NullValidator<T> : IValidator<T> where T : IComponent
-{
-    public ValidationResult Validate(T item) => ValidationResult.Success;
-}
-
-// ---------------------
-// in YourValidators.cs
-[DISingleton]
-internal class BatteryValidator : IValidator<Battery> { /* ... */ }
-[DISingleton]
-internal class ResistorValidator : IValidator<Resistor> { /* ... */ }
-// and more...
-
-// ---------------------
-// and call in ValidationService.cs
-[DISingleton]
-internal class ValidationService(IEnumerable<IValidator<IComponent>> validators)
-{
-    public void ValidateComponent(IComponent component)
-    {
-        
-    }
-}
-```
-
 ### (TODO) Visualize Missing Registrations
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
 
@@ -554,7 +490,7 @@ Therefore, we cannot accurately identify missing registrations on the dependency
 
 </details>
 
-### (TODO) Customize Registration
+### Customize Registration
 Are you a customization nerd? You can customize various registration settings using the `[Qudi]` attribute.
 
 ```csharp
