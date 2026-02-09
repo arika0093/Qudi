@@ -12,7 +12,10 @@ internal static class HelperCodeGenerator
 {
     private const string HelperNamespace = "Qudi.Helper";
 
-    public static void GenerateHelpers(SourceProductionContext context, ImmutableArray<HelperTarget> targets)
+    public static void GenerateHelpers(
+        SourceProductionContext context,
+        ImmutableArray<HelperTarget> targets
+    )
     {
         if (targets.IsDefaultOrEmpty)
         {
@@ -29,7 +32,12 @@ internal static class HelperCodeGenerator
 
         foreach (var helper in helpers)
         {
-            GenerateHelperForInterface(context, helper.InterfaceSymbol, helper.IsDecorator, helper.IsStrategy);
+            GenerateHelperForInterface(
+                context,
+                helper.InterfaceSymbol,
+                helper.IsDecorator,
+                helper.IsStrategy
+            );
         }
     }
 
@@ -65,7 +73,9 @@ internal static class HelperCodeGenerator
             interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         );
 
-        var interfaceName = interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var interfaceName = interfaceSymbol.ToDisplayString(
+            SymbolDisplayFormat.FullyQualifiedFormat
+        );
         var members = CollectInterfaceMembers(interfaceSymbol);
 
         var builder = new IndentedStringBuilder();
@@ -90,10 +100,7 @@ internal static class HelperCodeGenerator
         builder.DecreaseIndent();
         builder.AppendLine("}");
 
-        context.AddSource(
-            $"Qudi.Helper.{helperNameSuffix}.g.cs",
-            builder.ToString()
-        );
+        context.AddSource($"Qudi.Helper.{helperNameSuffix}.g.cs", builder.ToString());
     }
 
     private static ImmutableArray<ISymbol> CollectInterfaceMembers(INamedTypeSymbol interfaceSymbol)
@@ -174,9 +181,7 @@ internal static class HelperCodeGenerator
             $"public abstract class StrategyHelper_{helperNameSuffix} : {interfaceName}"
         );
         builder.AppendLine("{");
-        builder.AppendLine(
-            $"    protected readonly IEnumerable<{interfaceName}> _services;"
-        );
+        builder.AppendLine($"    protected readonly IEnumerable<{interfaceName}> _services;");
         builder.AppendLine("");
         builder.AppendLine(
             $"    protected StrategyHelper_{helperNameSuffix}(IEnumerable<{interfaceName}> services)"
@@ -208,13 +213,17 @@ internal static class HelperCodeGenerator
 
     private static void AppendDecoratorMethod(IndentedStringBuilder builder, IMethodSymbol method)
     {
-        var returnType = method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var returnType = method.ReturnType.ToDisplayString(
+            SymbolDisplayFormat.FullyQualifiedFormat
+        );
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
 
         if (method.ReturnsVoid)
         {
-            builder.AppendLine($"public virtual void {method.Name}({parameters}) => _innerService.{method.Name}({arguments});");
+            builder.AppendLine(
+                $"public virtual void {method.Name}({parameters}) => _innerService.{method.Name}({arguments});"
+            );
             return;
         }
 
@@ -223,11 +232,16 @@ internal static class HelperCodeGenerator
         );
     }
 
-    private static void AppendDecoratorProperty(IndentedStringBuilder builder, IPropertySymbol property)
+    private static void AppendDecoratorProperty(
+        IndentedStringBuilder builder,
+        IPropertySymbol property
+    )
     {
         var typeName = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var propertyName = property.IsIndexer ? "this" : property.Name;
-        var parameters = property.IsIndexer ? BuildParameterList(property.Parameters) : string.Empty;
+        var parameters = property.IsIndexer
+            ? BuildParameterList(property.Parameters)
+            : string.Empty;
         var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : string.Empty;
         var accessSuffix = property.IsIndexer
             ? $"[{BuildArgumentList(property.Parameters)}]"
@@ -259,12 +273,11 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendStrategyMethod(
-        IndentedStringBuilder builder,
-        IMethodSymbol method
-    )
+    private static void AppendStrategyMethod(IndentedStringBuilder builder, IMethodSymbol method)
     {
-        var returnType = method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var returnType = method.ReturnType.ToDisplayString(
+            SymbolDisplayFormat.FullyQualifiedFormat
+        );
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
 
@@ -322,7 +335,9 @@ internal static class HelperCodeGenerator
     {
         var typeName = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var propertyName = property.IsIndexer ? "this" : property.Name;
-        var parameters = property.IsIndexer ? BuildParameterList(property.Parameters) : string.Empty;
+        var parameters = property.IsIndexer
+            ? BuildParameterList(property.Parameters)
+            : string.Empty;
         var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : string.Empty;
         var accessSuffix = property.IsIndexer
             ? $"[{BuildArgumentList(property.Parameters)}]"
@@ -418,7 +433,9 @@ internal static class HelperCodeGenerator
             }
 
             builder.Append(GetRefKindPrefix(parameter.RefKind));
-            builder.Append(parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            builder.Append(
+                parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            );
             builder.Append(' ');
             builder.Append(parameter.Name);
             return builder.ToString();
@@ -450,7 +467,7 @@ internal static class HelperCodeGenerator
             RefKind.Ref => "ref ",
             RefKind.Out => "out ",
             RefKind.In => "in ",
-            _ => string.Empty
+            _ => string.Empty,
         };
     }
 

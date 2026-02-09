@@ -48,7 +48,7 @@ public sealed class StrategySelector(IEnumerable<IStrategyService> services)
         return new StrategyResult
         {
             UseService = service is StrategyServiceBeta,
-            Continue = service is not StrategyServiceBeta
+            Continue = service is not StrategyServiceBeta,
         };
     }
 }
@@ -77,11 +77,7 @@ public sealed class OrderedStrategy(IEnumerable<IOrderedService> services)
 {
     protected override StrategyResult ShouldUseService(IOrderedService service)
     {
-        return new StrategyResult
-        {
-            UseService = true,
-            Continue = false
-        };
+        return new StrategyResult { UseService = true, Continue = false };
     }
 
     public override string Get() => $"strategy({base.Get()})";

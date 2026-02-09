@@ -53,9 +53,7 @@ public static class QudiAddServiceForMicrosoftExtensionsDependencyInjection
             .OrderBy(t => t.Order)
             .ToList();
 
-        var registrations = applicable
-            .Where(t => !t.MarkAsDecorator && !t.MarkAsStrategy)
-            .ToList();
+        var registrations = applicable.Where(t => !t.MarkAsDecorator && !t.MarkAsStrategy).ToList();
         var postProcessors = applicable
             .Where(t => t.MarkAsDecorator || t.MarkAsStrategy)
             .OrderBy(t => t.Order)

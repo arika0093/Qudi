@@ -5,9 +5,18 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/examples/">
-    <Project Path="examples/Qudi.Example.Core/Qudi.Example.Core.csproj" Id="6a51cc5a-3ea8-41ad-8f4d-623601625bde" />
-    <Project Path="examples/Qudi.Example.Readme/Qudi.Example.Readme.csproj" Id="faa10edb-b998-4a76-a669-8766b17b1c2d" />
-    <Project Path="examples/Qudi.Example.Worker/Qudi.Example.Worker.csproj" Id="41f26876-b769-4c78-9c87-92b2a748795f" />
+    <Project
+      Path="examples/Qudi.Example.Core/Qudi.Example.Core.csproj"
+      Id="6a51cc5a-3ea8-41ad-8f4d-623601625bde"
+    />
+    <Project
+      Path="examples/Qudi.Example.Readme/Qudi.Example.Readme.csproj"
+      Id="faa10edb-b998-4a76-a669-8766b17b1c2d"
+    />
+    <Project
+      Path="examples/Qudi.Example.Worker/Qudi.Example.Worker.csproj"
+      Id="41f26876-b769-4c78-9c87-92b2a748795f"
+    />
   </Folder>
   <Folder Name="/src/">
     <File Path="src/Directory.Build.props" />

@@ -15,16 +15,16 @@ internal static class HelperTargetCollector
         IncrementalGeneratorInitializationContext context
     )
     {
-        var decoratorTargets = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
+        var decoratorTargets = context
+            .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (ctx, _) => CreateTargets(ctx, isDecorator: true, isStrategy: false)
             )
             .SelectMany(static (targets, _) => targets);
 
-        var strategyTargets = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
+        var strategyTargets = context
+            .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiStrategyAttribute,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (ctx, _) => CreateTargets(ctx, isDecorator: false, isStrategy: true)
@@ -43,7 +43,10 @@ internal static class HelperTargetCollector
         bool isStrategy
     )
     {
-        if (context.TargetSymbol is not INamedTypeSymbol typeSymbol || context.Attributes.Length == 0)
+        if (
+            context.TargetSymbol is not INamedTypeSymbol typeSymbol
+            || context.Attributes.Length == 0
+        )
         {
             return ImmutableArray<HelperTarget>.Empty;
         }
@@ -51,9 +54,8 @@ internal static class HelperTargetCollector
         var attribute = context.Attributes[0];
         var asTypes = GetExplicitAsTypes(attribute);
 
-        IEnumerable<INamedTypeSymbol> interfaces = asTypes.Length > 0
-            ? asTypes
-            : typeSymbol.AllInterfaces.OfType<INamedTypeSymbol>();
+        IEnumerable<INamedTypeSymbol> interfaces =
+            asTypes.Length > 0 ? asTypes : typeSymbol.AllInterfaces.OfType<INamedTypeSymbol>();
 
         var targets = new List<HelperTarget>();
         foreach (var iface in interfaces)
@@ -69,9 +71,7 @@ internal static class HelperTargetCollector
         return targets.ToImmutableArray();
     }
 
-    private static ImmutableArray<HelperTarget> MergeTargets(
-        ImmutableArray<HelperTarget> targets
-    )
+    private static ImmutableArray<HelperTarget> MergeTargets(ImmutableArray<HelperTarget> targets)
     {
         if (targets.IsDefaultOrEmpty)
         {
@@ -90,7 +90,7 @@ internal static class HelperTargetCollector
             map[target.InterfaceSymbol] = existing with
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
-                IsStrategy = existing.IsStrategy || target.IsStrategy
+                IsStrategy = existing.IsStrategy || target.IsStrategy,
             };
         }
 
