@@ -1,7 +1,7 @@
 # Qudi
 [![NuGet Version](https://img.shields.io/nuget/v/Qudi?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Qudi/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Qudi/test.yaml?branch=main&label=Test&style=flat-square) 
 
-**Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based dependency injection helper library.  
+**Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based **simple** dependency injection helper library.  
 Explicitly, No assembly scan, AOT friendly.
 
 ## Quick Start
@@ -108,13 +108,13 @@ When publishing as a library, using `Qudi.Core` allows you to avoid forcing the 
 </details>
 
 ### Benefits
-Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of this library (in my opinion) are as follows:
+Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of this library are as follows:
 
 * **Explicit**: Registration is controlled using attributes. While this style depends on preference, I prefer explicit registration.
-* **Conditional Registration**: Conditional registration is possible via attribute parameters. Of course, Scrutor can do this too, but Qudi makes it easier to achieve.
+* **Conditional**: Conditional registration is possible via attribute parameters. Of course, Scrutor can do this too, but Qudi makes it easier to achieve.
 * **No Assembly Scan**: No assembly scanning. It works in AOT environments and is very fast.
 
-## Various Usages
+## Features
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
 For example, consider a case where code implemented inside a Core project is used from another project via an interface.
@@ -220,6 +220,9 @@ builder.Services.AddQudiServices(conf => {
 });
 ```
 
+> [!NOTE]
+> If you want to switch processing dynamically according to conditions during runtime, consider using a mechanism like [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
+
 ### Decorator Pattern
 #### Overview
 Decorator pattern is a useful technique to add functionality to existing services without modifying their code.
@@ -267,7 +270,7 @@ public interface IMessageService
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
 
-#### Using DecoratorHelper
+#### (TODO) Using DecoratorHelper
 To quickly create decorator classes, you can also use the `DecoratorHelper` utility.
 You only need to `override` the methods you want to customize; other methods will be automatically generated to simply call the inner service.
 
@@ -290,7 +293,7 @@ public interface IManyFeatureService
     void FeatureA();
     void FeatureB(int val);
     void FeatureC(string msg);
-    void FeatureD(params string[] items);
+    Task FeatureD(params string[] items);
     // and more...
 }
 
@@ -303,25 +306,25 @@ public abstract class DecoratorHelper<T> where T : IManyFeatureService
     {
         _innerService = innerService;
     }
-    
+
     public virtual void FeatureA() => _innerService.FeatureA();
     public virtual void FeatureB(int val) => _innerService.FeatureB(val);
     public virtual void FeatureC(string msg) => _innerService.FeatureC(msg);
-    public virtual void FeatureD(params string[] items) => _innerService.FeatureD(items);
+    public virtual Task FeatureD(params string[] items) => _innerService.FeatureD(items);
     // and more...
 }
 ```
 
-#### Using HookMethodExecution
-In addition to overriding individual methods, you can also use the `HookMethodExecution` method to perform operations for all method calls at once.
-This is useful for logging, performance measurement, and other cross-cutting concerns.
+#### (TODO) Using Intercept
+In addition to overriding individual methods, you can also use the `Intercept` method to perform operations for all method calls at once.
+This is useful for logging, performance measurement, and other cross-cutting concerns (AOP-like behavior).
 
 ```csharp
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
-public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IManyFeatureService>(service)
+public class SampleInterceptor(IManyFeatureService service) : DecoratorHelper<IManyFeatureService>(service)
 {
     // add it
-    protected override IEnumerable<bool> HookMethodExecution(string methodName, object?[] args)
+    protected override IEnumerable<bool> Intercept(string methodName, object?[] args)
     {
         // before
         var timer = new System.Diagnostics.Stopwatch();
@@ -333,11 +336,11 @@ public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IMan
         Console.WriteLine($"Execute time is {timer.ElapsedMilliseconds} ms");
     }
 
-    // Only override the methods you want to customize
-    public override void FeatureA()
+    // You can still override specific methods if needed
+    public override async Task FeatureA()
     {
         Console.WriteLine("Before FeatureA");
-        base.FeatureA(); // call base method to ensure HookMethodExecution is invoked
+        await base.FeatureA(); // call base method to ensure Intercept is invoked
         Console.WriteLine("After FeatureA");
     }
     // and more...
@@ -347,33 +350,211 @@ public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IMan
 // generated code
 public abstract class DecoratorHelper<T> where T : IManyFeatureService
 {
-    protected readonly T _innerService;
-    protected DecoratorHelper(T innerService)
+    protected readonly IMessageService _innerService;
+    protected DecoratorHelper(IMessageService innerService)
     {
         _innerService = innerService;
     }
 
-    public virtual void FeatureA() 
+    protected abstract IEnumerable<bool> Intercept(string methodName, object?[] args);
+
+    public virtual async Task FeatureA()
     {
-        var enumerator = HookMethodExecution(nameof(FeatureA), Array.Empty<object?>());
+        var enumerator = Intercept(nameof(FeatureA), Array.Empty<object?>());
         // call hook before execution
         if (enumerator.MoveNext() && enumerator.Current)
         {
             // call the inner service
-            _innerService.FeatureA();
+            await _innerService.FeatureA();
+            // call hook after execution
+            enumerator.MoveNext();
         }
     }
     // and more...
+}
+```
+### (TODO) Strategy Pattern
+This is similar to the Decorator pattern, but switches services in a 1-to-many relationship instead of 1-to-1.
+For example, consider a case where you want to switch between multiple implementations of a message service based on conditions.
 
-    protected virtual IEnumerable<bool> HookMethodExecution(string methodName, object?[] args)
+```csharp
+[QudiStrategy(Lifetime = Lifetime.Singleton)]
+public class SendMessageStrategy(IEnumerable<IMessageService> services, MyConfiguration config) : IMessageService
+{
+    public void SendMessage(string message)
     {
-        // default: do nothing, proceed with execution
-        yield return true;
+        foreach (var service in services)
+        {
+            if (config.ShouldUseService(service))
+            {
+                service.SendMessage(message);
+            }
+        }
     }
 }
 ```
 
-### Customize Registration
+Once defined this way, you can send messages through `SendMessageStrategy` instead of individual `IMessageService` implementations.
+
+```csharp
+[DISingleton]
+public class NotificationService(IMessageService messageService)
+{
+    public void Notify(string message)
+    {
+        // Here, SendMessageStrategy is invoked.
+        messageService.SendMessage(message); 
+    }
+}
+```
+
+A `StrategyHelper` is also provided to facilitate implementation.
+```csharp
+[QudiStrategy(Lifetime = Lifetime.Singleton)]
+public class MessageServiceStrategy(IEnumerable<IMessageService> services) : StrategyHelper<IMessageService>(services)
+{
+    protected override StrategyResult ShouldUseService(IMessageService service)
+    {
+        // Select which service to use based on conditions
+        return new(){
+            UseService = service is EmailMessageService, // For example, use only EmailMessageService
+            Continue = true // Whether to continue checking other services
+        };
+    }
+}
+
+// ---------------------
+// generated code
+public abstract class StrategyHelper<T> where T : IMessageService
+{
+    protected readonly IEnumerable<IMessageService> _services;
+    protected StrategyHelper(IEnumerable<IMessageService> services)
+    {
+        _services = services;
+    }
+
+    protected abstract StrategyResult ShouldUseService(IMessageService service);
+
+    // For each method and property, code is generated to determine which service to use and invoke it.
+    public virtual void SendMessage(string message)
+    {
+        foreach (var service in _services)
+        {
+            var result = ShouldUseService(service);
+            if (result.UseService)
+            {
+                service.SendMessage(message);
+            }
+            if (!result.Continue)
+            {
+                break;
+            }
+        }
+    }
+}
+```
+
+You can also combine it with Decorators.
+
+```csharp
+[QudiDecorator(Lifetime = Lifetime.Singleton)]
+public class LoggingStrategyDecorator(IMessageService innerService, ILogger<LoggingStrategyDecorator> logger)
+    : DecoratorHelper<IMessageService>(innerService)
+{
+    public override void SendMessage(string message)
+    {
+        logger.LogTrace("Sending message: {Message}", message);
+        base.SendMessage(message);
+    }
+}
+
+[QudiStrategy(Lifetime = Lifetime.Singleton)]
+public class SendMessageStrategy(IEnumerable<IMessageService> services) : StrategyHelper<IMessageService>(services)
+{
+    protected override StrategyResult ShouldUseService(IMessageService service)
+    {
+        // ...
+    }
+}
+
+// call chain is:
+// IMessageService
+// -> LoggingStrategyDecorator -> SendMessageStrategy
+// -> ( individual IMessageService implementations )
+```
+
+When Order is the same, Decorators are applied first, followed by Strategies.
+
+
+### (TODO) Generics Registration
+For example, consider a case where you want to generically register validation classes for a class `T` representing component information.
+
+* For each `T`, there exists a class implementing `IValidator<T>`.
+* As a fallback in case `T` is not registered, you call `NullValidator<T>` which always returns a success result.
+
+In such cases, you can perform generic registration as follows.
+
+
+```csharp
+// in IComponent.cs
+public interface IComponent { /* ... */ }
+public class Battery : IComponent { /* ... */ }
+public class Resistor : IComponent { /* ... */ }
+// and more...
+
+// ---------------------
+// in IValidator.cs
+[QudiGenerics(FallbackType = typeof(NullValidator<>))]
+public interface IValidator<T> where T : IComponent
+{
+    ValidationResult Validate(T item);
+}
+[DISingleton]
+internal class NullValidator<T> : IValidator<T> where T : IComponent
+{
+    public ValidationResult Validate(T item) => ValidationResult.Success;
+}
+
+// ---------------------
+// in YourValidators.cs
+[DISingleton]
+internal class BatteryValidator : IValidator<Battery> { /* ... */ }
+[DISingleton]
+internal class ResistorValidator : IValidator<Resistor> { /* ... */ }
+// and more...
+
+// ---------------------
+// and call in ValidationService.cs
+[DISingleton]
+internal class ValidationService(IEnumerable<IValidator<IComponent>> validators)
+{
+    public void ValidateComponent(IComponent component)
+    {
+        
+    }
+}
+```
+
+### (TODO) Visualize Missing Registrations
+When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
+
+```
+TODO
+```
+
+> [!NOTE]
+> Missing registrations are detected only for interface types included in project dependencies.
+> This is a limitation of Qudi's scanning approach, but it should be sufficient for most cases.
+
+<details>
+<summary>Why is this not an analyzer error?</summary>
+
+Source Generators cannot directly reference code from dependent projects.
+Therefore, we cannot accurately identify missing registrations on the dependency side, so we notify them as runtime errors instead.
+
+</details>
+
+### (TODO) Customize Registration
 Are you a customization nerd? You can customize various registration settings using the `[Qudi]` attribute.
 
 ```csharp
@@ -401,8 +582,20 @@ public class YourClass : IYourService, IYourOtherService { /* ... */ }
 // [DISingleton(When = [Condition.Development], AsTypes = [typeof(IYourService)], ...)]
 ```
 
-> [!NOTE]
-> If you need to perform more complex tasks, it is recommended to register them manually as before.
+> [!TIP]
+> If you need to perform more complex tasks, it is recommended to register them manually.
+
+### (TODO) Filtering Registrations
+You can filter which registrations to apply by specifying options in the `AddQudiServices` method.
+
+```csharp
+services.AddQudiServices(conf => {
+    conf.AddFilter(reg => {
+        // e.g. filter by namespace
+        return reg.Namespace.Contains("MyApp.Services");
+    });
+});
+```
 
 ### Use Collected Information Directly
 You can also refer to the collected information only and register it manually to the DI container.
