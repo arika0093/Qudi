@@ -2,7 +2,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/Qudi?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Qudi/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Qudi/test.yaml?branch=main&label=Test&style=flat-square) 
 
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based dependency injection helper library.  
-No assembly scan, AOT friendly.
+Explicitly, No assembly scan, AOT friendly.
 
 ## Quick Start
 ### Overview
@@ -107,6 +107,13 @@ When publishing as a library, using `Qudi.Core` allows you to avoid forcing the 
 
 </details>
 
+### Benefits
+Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of this library (in my opinion) are as follows:
+
+* **Explicit**: Registration is controlled using attributes. While this style depends on preference, I prefer explicit registration.
+* **Conditional Registration**: Conditional registration is possible via attribute parameters. Of course, Scrutor can do this too, but Qudi makes it easier to achieve.
+* **No Assembly Scan**: No assembly scanning. It works in AOT environments and is very fast.
+
 ## Various Usages
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
@@ -139,19 +146,7 @@ internal class MyService(IDataRepository repository)
 }
 ```
 
-In such cases, first introduce `Qudi`(or `Qudi.Core`) in each project.
-you can create a `Directory.Build.props` file in the parent directory and set it up as follows to share the package reference.
-
-```xml
-<!-- in Directory.Build.props -->
-<Project>
-  <ItemGroup Label="Qudi Packages">
-    <PackageReference Include="Qudi" Version="*" />
-    <Using Include="Qudi" />
-  </ItemGroup>
-</Project>
-```
-
+In this case, introduce `Qudi` to `MyApp.Core` (or install `Qudi.Core` to all projects).  
 Next, mark the implementation class and the dependent class with Qudi attributes.
 
 ```csharp
@@ -164,7 +159,7 @@ internal class SqlDataRepository : IDataRepository { /* ... */ }
 internal class MyService(IDataRepository repository) { /* ... */ }
 ```
 
-Then, just call `AddQudiServices` as usual :)
+Then, just call `AddQudiServices` as usual in the startup code of `MyApp.Web`.
 
 ```csharp
 // in MyApp.Web
@@ -218,7 +213,7 @@ builder.Services.AddQudiServices(conf => {
     // Detection from IHostEnvironment
     conf.SetCondition(builder.Environment.EnvironmentName);
     // Or set it directly
-    conf.SetCondition(Condition.Development); // -> "Development"
+    conf.SetCondition(Condition.Development);
     conf.SetCondition("testing");
     // Alternatively, you can set conditions based on environment variables
     conf.SetConditionFromEnvironment("ASPNETCORE_ENVIRONMENT");
@@ -271,6 +266,45 @@ public interface IMessageService
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
 
+To quickly create decorator classes, you can also use the `DecoratorHelper` utility.
+You only need to `override` the methods you want to customize; other methods will be automatically generated to simply call the inner service.
+
+```csharp
+[QudiDecorator(Lifetime = Lifetime.Singleton)]
+public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IManyFeatureService>(service)
+{
+    public override void FeatureA()
+    {
+        Console.WriteLine("Before FeatureA");
+        service.FeatureA();
+    }
+}
+
+public interface IManyFeatureService
+{
+    void FeatureA();
+    void FeatureB(int val);
+    void FeatureC(string msg);
+    void FeatureD(params string[] items);
+    // and more...
+}
+
+// ---------------------
+// generated code
+public abstract class DecoratorHelper<T> where T : IManyFeatureService
+{
+    protected readonly T _innerService;
+    protected DecoratorHelper(T innerService)
+    {
+        _innerService = innerService;
+    }
+    public virtual void FeatureA() => _innerService.FeatureA();
+    public virtual void FeatureB(int val) => _innerService.FeatureB(val);
+    public virtual void FeatureC(string msg) => _innerService.FeatureC(msg);
+    public virtual void FeatureD(params string[] items) => _innerService.FeatureD(items);
+    // and more...
+}
+```
 
 ### Customize Registration
 Are you a customization nerd? You can customize various registration settings using the `[Qudi]` attribute.
@@ -391,6 +425,7 @@ namespace Qudi.Generated__D716A886
 ```
 
 </details>
+
 
 As shown, information about annotated classes is collected as `TypeRegistrationInfo`. If dependencies exist, those are included automatically. Because this information is DI-container-agnostic, it can be used to support multiple DI containers.
 
