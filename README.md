@@ -282,25 +282,7 @@ public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IMan
         base.FeatureA();
         Console.WriteLine("After FeatureA");
     }
-
     // For other methods, code is automatically generated to simply call innerService.
-    // ------
-
-    // You can also perform operations for all calls at once.
-    // For example, useful for logging and performance measurement.
-    // If you do not write any processing, nothing will be done (the call itself will be skipped).
-    protected override IEnumerable<bool> HookMethodExecution(string methodName, object?[] args)
-    {
-        // before
-        var timer = new System.Diagnostics.Stopwatch();
-        Console.WriteLine("Timer started...");
-        timer.Start();
-        yield return true; // if cancel execution, yield return false;
-        // after
-        timer.Stop();
-        Console.WriteLine($"Execute time is {timer.ElapsedMilliseconds} ms");
-    }
-
 }
 
 public interface IManyFeatureService
