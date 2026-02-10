@@ -255,7 +255,7 @@ public interface IMessageService
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
 
-#### (TODO) Using Auto Generated Helper
+#### Using Auto Generated Helper
 To quickly implement decorators, by marking the target class as `partial`, an abstract helper class is automatically generated.
 
 ```csharp
@@ -322,7 +322,7 @@ public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
 
 </details>
 
-#### (TODO) Using Intercept
+#### Using Intercept
 In addition to overriding individual methods, you can also use the `Intercept` method to perform operations for all method calls at once.
 This is useful for logging, performance measurement, and other cross-cutting concerns (AOP-like behavior).
 
@@ -396,7 +396,7 @@ public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
 
 </details>
 
-### (TODO) Strategy Pattern
+### Strategy Pattern
 #### Overview
 This is similar to the Decorator pattern, but switches services in a 1-to-many relationship instead of 1-to-1.
 For example, consider a case where you want to switch between multiple implementations of a message service based on conditions.
@@ -432,7 +432,7 @@ public class NotificationService(IMessageService messageService)
 }
 ```
 
-#### (TODO) Using Auto Generated Helper
+#### Using Auto Generated Helper
 Like Decorators, by marking the target class as `partial`, an abstract helper class for quickly implementing strategies is automatically generated.
 
 ```csharp
