@@ -265,6 +265,7 @@ To quickly implement decorators, by marking the target class as `partial`, an ab
 public partial class SampleDecorator : IManyFeatureService
 {
     // mark it partial and add constructor definition
+    // required C# 14 or later for 'partial' constructor
     public partial SampleDecorator(
         IManyFeatureService innerService,
         ILogger<SampleDecorator> logger    
@@ -432,6 +433,7 @@ Like Decorators, by marking the target class as `partial`, an abstract helper cl
 public partial class MessageServiceStrategy : IMessageService
 {
     // mark it partial and add constructor definition
+    // required C# 14 or later for 'partial' constructor
     public partial MessageServiceStrategy(
         IEnumerable<IMessageService> services
     );
