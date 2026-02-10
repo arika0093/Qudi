@@ -21,32 +21,32 @@ internal static class RegistrationAttrParser
     {
         var qudiProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             QudiAttribute,
-            static (node, _) => node is ClassDeclarationSyntax,
+            static (node, _) => true,
             static (context, _) => CreateFromAttribute(context)
         );
         var singletonProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             QudiSingletonAttribute,
-            static (node, _) => node is ClassDeclarationSyntax,
+            static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, lifetime: "Singleton")
         );
         var transientProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             QudiTransientAttribute,
-            static (node, _) => node is ClassDeclarationSyntax,
+            static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, lifetime: "Transient")
         );
         var scopedProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             QudiScopedAttribute,
-            static (node, _) => node is ClassDeclarationSyntax,
+            static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, lifetime: "Scoped")
         );
         var decoratorProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             QudiDecoratorAttribute,
-            static (node, _) => node is ClassDeclarationSyntax,
+            static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, asDecorator: true)
         );
         var strategyProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             QudiStrategyAttribute,
-            static (node, _) => node is ClassDeclarationSyntax,
+            static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, asStrategy: true)
         );
 

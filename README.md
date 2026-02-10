@@ -690,5 +690,5 @@ dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win
 
 ## Well-known Issues
 - [ ] Assembly scan is performed every time, which is very slow for medium-sized projects or larger.
-- [ ] Record types are not registered.
+- [x] Record types are not registered.
 - [ ] 
