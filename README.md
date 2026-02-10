@@ -260,7 +260,6 @@ To quickly implement decorators, by marking the target class as `partial`, an ab
 
 ```csharp
 // when use QudiDecoratorAttribute, marked partial and implements interface
-// the abstract helper class is automatically generated to help you implement decorator pattern.
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
 public partial class SampleDecorator : IManyFeatureService
 {
@@ -289,9 +288,12 @@ public interface IManyFeatureService
     Task FeatureD(params string[] items);
     // and more...
 }
+```
 
-// ---------------------
-// generated code
+<details>
+<summary>Generated Code Snippets</summary>
+
+```csharp
 partial class SampleDecorator : DecoratorHelper_IManyFeatureService
 {
     private readonly ILogger<SampleDecorator> logger;
@@ -317,6 +319,8 @@ public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
     // and more...
 }
 ```
+
+</details>
 
 #### (TODO) Using Intercept
 In addition to overriding individual methods, you can also use the `Intercept` method to perform operations for all method calls at once.
@@ -350,9 +354,12 @@ public partial class SampleInterceptor : IManyFeatureService
     }
     // and more...
 }
+```
 
-// ---------------------
-// generated code
+<details>
+<summary>Generated Code Snippets</summary>
+
+```csharp
 partial class SampleInterceptor : DecoratorHelper_IManyFeatureService
 {
     public partial SampleInterceptor(IManyFeatureService innerService)
@@ -447,9 +454,12 @@ public partial class MessageServiceStrategy : IMessageService
         };
     }
 }
+```
 
-// ---------------------
-// generated code
+<details>
+<summary>Generated Code Snippets</summary>
+
+```csharp
 partial class MessageServiceStrategy : StrategyHelper_IMessageService
 {
     public partial MessageServiceStrategy(IEnumerable<IMessageService> services)
@@ -486,6 +496,8 @@ public abstract class StrategyHelper_IMessageService : IMessageService
     }
 }
 ```
+
+</details>
 
 You can also combine it with Decorators.
 
