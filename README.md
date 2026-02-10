@@ -214,7 +214,7 @@ Decorator pattern is a useful technique to add functionality to existing service
 You can easily register decorator classes using the `[QudiDecorator]` attribute.
 
 ```csharp
-[QudiDecorator(Lifetime = Lifetime.Singleton, Order = 1)]
+[QudiDecorator(Lifetime = Lifetime.Singleton)] // or [QudiDecorator] works the same
 public class LoggingMessageServiceDecorator(
     IMessageService innerService,
     ILogger<LoggingMessageServiceDecorator> logger
@@ -228,7 +228,7 @@ public class LoggingMessageServiceDecorator(
     }
 }
 
-[QudiDecorator(Lifetime = Lifetime.Singleton, Order = 2)]
+[QudiDecorator(Lifetime = Lifetime.Singleton, Order = 1)] // you can specify order
 public class CensorshipMessageServiceDecorator(
     IMessageService innerService
 ) : IMessageService
@@ -402,7 +402,7 @@ This is similar to the Decorator pattern, but switches services in a 1-to-many r
 For example, consider a case where you want to switch between multiple implementations of a message service based on conditions.
 
 ```csharp
-[QudiStrategy(Lifetime = Lifetime.Singleton)]
+[QudiStrategy(Lifetime = Lifetime.Singleton)] // or [QudiStrategy] works the same
 public class SendMessageStrategy(IEnumerable<IMessageService> services, MyConfiguration config) : IMessageService
 {
     public void SendMessage(string message)
