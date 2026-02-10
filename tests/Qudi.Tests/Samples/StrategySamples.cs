@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using Qudi;
 
@@ -68,20 +69,27 @@ public sealed class OrderedService : IOrderedService
 [QudiDecorator(Lifetime = Lifetime.Transient)]
 public sealed partial class OrderedDecorator : IOrderedService
 {
-    public partial OrderedDecorator(IOrderedService inner);
+    public partial OrderedDecorator(IOrderedService innerService);
 
     public override string Get() => $"decorator({base.Get()})";
+
+    private void CheckVariableIsExist()
+    {
+        var _ = innerService == null;
+    }
 }
 
 [QudiStrategy(Lifetime = Lifetime.Singleton)]
 public sealed partial class OrderedStrategy : IOrderedService
 {
-    public partial OrderedStrategy(IEnumerable<IOrderedService> services);
+    public partial OrderedStrategy(IEnumerable<IOrderedService> myServices);
 
-    protected override StrategyResult ShouldUseService(IOrderedService service)
-    {
-        return true;
-    }
+    protected override StrategyResult ShouldUseService(IOrderedService service) => true;
 
     public override string Get() => $"strategy({base.Get()})";
+
+    private void CheckVariableIsExist()
+    {
+        var _ = myServices.Any();
+    }
 }

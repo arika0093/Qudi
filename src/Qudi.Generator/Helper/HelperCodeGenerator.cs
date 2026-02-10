@@ -91,14 +91,17 @@ internal static class HelperCodeGenerator
         var interfaceName = helper.InterfaceName;
         var interfaceHelperName = helper.InterfaceHelperName;
         var members = helper.Members.ToImmutableArray();
+        var baseParameterName = string.IsNullOrEmpty(helper.DecoratorParameterName)
+            ? "innerService"
+            : helper.DecoratorParameterName;
         var helperName = BuildHelperClassName(interfaceHelperName, isDecorator: true);
         builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
         builder.AppendLine("{");
-        builder.AppendLine($"    protected readonly {interfaceName} innerService;");
+        builder.AppendLine($"    protected readonly {interfaceName} {baseParameterName};");
         builder.AppendLine("");
-        builder.AppendLine($"    protected {helperName}({interfaceName} innerService)");
+        builder.AppendLine($"    protected {helperName}({interfaceName} {baseParameterName})");
         builder.AppendLine("    {");
-        builder.AppendLine("        this.innerService = innerService;");
+        builder.AppendLine($"        this.{baseParameterName} = {baseParameterName};");
         builder.AppendLine("    }");
         builder.AppendLine("");
         builder.AppendLine(
@@ -113,11 +116,11 @@ internal static class HelperCodeGenerator
         {
             if (member.Kind == HelperMemberKind.Method)
             {
-                AppendDecoratorMethod(builder, member);
+                AppendDecoratorMethod(builder, member, baseParameterName);
             }
             else if (member.Kind == HelperMemberKind.Property)
             {
-                AppendDecoratorProperty(builder, member);
+                AppendDecoratorProperty(builder, member, baseParameterName);
             }
         }
 
@@ -133,19 +136,22 @@ internal static class HelperCodeGenerator
         var interfaceName = helper.InterfaceName;
         var interfaceHelperName = helper.InterfaceHelperName;
         var members = helper.Members.ToImmutableArray();
+        var servicesParameterName = string.IsNullOrEmpty(helper.StrategyParameterName)
+            ? "services"
+            : helper.StrategyParameterName;
 
         var helperName = BuildHelperClassName(interfaceHelperName, isDecorator: false);
         builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
         builder.AppendLine("{");
         builder.AppendLine(
-            $"    protected readonly {IEnumerable}<{interfaceName}> services;"
+            $"    protected readonly {IEnumerable}<{interfaceName}> {servicesParameterName};"
         );
         builder.AppendLine("");
         builder.AppendLine(
-            $"    protected {helperName}({IEnumerable}<{interfaceName}> services)"
+            $"    protected {helperName}({IEnumerable}<{interfaceName}> {servicesParameterName})"
         );
         builder.AppendLine("    {");
-        builder.AppendLine("        this.services = services;");
+        builder.AppendLine($"        this.{servicesParameterName} = {servicesParameterName};");
         builder.AppendLine("    }");
         builder.AppendLine("");
         builder.AppendLine(
@@ -157,11 +163,11 @@ internal static class HelperCodeGenerator
         {
             if (member.Kind == HelperMemberKind.Method)
             {
-                AppendStrategyMethod(builder, member);
+                AppendStrategyMethod(builder, member, servicesParameterName);
             }
             else if (member.Kind == HelperMemberKind.Property)
             {
-                AppendStrategyProperty(builder, member);
+                AppendStrategyProperty(builder, member, servicesParameterName);
             }
         }
 
@@ -169,7 +175,11 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendDecoratorMethod(IndentedStringBuilder builder, HelperMember method)
+    private static void AppendDecoratorMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string baseParameterName
+    )
     {
         var returnType = method.ReturnTypeName;
         var parameters = BuildParameterList(method.Parameters);
@@ -188,7 +198,7 @@ internal static class HelperCodeGenerator
         builder.IncreaseIndent();
         if (returnsVoid)
         {
-            builder.AppendLine($"innerService.{method.Name}({arguments});");
+            builder.AppendLine($"{baseParameterName}.{method.Name}({arguments});");
             builder.AppendLine("enumerator.MoveNext();");
             builder.DecreaseIndent();
             builder.AppendLine("}");
@@ -197,7 +207,7 @@ internal static class HelperCodeGenerator
             return;
         }
 
-        builder.AppendLine($"var result = innerService.{method.Name}({arguments});");
+        builder.AppendLine($"var result = {baseParameterName}.{method.Name}({arguments});");
         builder.AppendLine("enumerator.MoveNext();");
         builder.AppendLine("return result;");
         builder.DecreaseIndent();
@@ -209,7 +219,8 @@ internal static class HelperCodeGenerator
 
     private static void AppendDecoratorProperty(
         IndentedStringBuilder builder,
-        HelperMember property
+        HelperMember property,
+        string baseParameterName
     )
     {
         var typeName = property.ReturnTypeName;
@@ -229,8 +240,8 @@ internal static class HelperCodeGenerator
         if (property.HasGetter)
         {
             var getterAccess = property.IsIndexer
-                ? $"innerService{accessSuffix}"
-                : $"innerService.{propertyName}{accessSuffix}";
+                ? $"{baseParameterName}{accessSuffix}"
+                : $"{baseParameterName}.{propertyName}{accessSuffix}";
             builder.AppendLine("get");
             builder.AppendLine("{");
             builder.IncreaseIndent();
@@ -253,8 +264,8 @@ internal static class HelperCodeGenerator
         if (property.HasSetter)
         {
             var setterAccess = property.IsIndexer
-                ? $"innerService{accessSuffix}"
-                : $"innerService.{propertyName}{accessSuffix}";
+                ? $"{baseParameterName}{accessSuffix}"
+                : $"{baseParameterName}.{propertyName}{accessSuffix}";
             builder.AppendLine("set");
             builder.AppendLine("{");
             builder.IncreaseIndent();
@@ -277,7 +288,11 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendStrategyMethod(IndentedStringBuilder builder, HelperMember method)
+    private static void AppendStrategyMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string servicesParameterName
+    )
     {
         var returnType = method.ReturnTypeName;
         var parameters = BuildParameterList(method.Parameters);
@@ -295,7 +310,7 @@ internal static class HelperCodeGenerator
             builder.AppendLine("var hasResult = false;");
         }
 
-        builder.AppendLine("foreach (var service in services)");
+        builder.AppendLine($"foreach (var service in {servicesParameterName})");
         builder.AppendLine("{");
         builder.IncreaseIndent();
         builder.AppendLine($"var decision = ShouldUseService(service);");
@@ -331,7 +346,11 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendStrategyProperty(IndentedStringBuilder builder, HelperMember property)
+    private static void AppendStrategyProperty(
+        IndentedStringBuilder builder,
+        HelperMember property,
+        string servicesParameterName
+    )
     {
         var typeName = property.ReturnTypeName;
         var propertyName = property.IsIndexer ? "this" : property.Name;
@@ -354,7 +373,7 @@ internal static class HelperCodeGenerator
             builder.IncreaseIndent();
             builder.AppendLine($"{typeName} result = default!;");
             builder.AppendLine("var hasResult = false;");
-            builder.AppendLine("foreach (var service in services)");
+            builder.AppendLine($"foreach (var service in {servicesParameterName})");
             builder.AppendLine("{");
             builder.IncreaseIndent();
             builder.AppendLine("var decision = ShouldUseService(service);");
@@ -387,7 +406,7 @@ internal static class HelperCodeGenerator
             builder.AppendLine("set");
             builder.AppendLine("{");
             builder.IncreaseIndent();
-            builder.AppendLine("foreach (var service in services)");
+            builder.AppendLine($"foreach (var service in {servicesParameterName})");
             builder.AppendLine("{");
             builder.IncreaseIndent();
             builder.AppendLine("var decision = ShouldUseService(service);");

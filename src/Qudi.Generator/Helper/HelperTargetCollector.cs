@@ -105,19 +105,6 @@ internal static class HelperTargetCollector
         var interfaceHelperName = SanitizeIdentifier(
             iface.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
         );
-        var members = CollectInterfaceMembers(iface);
-        var target = new HelperInterfaceTarget
-        {
-            InterfaceName = interfaceName,
-            InterfaceNamespace = interfaceNamespace,
-            InterfaceHelperName = interfaceHelperName,
-            HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
-            Members = new EquatableArray<HelperMember>(members),
-            IsDecorator = isDecorator,
-            IsStrategy = isStrategy,
-        };
-        interfaceTargets.Add(target);
-
         var constructorTarget = FindPartialConstructorTarget(
             context,
             typeName,
@@ -133,6 +120,26 @@ internal static class HelperTargetCollector
         {
             implementingTargets.Add(constructorTarget);
         }
+        var members = CollectInterfaceMembers(iface);
+        var decoratorParameterName = isDecorator && constructorTarget is not null
+            ? constructorTarget.BaseParameterName
+            : string.Empty;
+        var strategyParameterName = isStrategy && constructorTarget is not null
+            ? constructorTarget.BaseParameterName
+            : string.Empty;
+        var target = new HelperInterfaceTarget
+        {
+            InterfaceName = interfaceName,
+            InterfaceNamespace = interfaceNamespace,
+            InterfaceHelperName = interfaceHelperName,
+            HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
+            DecoratorParameterName = decoratorParameterName,
+            StrategyParameterName = strategyParameterName,
+            Members = new EquatableArray<HelperMember>(members),
+            IsDecorator = isDecorator,
+            IsStrategy = isStrategy,
+        };
+        interfaceTargets.Add(target);
 
         return new HelperGenerationInput
         {
@@ -192,9 +199,36 @@ internal static class HelperTargetCollector
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
                 IsStrategy = existing.IsStrategy || target.IsStrategy,
+                DecoratorParameterName = MergeParameterName(
+                    existing.DecoratorParameterName,
+                    target.DecoratorParameterName
+                ),
+                StrategyParameterName = MergeParameterName(
+                    existing.StrategyParameterName,
+                    target.StrategyParameterName
+                ),
             };
         }
         return map.Values.ToImmutableArray();
+    }
+
+    private static string MergeParameterName(string existing, string incoming)
+    {
+        var hasExisting = !string.IsNullOrEmpty(existing);
+        var hasIncoming = !string.IsNullOrEmpty(incoming);
+        if (!hasExisting)
+        {
+            return incoming;
+        }
+
+        if (!hasIncoming)
+        {
+            return existing;
+        }
+
+        return string.Equals(existing, incoming, StringComparison.Ordinal)
+            ? existing
+            : string.Empty;
     }
 
     private static ImmutableArray<HelperImplementingTarget> MergeImplementingTargets(
@@ -266,6 +300,11 @@ internal static class HelperTargetCollector
                     continue;
                 }
 
+                if (!IsVisibleInHelper(member))
+                {
+                    continue;
+                }
+
                 if (member is IMethodSymbol method && method.MethodKind == MethodKind.Ordinary)
                 {
                     members.Add(CreateMethodMember(method));
@@ -280,6 +319,14 @@ internal static class HelperTargetCollector
         }
 
         return members;
+    }
+
+    private static bool IsVisibleInHelper(ISymbol member)
+    {
+        return member.DeclaredAccessibility is Accessibility.Public
+            or Accessibility.Protected
+            or Accessibility.ProtectedOrInternal
+            or Accessibility.ProtectedAndInternal;
     }
 
     private static HelperMember CreateMethodMember(IMethodSymbol method)

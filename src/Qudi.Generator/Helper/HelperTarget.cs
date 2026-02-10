@@ -9,6 +9,8 @@ internal sealed record HelperInterfaceTarget
     public required string InterfaceNamespace { get; init; }
     public required string InterfaceHelperName { get; init; }
     public required string HelperNamespaceSuffix { get; init; }
+    public required string DecoratorParameterName { get; init; }
+    public required string StrategyParameterName { get; init; }
     public required EquatableArray<HelperMember> Members { get; init; }
     public required bool IsDecorator { get; init; }
     public required bool IsStrategy { get; init; }
