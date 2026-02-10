@@ -20,7 +20,7 @@ internal static class HelperTargetCollector
         var decoratorTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
-                static (node, _) => node is ClassDeclarationSyntax,
+                static (node, _) => true,
                 static (ctx, _) => CreateTargets(ctx, isDecorator: true, isStrategy: false)
             )
             .SelectMany(static (targets, _) => targets);
@@ -28,7 +28,7 @@ internal static class HelperTargetCollector
         var strategyTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiStrategyAttribute,
-                static (node, _) => node is ClassDeclarationSyntax,
+                static (node, _) => true,
                 static (ctx, _) => CreateTargets(ctx, isDecorator: false, isStrategy: true)
             )
             .SelectMany(static (targets, _) => targets);
@@ -53,35 +53,60 @@ internal static class HelperTargetCollector
             return ImmutableArray<HelperTarget>.Empty;
         }
 
+        // TODO: There may be multiple attributes
         var attribute = context.Attributes[0];
         var asTypes = GetExplicitAsTypes(attribute);
+
+        // typename is only class name without namespace, such as "MyService"
+        // TODO: Support nested classes (classes within classes)
+        var typeName = typeSymbol.Name;
+        var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
+            ? string.Empty
+            : typeSymbol.ContainingNamespace.ToDisplayString();
+        var isRecord = typeSymbol.IsRecord;
+        var typeKind = typeSymbol.TypeKind switch
+        {
+            TypeKind.Class => "class",
+            TypeKind.Struct => "struct",
+            _ => "class",
+        };
+        var typeKeyword = $"{(isRecord ? "record " : "")}{typeKind}";
 
         IEnumerable<INamedTypeSymbol> interfaces =
             asTypes.Length > 0 ? asTypes : typeSymbol.AllInterfaces.OfType<INamedTypeSymbol>();
 
         var targets = new List<HelperTarget>();
-        foreach (var iface in interfaces)
+        var iface = interfaces.FirstOrDefault(
+            iface => iface.TypeKind == TypeKind.Interface
+        );
+        if(iface == null)
         {
-            if (iface.TypeKind != TypeKind.Interface)
-            {
-                continue;
-            }
-
-            var interfaceName = iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var members = CollectInterfaceMembers(iface);
-            var target = new HelperTarget
-            {
-                InterfaceName = interfaceName,
-                HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
-                Members = new EquatableArray<HelperMember>(members),
-                IsDecorator = isDecorator,
-                IsStrategy = isStrategy,
-            };
-
-            targets.Add(target);
+            return ImmutableArray<HelperTarget>.Empty;
         }
 
-        return targets.ToImmutableArray();
+        var interfaceName = iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var interfaceNamespace = iface.ContainingNamespace.IsGlobalNamespace
+            ? string.Empty
+            : iface.ContainingNamespace.ToDisplayString();
+        var interfaceHelperName = SanitizeIdentifier(
+            iface.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+        );
+        var members = CollectInterfaceMembers(iface);
+        var target = new HelperTarget
+        {
+            ImplementingTypeName = typeName,
+            ImplementingTypeNamespace = typeNamespace,
+            ImplementingTypeKeyword = typeKeyword,
+            InterfaceName = interfaceName,
+            InterfaceNamespace = interfaceNamespace,
+            InterfaceHelperName = interfaceHelperName,
+            HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
+            Members = new EquatableArray<HelperMember>(members),
+            IsDecorator = isDecorator,
+            IsStrategy = isStrategy,
+        };
+
+        return targets.Append(target).ToImmutableArray();
     }
 
     private static ImmutableArray<HelperTarget> MergeTargets(ImmutableArray<HelperTarget> targets)
@@ -106,7 +131,6 @@ internal static class HelperTargetCollector
                 IsStrategy = existing.IsStrategy || target.IsStrategy,
             };
         }
-
         return map.Values.ToImmutableArray();
     }
 
