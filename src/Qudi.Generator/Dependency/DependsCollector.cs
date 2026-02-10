@@ -128,7 +128,7 @@ internal static class DependsCollector
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return FastHashGenerator.Generate(assemblySymbol.Identity.ToString());
+        return FastHashGenerator.Generate(assemblySymbol.Identity.ToString(), 12);
     }
 
     private static bool IsProjectReferencePath(string? filePath)
