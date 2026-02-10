@@ -9,6 +9,8 @@ namespace Qudi.Generator.Registration;
 
 internal static class RegistrationAttrParser
 {
+    private const string DefaultLifetime = "Singleton";
+
     private const string QudiAttribute = $"Qudi.QudiAttribute";
     private const string QudiSingletonAttribute = $"Qudi.DISingletonAttribute";
     private const string QudiScopedAttribute = $"Qudi.DIScopedAttribute";
@@ -116,7 +118,7 @@ internal static class RegistrationAttrParser
         return new RegistrationSpec
         {
             // TypeName, Namespace is should be overwritten later.
-            Lifetime = SGAttributeParser.GetValue<string>(attr, "Lifetime") ?? "",
+            Lifetime = SGAttributeParser.GetValue<string>(attr, "Lifetime") ?? DefaultLifetime,
             When = SGAttributeParser.GetValues<string>(attr, "When"),
             AsTypes = SGAttributeParser.GetValueAsTypes(attr, "AsTypes"),
             UsePublic = SGAttributeParser.GetValue<bool?>(attr, "UsePublic") ?? true,
@@ -129,14 +131,12 @@ internal static class RegistrationAttrParser
 
     private static string DetermineNamespace(INamedTypeSymbol typeSymbol)
     {
+        var isGlobal = typeSymbol.ContainingNamespace == null
+            || typeSymbol.ContainingNamespace.IsGlobalNamespace;
         var ns = typeSymbol.ContainingNamespace?.ToDisplayString(
             SymbolDisplayFormat.FullyQualifiedFormat
         );
-        if (ns?.Contains("<global namespace>") != false)
-        {
-            ns = string.Empty;
-        }
-        return ns;
+        return !isGlobal ? ns! : string.Empty;
     }
 
 }
