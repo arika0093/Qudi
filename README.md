@@ -505,6 +505,11 @@ public abstract class StrategyHelper_IMessageService : IMessageService
 
 </details>
 
+> [!IMPORTANT]
+> Since `ShouldUseService` is executed for each method/property call, it is recommended to implement it as lightweight as possible and keep idempotent.
+> If the scale becomes large, consider separating it into a dedicated service/interface.
+
+#### Combine with Decorator
 You can also combine it with Decorators.
 
 ```csharp
