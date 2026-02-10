@@ -11,6 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Qudi.Example.Core\Qudi.Example.Core.csproj" />
+    <ProjectReference Include="..\Qudi.Example.SimpleCase.Core\Qudi.Example.SimpleCase.Core.csproj" />
   </ItemGroup>
 </Project>
