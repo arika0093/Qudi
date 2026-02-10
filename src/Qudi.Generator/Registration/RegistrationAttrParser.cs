@@ -131,12 +131,10 @@ internal static class RegistrationAttrParser
 
     private static string DetermineNamespace(INamedTypeSymbol typeSymbol)
     {
+        var ns = typeSymbol.ContainingNamespace?.ToDisplayString();
         var isGlobal = typeSymbol.ContainingNamespace == null
             || typeSymbol.ContainingNamespace.IsGlobalNamespace;
-        var ns = typeSymbol.ContainingNamespace?.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
-        return !isGlobal ? ns! : string.Empty;
+        return (!isGlobal && ns != null) ? ns : string.Empty;
     }
 
 }
