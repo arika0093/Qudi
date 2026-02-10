@@ -80,4 +80,36 @@ public sealed class StrategyPatternTests
 
         service.Get().ShouldBe("log:beta");
     }
+
+    [Test]
+    public void StrategyRespectsSingletonLifetime()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var first = provider.GetRequiredService<ILifetimeStrategyService>();
+        var second = provider.GetRequiredService<ILifetimeStrategyService>();
+
+        first.Id.ShouldBe(second.Id);
+    }
+
+    [Test]
+    public void StrategyRespectsScopedLifetime()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+
+        using var scope1 = provider.CreateScope();
+        var scope1First = scope1.ServiceProvider.GetRequiredService<IScopedStrategyService>();
+        var scope1Second = scope1.ServiceProvider.GetRequiredService<IScopedStrategyService>();
+
+        using var scope2 = provider.CreateScope();
+        var scope2First = scope2.ServiceProvider.GetRequiredService<IScopedStrategyService>();
+
+        scope1First.Id.ShouldBe(scope1Second.Id);
+        scope1First.Id.ShouldNotBe(scope2First.Id);
+    }
 }

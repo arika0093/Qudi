@@ -20,7 +20,7 @@ public sealed class HelperLogger
     public string Prefix => "log";
 }
 
-[QudiDecorator(Lifetime = Lifetime.Transient)]
+[QudiDecorator]
 public sealed partial class HelperOnlyDecorator : IHelperOnlyService
 {
     public partial HelperOnlyDecorator(IHelperOnlyService innerService, HelperLogger logger);
@@ -47,7 +47,7 @@ public sealed class InterceptState
     public void Add(string value) => Entries.Add(value);
 }
 
-[QudiDecorator(Lifetime = Lifetime.Transient)]
+[QudiDecorator]
 public sealed partial class InterceptDecorator : IInterceptService
 {
     public partial InterceptDecorator(IInterceptService innerService, InterceptState state);
@@ -77,7 +77,7 @@ public sealed class LoggedStrategyBeta : ILoggedStrategyService
     public string Get() => "beta";
 }
 
-[QudiStrategy(Lifetime = Lifetime.Singleton)]
+[QudiStrategy]
 public sealed partial class LoggedStrategySelector : ILoggedStrategyService
 {
     public partial LoggedStrategySelector(

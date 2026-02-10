@@ -214,7 +214,7 @@ Decorator pattern is a useful technique to add functionality to existing service
 You can easily register decorator classes using the `[QudiDecorator]` attribute.
 
 ```csharp
-[QudiDecorator(Lifetime = Lifetime.Singleton)] // or [QudiDecorator] works the same
+[QudiDecorator]
 public class LoggingMessageServiceDecorator(
     IMessageService innerService,
     ILogger<LoggingMessageServiceDecorator> logger
@@ -228,7 +228,7 @@ public class LoggingMessageServiceDecorator(
     }
 }
 
-[QudiDecorator(Lifetime = Lifetime.Singleton, Order = 1)] // you can specify order
+[QudiDecorator(Order = 1)] // you can specify order
 public class CensorshipMessageServiceDecorator(
     IMessageService innerService
 ) : IMessageService
@@ -260,18 +260,14 @@ To quickly implement decorators, by marking the target class as `partial`, an ab
 
 ```csharp
 // when use QudiDecoratorAttribute, marked partial and implements interface
-[QudiDecorator(Lifetime = Lifetime.Singleton)]
-public partial class SampleDecorator : IManyFeatureService
+[QudiDecorator]
+public partial class SampleDecorator(
+    IManyFeatureService innerService,
+    ILogger<SampleDecorator> logger    
+) : IManyFeatureService
 {
-    // mark it partial and add constructor definition
-    // required C# 14 or later for 'partial' constructor
-    public partial SampleDecorator(
-        IManyFeatureService innerService,
-        ILogger<SampleDecorator> logger    
-    );
-
-    // Only override the methods you want to customize
-    public override void FeatureA()
+    // Only generate the methods you want to customize
+    public void FeatureA()
     {
         logger.LogTrace("Before FeatureA");
         base.FeatureA();
@@ -294,28 +290,20 @@ public interface IManyFeatureService
 <summary>Generated Code Snippets</summary>
 
 ```csharp
-partial class SampleDecorator : DecoratorHelper_IManyFeatureService
+partial class SampleDecorator : IDecoratorHelper_IManyFeatureService
 {
-    private readonly ILogger<SampleDecorator> logger;
-    public partial SampleDecorator(IManyFeatureService innerService, ILogger<SampleDecorator> logger)
-        : base(innerService)
-    {
-        this.logger = logger;
-    }
+    IDecoratorHelper_IManyFeatureService.__InnerService {get;} = innerService;
 }
 
-public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
+[EditorBrowsable(EditorBrowsableState.Never)]
+public interface IDecoratorHelper_IManyFeatureService : IManyFeatureService
 {
-    protected readonly IManyFeatureService innerService;
-    protected DecoratorHelper_IManyFeatureService(IManyFeatureService innerService)
-    {
-        this.innerService = innerService;
-    }
+    IManyFeatureService __InnerService { get; }
 
-    public virtual void FeatureA() => innerService.FeatureA();
-    public virtual void FeatureB(int val) => innerService.FeatureB(val);
-    public virtual void FeatureC(string msg) => innerService.FeatureC(msg);
-    public virtual Task FeatureD(params string[] items) => innerService.FeatureD(items);
+    void FeatureA() => __InnerService.FeatureA();
+    void FeatureB(int val) => __InnerService.FeatureB(val);
+    void FeatureC(string msg) => __InnerService.FeatureC(msg);
+    Task FeatureD(params string[] items) => __InnerService.FeatureD(items);
     // and more...
 }
 ```
@@ -327,13 +315,11 @@ In addition to overriding individual methods, you can also use the `Intercept` m
 This is useful for logging, performance measurement, and other cross-cutting concerns (AOP-like behavior).
 
 ```csharp
-[QudiDecorator(Lifetime = Lifetime.Singleton)]
-public partial class SampleInterceptor : IManyFeatureService
+[QudiDecorator]
+public partial class SampleInterceptor(IManyFeatureService innerService) : IManyFeatureService
 {
-    public partial SampleInterceptor(IManyFeatureService innerService);
-
     // add it
-    protected override IEnumerable<bool> Intercept(string methodName, object?[] args)
+    public IEnumerable<bool> Intercept(string methodName, object?[] args)
     {
         // before
         var timer = new System.Diagnostics.Stopwatch();
@@ -345,8 +331,8 @@ public partial class SampleInterceptor : IManyFeatureService
         Console.WriteLine($"Execute time is {timer.ElapsedMilliseconds} ms");
     }
 
-    // You can still override specific methods if needed
-    public override async Task FeatureA()
+    // You can still generate specific methods if needed
+    public async Task FeatureA()
     {
         Console.WriteLine("Before FeatureA");
         await base.FeatureA(); // call base method to ensure Intercept is invoked
@@ -360,25 +346,19 @@ public partial class SampleInterceptor : IManyFeatureService
 <summary>Generated Code Snippets</summary>
 
 ```csharp
-partial class SampleInterceptor : DecoratorHelper_IManyFeatureService
+partial class SampleInterceptor : IDecoratorHelper_IManyFeatureService
 {
-    public partial SampleInterceptor(IManyFeatureService innerService)
-        : base(innerService)
-    {
-    }
+    IDecoratorHelper_IManyFeatureService.__InnerService {get;} = innerService;
 }
 
-public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
+[EditorBrowsable(EditorBrowsableState.Never)]
+public interface DecoratorHelper_IManyFeatureService : IManyFeatureService
 {
-    protected readonly IManyFeatureService innerService;
-    protected DecoratorHelper_IManyFeatureService(IManyFeatureService innerService)
-    {
-        this.innerService = innerService;
-    }
+    IManyFeatureService __InnerService { get; }
 
-    protected abstract IEnumerable<bool> Intercept(string methodName, object?[] args);
+    IEnumerable<bool> Intercept(string methodName, object?[] args);
 
-    public virtual async Task FeatureA()
+    public async Task FeatureA()
     {
         var enumerator = Intercept(nameof(FeatureA), Array.Empty<object?>());
         // call hook before execution
@@ -402,7 +382,7 @@ This is similar to the Decorator pattern, but switches services in a 1-to-many r
 For example, consider a case where you want to switch between multiple implementations of a message service based on conditions.
 
 ```csharp
-[QudiStrategy(Lifetime = Lifetime.Singleton)] // or [QudiStrategy] works the same
+[QudiStrategy]
 public class SendMessageStrategy(IEnumerable<IMessageService> services, MyConfiguration config) : IMessageService
 {
     public void SendMessage(string message)
@@ -438,13 +418,13 @@ Like Decorators, by marking the target class as `partial`, an abstract helper cl
 ```csharp
 // when use QudiStrategyAttribute, marked partial and implements interface
 // the abstract helper class is automatically generated to help you implement strategy pattern.
-[QudiStrategy(Lifetime = Lifetime.Singleton)]
-public partial class MessageServiceStrategy : IMessageService
+[QudiStrategy]
+public partial class MessageServiceStrategy(IEnumerable<IMessageService> Services) : IMessageService
 {
     // mark it partial and add constructor definition
     // required C# 14 or later for 'partial' constructor
     public partial MessageServiceStrategy(
-        IEnumerable<IMessageService> services
+        
     );
 
     protected override StrategyResult ShouldUseService(IMessageService service)
@@ -513,7 +493,7 @@ public abstract class StrategyHelper_IMessageService : IMessageService
 You can also combine it with Decorators.
 
 ```csharp
-[QudiDecorator(Lifetime = Lifetime.Singleton)]
+[QudiDecorator]
 public partial class LoggingStrategyDecorator : IMessageService
 {
     public partial LoggingStrategyDecorator(
@@ -528,7 +508,7 @@ public partial class LoggingStrategyDecorator : IMessageService
     }
 }
 
-[QudiStrategy(Lifetime = Lifetime.Singleton)]
+[QudiStrategy]
 public partial class SendMessageStrategy : IMessageService
 {
     public partial SendMessageStrategy(

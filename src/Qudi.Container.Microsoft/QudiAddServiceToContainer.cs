@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,16 @@ namespace Qudi.Container.Microsoft;
 /// </summary>
 public static class QudiAddServiceToContainer
 {
+    private static readonly ConditionalWeakTable<
+        IServiceScopeFactory,
+        ConditionalWeakTable<ServiceDescriptor, object>
+    > SingletonCache = new();
+
+    private static readonly ConditionalWeakTable<
+        IServiceProvider,
+        ConditionalWeakTable<ServiceDescriptor, object>
+    > ScopedCache = new();
+
     /// <summary>
     /// Registers Qudi-collected service definitions into <paramref name="services" />.
     /// </summary>
@@ -175,7 +186,7 @@ public static class QudiAddServiceToContainer
 
         RemoveDescriptors(services, descriptors);
 
-        var lifetime = ConvertLifetime(strategy.Lifetime);
+        var lifetime = ResolveStrategyLifetime(descriptors);
         if (strategy.Key is null)
         {
             services.Add(
@@ -198,6 +209,27 @@ public static class QudiAddServiceToContainer
                 lifetime
             )
         );
+    }
+
+    private static ServiceLifetime ResolveStrategyLifetime(
+        List<(int Index, ServiceDescriptor Descriptor)> descriptors
+    )
+    {
+        if (descriptors.Count == 0)
+        {
+            return ServiceLifetime.Transient;
+        }
+
+        var lifetime = descriptors[0].Descriptor.Lifetime;
+        for (var i = 1; i < descriptors.Count; i++)
+        {
+            if (descriptors[i].Descriptor.Lifetime != lifetime)
+            {
+                return ServiceLifetime.Transient;
+            }
+        }
+
+        return lifetime;
     }
 
     private static void ApplyDecoratorToServiceType(
@@ -347,6 +379,28 @@ public static class QudiAddServiceToContainer
         object? serviceKey = null
     )
     {
+        return descriptor.Lifetime switch
+        {
+            ServiceLifetime.Singleton => GetOrCreateSingleton(
+                provider,
+                descriptor,
+                () => CreateInstanceUncached(provider, descriptor, serviceKey)
+            ),
+            ServiceLifetime.Scoped => GetOrCreateScoped(
+                provider,
+                descriptor,
+                () => CreateInstanceUncached(provider, descriptor, serviceKey)
+            ),
+            _ => CreateInstanceUncached(provider, descriptor, serviceKey),
+        };
+    }
+
+    private static object CreateInstanceUncached(
+        IServiceProvider provider,
+        ServiceDescriptor descriptor,
+        object? serviceKey
+    )
+    {
         // Recreate the previous descriptor exactly as DI would have produced it.
         if (descriptor.IsKeyedService)
         {
@@ -391,6 +445,61 @@ public static class QudiAddServiceToContainer
         throw new InvalidOperationException(
             $"Unable to create instance for service type '{descriptor.ServiceType}'."
         );
+    }
+
+    private static object GetOrCreateSingleton(
+        IServiceProvider provider,
+        ServiceDescriptor descriptor,
+        Func<object> factory
+    )
+    {
+        var scopeFactory = provider.GetService<IServiceScopeFactory>();
+        if (scopeFactory is null)
+        {
+            return GetOrCreateScoped(provider, descriptor, factory);
+        }
+
+        var cache = SingletonCache.GetValue(
+            scopeFactory,
+            static _ => new ConditionalWeakTable<ServiceDescriptor, object>()
+        );
+        return GetOrCreateCached(cache, descriptor, factory);
+    }
+
+    private static object GetOrCreateScoped(
+        IServiceProvider provider,
+        ServiceDescriptor descriptor,
+        Func<object> factory
+    )
+    {
+        var cache = ScopedCache.GetValue(
+            provider,
+            static _ => new ConditionalWeakTable<ServiceDescriptor, object>()
+        );
+        return GetOrCreateCached(cache, descriptor, factory);
+    }
+
+    private static object GetOrCreateCached(
+        ConditionalWeakTable<ServiceDescriptor, object> cache,
+        ServiceDescriptor descriptor,
+        Func<object> factory
+    )
+    {
+        if (cache.TryGetValue(descriptor, out var existing))
+        {
+            return existing;
+        }
+
+        var created = factory();
+        try
+        {
+            cache.Add(descriptor, created);
+            return created;
+        }
+        catch (ArgumentException)
+        {
+            return cache.TryGetValue(descriptor, out var raced) ? raced : created;
+        }
     }
 
     private static ServiceLifetime ConvertLifetime(string lifetime)
