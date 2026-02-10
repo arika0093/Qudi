@@ -81,11 +81,13 @@ Install `Qudi` from NuGet.
 dotnet add package Qudi
 ```
 
-Alternatively, you can install `Qudi.Core` and `Qudi.Container.*` packages separately.
+Alternatively, you can install `Qudi.Core`, `Qudi.Generator` and `Qudi.Container.*` packages separately.
 
 ```bash
-# install Qudi.Core (common models and source generator)
+# install Qudi.Core (common models)
 dotnet add package Qudi.Core
+# install Qudi.Generator (source generator)
+dotnet add package Qudi.Generator
 # install container-specific package (here, Microsoft.Extensions.DependencyInjection)
 dotnet add package Qudi.Container.Microsoft
 ```
@@ -204,7 +206,7 @@ builder.Services.AddQudiServices(conf => {
 ```
 
 > [!NOTE]
-> If you want to switch processing dynamically according to conditions during runtime, consider using a mechanism like [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
+> If you want to switch processing dynamically according to conditions during runtime, consider using [Strategy Pattern](#strategy-pattern) or [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
 
 ### Decorator Pattern
 #### Overview
@@ -253,13 +255,14 @@ public interface IMessageService
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
 
-#### (TODO) Using DecoratorHelper
-To quickly create decorator classes, you can also use the `DecoratorHelper` utility.
-You only need to `override` the methods you want to customize; other methods will be automatically generated to simply call the inner service.
+#### (TODO) Using Auto Generated Helper
+To quickly implement decorators, by marking the target class as `partial`, an abstract helper class is automatically generated.
 
 ```csharp
+// when use QudiDecoratorAttribute, marked partial, and implementing interface
+// the abstract helper class is automatically generated to help you implement decorator pattern.
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
-public class SampleDecorator(IManyFeatureService service) : DecoratorHelper<IManyFeatureService>(service)
+public partial class SampleDecorator(IManyFeatureService service) : IManyFeatureService
 {
     // Only override the methods you want to customize
     public override void FeatureA()
@@ -282,10 +285,11 @@ public interface IManyFeatureService
 
 // ---------------------
 // generated code
-public abstract class DecoratorHelper<T> where T : IManyFeatureService
+partial class SampleDecorator(IManyFeatureService service) : DecoratorHelper_IManyFeatureService(service) { }
+public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
 {
-    protected readonly T _innerService;
-    protected DecoratorHelper(T innerService)
+    protected readonly IManyFeatureService _innerService;
+    protected DecoratorHelper_IManyFeatureService(IManyFeatureService innerService)
     {
         _innerService = innerService;
     }
@@ -304,7 +308,7 @@ This is useful for logging, performance measurement, and other cross-cutting con
 
 ```csharp
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
-public class SampleInterceptor(IManyFeatureService service) : DecoratorHelper<IManyFeatureService>(service)
+public partial class SampleInterceptor(IManyFeatureService service) : IManyFeatureService
 {
     // add it
     protected override IEnumerable<bool> Intercept(string methodName, object?[] args)
@@ -331,10 +335,11 @@ public class SampleInterceptor(IManyFeatureService service) : DecoratorHelper<IM
 
 // ---------------------
 // generated code
-public abstract class DecoratorHelper<T> where T : IManyFeatureService
+partial class SampleInterceptor(IManyFeatureService service) : DecoratorHelper_IManyFeatureService(service) { }
+public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
 {
-    protected readonly IMessageService _innerService;
-    protected DecoratorHelper(IMessageService innerService)
+    protected readonly IManyFeatureService _innerService;
+    protected DecoratorHelper_IManyFeatureService(IManyFeatureService innerService)
     {
         _innerService = innerService;
     }
@@ -356,6 +361,7 @@ public abstract class DecoratorHelper<T> where T : IManyFeatureService
     // and more...
 }
 ```
+
 ### (TODO) Strategy Pattern
 #### Overview
 This is similar to the Decorator pattern, but switches services in a 1-to-many relationship instead of 1-to-1.
@@ -392,11 +398,14 @@ public class NotificationService(IMessageService messageService)
 }
 ```
 
-#### (TODO) Using StrategyHelper
-A `StrategyHelper` is also provided to facilitate implementation.
+#### (TODO) Using Auto Generated Helper
+Like Decorators, by marking the target class as `partial`, an abstract helper class for quickly implementing strategies is automatically generated.
+
 ```csharp
+// when use QudiStrategyAttribute, marked partial, and implementing interface
+// the abstract helper class is automatically generated to help you implement strategy pattern.
 [QudiStrategy(Lifetime = Lifetime.Singleton)]
-public class MessageServiceStrategy(IEnumerable<IMessageService> services) : StrategyHelper<IMessageService>(services)
+public partial class MessageServiceStrategy(IEnumerable<IMessageService> services) : IMessageService
 {
     protected override StrategyResult ShouldUseService(IMessageService service)
     {
@@ -410,10 +419,11 @@ public class MessageServiceStrategy(IEnumerable<IMessageService> services) : Str
 
 // ---------------------
 // generated code
-public abstract class StrategyHelper<T> where T : IMessageService
+partial class MessageServiceStrategy(IEnumerable<IMessageService> services) : StrategyHelper_IMessageService(services) { }
+public abstract class StrategyHelper_IMessageService : IMessageService
 {
     protected readonly IEnumerable<IMessageService> _services;
-    protected StrategyHelper(IEnumerable<IMessageService> services)
+    protected StrategyHelper_IMessageService(IEnumerable<IMessageService> services)
     {
         _services = services;
     }
@@ -444,7 +454,7 @@ You can also combine it with Decorators.
 ```csharp
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
 public class LoggingStrategyDecorator(IMessageService innerService, ILogger<LoggingStrategyDecorator> logger)
-    : DecoratorHelper<IMessageService>(innerService)
+    : IMessageService
 {
     public override void SendMessage(string message)
     {
@@ -454,7 +464,7 @@ public class LoggingStrategyDecorator(IMessageService innerService, ILogger<Logg
 }
 
 [QudiStrategy(Lifetime = Lifetime.Singleton)]
-public class SendMessageStrategy(IEnumerable<IMessageService> services) : StrategyHelper<IMessageService>(services)
+public class SendMessageStrategy(IEnumerable<IMessageService> services) : IMessageService
 {
     protected override StrategyResult ShouldUseService(IMessageService service)
     {
@@ -677,3 +687,8 @@ dotnet test
 # run AOT tests ( e.g. Windows )
 dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win-x64 && publish\Qudi.Tests.exe 
 ```
+
+## Well-known Issues
+- [ ] Assembly scan is performed every time, which is very slow for medium-sized projects or larger.
+- [ ] Record types are not registered.
+- [ ] 
