@@ -11,6 +11,8 @@ internal static class RegistrationCodeGenerator
     private const string TRInfo = "global::Qudi.TypeRegistrationInfo";
     private const string List = "global::System.Collections.Generic.List";
     private const string IReadOnlyList = "global::System.Collections.Generic.IReadOnlyList";
+    private const string TRList = $"{List}<{TRInfo}>";
+    private const string TRResult = $"{IReadOnlyList}<{TRInfo}>";
     private const string VisitedHashSet = "global::System.Collections.Generic.HashSet<long>";
 
     public static void GenerateAddQudiServicesCode(
@@ -53,11 +55,15 @@ internal static class RegistrationCodeGenerator
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             internal static partial class QudiInternalRegistrations
             {
-                public static {{IReadOnlyList}}<{{TRInfo}}> FetchAll()
+                public static {{TRResult}} FetchAll()
                 {
-                    return global::Qudi.Generated__{{projectInfo.ProjectHash}}.QudiRegistrations.WithDependencies(
-                        visited: new {{VisitedHashSet}} { }, fromOther: false
+                    var collection = new {{TRList}} { };
+                    global::Qudi.Generated__{{projectInfo.ProjectHash}}.QudiRegistrations.WithDependencies(
+                        collection: collection,
+                        visited: new {{VisitedHashSet}} { },
+                        fromOther: false
                     );
+                    return collection;
                 }
             }
             """
@@ -109,26 +115,23 @@ internal static class RegistrationCodeGenerator
             /// </summary>
             /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
             /// <returns>All registrations including dependencies.</returns>
-            public static {IReadOnlyList}<{TRInfo}> WithDependencies({VisitedHashSet} visited, bool fromOther)
+            public static void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)
             """
         );
         using (builder.BeginScope())
         {
-            builder.AppendLine($"var list = new {List}<{TRInfo}>();");
             // add self registrations
             // check visited to avoid duplicate registrations
-            builder.AppendLine($$"""
-                if (!visited.Add(0x{{projectInfo.ProjectHash}}))
-                {
-                    return list;
-                }
-                """);
-            builder.AppendLine($"list.AddRange(Self(fromOther: fromOther));");
+            builder.AppendLine(
+                $$"""
+                if (!visited.Add(0x{{projectInfo.ProjectHash}})) return;
+                Self(collection, fromOther: fromOther);
+                """
+            );
             foreach (var dep in projectInfo.Dependencies)
             {
-                builder.AppendLine($"list.AddRange(global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(visited, fromOther: true));");
+                builder.AppendLine($"global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);");
             }
-            builder.AppendLine("return list;");
         }
     }
 
@@ -141,9 +144,9 @@ internal static class RegistrationCodeGenerator
             /// </summary>
             /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
             /// <returns>Registrations defined in this project only.</returns>
-            public static {{IReadOnlyList}}<{{TRInfo}}> Self(bool fromOther = false)
+            public static void Self({{TRList}} collection, bool fromOther = false)
             {
-                return Original.Where(t => t.UsePublic || !fromOther).ToList();
+                collection.AddRange(Original.Where(t => t.UsePublic || !fromOther));
             }
             """
         );
@@ -160,38 +163,37 @@ internal static class RegistrationCodeGenerator
             /// <summary>
             /// All registrations defined in this project.
             /// </summary>
-            private static readonly {{IReadOnlyList}}<{{TRInfo}}> Original = new {{List}}<{{TRInfo}}>
-            {
+            private static readonly {{TRList}} Original = new {{TRList}}
             """
         );
-        builder.IncreaseIndent();
-        foreach (var reg in registrations)
+        using(builder.BeginScope(start: "{", end: "};"))
         {
-            var when = string.Join(", ", reg.When.Select(t => $"\"{t}\""));
-            var asTypes = string.Join(", ", reg.AsTypes);
-            var usePublicLiteral = reg.UsePublic ? "true" : "false";
-            var markAsDecoratorLiteral = reg.MarkAsDecorator ? "true" : "false";
-            var markAsStrategyLiteral = reg.MarkAsStrategy ? "true" : "false";
-            builder.AppendLine(
-                $$"""
-                new {{TRInfo}}
-                {
-                    Type = typeof({{reg.TypeName}}),
-                    Lifetime = "{{reg.Lifetime}}",
-                    When = new global::System.Collections.Generic.List<string> { {{when}} },
-                    AsTypes = new global::System.Collections.Generic.List<global::System.Type> { {{asTypes}} },
-                    UsePublic = {{usePublicLiteral}},
-                    Key = {{(reg.KeyLiteral is null ? "null" : reg.KeyLiteral)}},
-                    Order = {{reg.Order}},
-                    MarkAsDecorator = {{markAsDecoratorLiteral}},
-                    MarkAsStrategy = {{markAsStrategyLiteral}},
-                    AssemblyName = "{{projectInfo.AssemblyName}}",
-                    Namespace = "{{reg.Namespace}}",
-                },
-                """
-            );
+            foreach (var reg in registrations)
+            {
+                var when = string.Join(", ", reg.When.Select(t => $"\"{t}\""));
+                var asTypes = string.Join(", ", reg.AsTypes);
+                var usePublicLiteral = reg.UsePublic ? "true" : "false";
+                var markAsDecoratorLiteral = reg.MarkAsDecorator ? "true" : "false";
+                var markAsStrategyLiteral = reg.MarkAsStrategy ? "true" : "false";
+                builder.AppendLine(
+                    $$"""
+                    new {{TRInfo}}
+                    {
+                        Type = typeof({{reg.TypeName}}),
+                        Lifetime = "{{reg.Lifetime}}",
+                        When = new global::System.Collections.Generic.List<string> { {{when}} },
+                        AsTypes = new global::System.Collections.Generic.List<global::System.Type> { {{asTypes}} },
+                        UsePublic = {{usePublicLiteral}},
+                        Key = {{(reg.KeyLiteral is null ? "null" : reg.KeyLiteral)}},
+                        Order = {{reg.Order}},
+                        MarkAsDecorator = {{markAsDecoratorLiteral}},
+                        MarkAsStrategy = {{markAsStrategyLiteral}},
+                        AssemblyName = "{{projectInfo.AssemblyName}}",
+                        Namespace = "{{reg.Namespace}}",
+                    },
+                    """
+                );
+            }
         }
-        builder.DecreaseIndent();
-        builder.AppendLine("};");
     }
 }

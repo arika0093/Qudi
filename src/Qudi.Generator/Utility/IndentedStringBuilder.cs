@@ -74,26 +74,26 @@ internal class IndentedStringBuilder(StringBuilder stringBuilder, int indentLeve
     /// <summary>
     /// Begins a new scope with increased indentation.
     /// </summary>
-    public IDisposable? BeginScope(string braceOpen = "{", string braceClose = "}")
+    public IDisposable? BeginScope(string start = "{", string end = "}")
     {
-        if (!string.IsNullOrEmpty(braceOpen))
+        if (!string.IsNullOrEmpty(start))
         {
-            AppendLine(braceOpen);
+            AppendLine(start);
         }
         IncreaseIndent();
-        return new ClosedScope(this, braceClose);
+        return new ClosedScope(this, end);
     }
 
     /// <summary>
     /// Begins a new scope with increased indentation if the condition is true.
     /// </summary>
-    public IDisposable? BeginScopeIf(bool condition, string openText = "{", string closeText = "}")
+    public IDisposable? BeginScopeIf(bool condition, string start = "{", string end = "}")
     {
         if (!condition)
         {
             return null;
         }
-        return BeginScope(openText, closeText);
+        return BeginScope(start, end);
     }
 
     /// <summary>Returns the current contents of the builder as a string.</summary>
