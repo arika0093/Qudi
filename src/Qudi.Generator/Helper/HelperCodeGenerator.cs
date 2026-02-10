@@ -23,16 +23,30 @@ internal static class HelperCodeGenerator
 
         try
         {
-            // TODO: Separate generation for concrete and interface sides
-            // Output to Qudi.Helper.Concrete.g.cs and Qudi.Helper.Abstract.g.cs
-            foreach (var helper in interfaceTargets)
+            if (interfaceTargets.Count > 0)
             {
-                GenerateHelperForInterface(context, helper);
+                var builder = new IndentedStringBuilder();
+                builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
+                foreach (var helper in interfaceTargets)
+                {
+                    GenerateHelperForInterface(builder, helper);
+                    builder.AppendLine("");
+                }
+
+                context.AddSource("Qudi.Helper.Abstracts.g.cs", builder.ToString());
             }
 
-            foreach (var target in implementingTargets)
+            if (implementingTargets.Count > 0)
             {
-                GeneratePartialConstructor(context, target);
+                var builder = new IndentedStringBuilder();
+                builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
+                foreach (var target in implementingTargets)
+                {
+                    GeneratePartialConstructor(builder, target);
+                    builder.AppendLine("");
+                }
+
+                context.AddSource("Qudi.Helper.Constructor.g.cs", builder.ToString());
             }
         }
         catch (System.Exception ex)
@@ -47,17 +61,14 @@ internal static class HelperCodeGenerator
     }
 
     private static void GenerateHelperForInterface(
-        SourceProductionContext context,
+        IndentedStringBuilder builder,
         HelperInterfaceTarget helper
     )
     {
         var namespaceName = helper.InterfaceNamespace;
-
-        var builder = new IndentedStringBuilder();
-        builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
         var isUseNamespace = !string.IsNullOrEmpty(namespaceName);
         builder.AppendLineIf(isUseNamespace, $"namespace {namespaceName}");
-        using(builder.BeginScopeIf(isUseNamespace))
+        using (builder.BeginScopeIf(isUseNamespace))
         {
             if (helper.IsDecorator)
             {
@@ -70,8 +81,6 @@ internal static class HelperCodeGenerator
                 GenerateStrategyHelper(builder, helper);
             }
         }
-
-        context.AddSource($"Qudi.Helper.{helper.HelperNamespaceSuffix}.g.cs", builder.ToString());
     }
 
     private static void GenerateDecoratorHelper(
@@ -85,11 +94,18 @@ internal static class HelperCodeGenerator
         var helperName = BuildHelperClassName(interfaceHelperName, isDecorator: true);
         builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
         builder.AppendLine("{");
-        builder.AppendLine($"    protected readonly {interfaceName} _innerService;");
+        builder.AppendLine($"    protected readonly {interfaceName} innerService;");
         builder.AppendLine("");
         builder.AppendLine($"    protected {helperName}({interfaceName} innerService)");
         builder.AppendLine("    {");
-        builder.AppendLine("        _innerService = innerService;");
+        builder.AppendLine("        this.innerService = innerService;");
+        builder.AppendLine("    }");
+        builder.AppendLine("");
+        builder.AppendLine(
+            "    protected virtual global::System.Collections.Generic.IEnumerable<bool> Intercept(string methodName, object?[] args)"
+        );
+        builder.AppendLine("    {");
+        builder.AppendLine("        yield return true;");
         builder.AppendLine("    }");
         builder.IncreaseIndent();
 
@@ -122,14 +138,14 @@ internal static class HelperCodeGenerator
         builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
         builder.AppendLine("{");
         builder.AppendLine(
-            $"    protected readonly {IEnumerable}<{interfaceName}> _services;"
+            $"    protected readonly {IEnumerable}<{interfaceName}> services;"
         );
         builder.AppendLine("");
         builder.AppendLine(
             $"    protected {helperName}({IEnumerable}<{interfaceName}> services)"
         );
         builder.AppendLine("    {");
-        builder.AppendLine("        _services = services;");
+        builder.AppendLine("        this.services = services;");
         builder.AppendLine("    }");
         builder.AppendLine("");
         builder.AppendLine(
@@ -158,19 +174,37 @@ internal static class HelperCodeGenerator
         var returnType = method.ReturnTypeName;
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
+        var interceptArguments = BuildInterceptArgumentList(method.Parameters);
         var returnsVoid = returnType == "void";
 
+        builder.AppendLine($"public virtual {returnType} {method.Name}({parameters})");
+        builder.AppendLine("{");
+        builder.IncreaseIndent();
+        builder.AppendLine(
+            $"using var enumerator = Intercept(\"{method.Name}\", new object?[] {{ {interceptArguments} }}).GetEnumerator();"
+        );
+        builder.AppendLine("if (enumerator.MoveNext() && enumerator.Current)");
+        builder.AppendLine("{");
+        builder.IncreaseIndent();
         if (returnsVoid)
         {
-            builder.AppendLine(
-                $"public virtual void {method.Name}({parameters}) => _innerService.{method.Name}({arguments});"
-            );
+            builder.AppendLine($"innerService.{method.Name}({arguments});");
+            builder.AppendLine("enumerator.MoveNext();");
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
             return;
         }
 
-        builder.AppendLine(
-            $"public virtual {returnType} {method.Name}({parameters}) => _innerService.{method.Name}({arguments});"
-        );
+        builder.AppendLine($"var result = innerService.{method.Name}({arguments});");
+        builder.AppendLine("enumerator.MoveNext();");
+        builder.AppendLine("return result;");
+        builder.DecreaseIndent();
+        builder.AppendLine("}");
+        builder.AppendLine("return default!;");
+        builder.DecreaseIndent();
+        builder.AppendLine("}");
     }
 
     private static void AppendDecoratorProperty(
@@ -194,20 +228,49 @@ internal static class HelperCodeGenerator
 
         if (property.HasGetter)
         {
+            var getterAccess = property.IsIndexer
+                ? $"innerService{accessSuffix}"
+                : $"innerService.{propertyName}{accessSuffix}";
+            builder.AppendLine("get");
+            builder.AppendLine("{");
+            builder.IncreaseIndent();
             builder.AppendLine(
-                property.IsIndexer
-                    ? $"get => _innerService{accessSuffix};"
-                    : $"get => _innerService.{propertyName}{accessSuffix};"
+                $"using var enumerator = Intercept(\"get_{propertyName}\", new object?[] {{ {BuildInterceptArgumentList(property.Parameters)} }}).GetEnumerator();"
             );
+            builder.AppendLine("if (enumerator.MoveNext() && enumerator.Current)");
+            builder.AppendLine("{");
+            builder.IncreaseIndent();
+            builder.AppendLine($"var result = {getterAccess};");
+            builder.AppendLine("enumerator.MoveNext();");
+            builder.AppendLine("return result;");
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
+            builder.AppendLine("return default!;");
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
         }
 
         if (property.HasSetter)
         {
+            var setterAccess = property.IsIndexer
+                ? $"innerService{accessSuffix}"
+                : $"innerService.{propertyName}{accessSuffix}";
+            builder.AppendLine("set");
+            builder.AppendLine("{");
+            builder.IncreaseIndent();
+            var setterArgs = BuildInterceptArgumentListWithValue(property.Parameters);
             builder.AppendLine(
-                property.IsIndexer
-                    ? $"set => _innerService{accessSuffix} = value;"
-                    : $"set => _innerService.{propertyName}{accessSuffix} = value;"
+                $"using var enumerator = Intercept(\"set_{propertyName}\", new object?[] {{ {setterArgs} }}).GetEnumerator();"
             );
+            builder.AppendLine("if (enumerator.MoveNext() && enumerator.Current)");
+            builder.AppendLine("{");
+            builder.IncreaseIndent();
+            builder.AppendLine($"{setterAccess} = value;");
+            builder.AppendLine("enumerator.MoveNext();");
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
         }
 
         builder.DecreaseIndent();
@@ -232,7 +295,7 @@ internal static class HelperCodeGenerator
             builder.AppendLine("var hasResult = false;");
         }
 
-        builder.AppendLine("foreach (var service in _services)");
+        builder.AppendLine("foreach (var service in services)");
         builder.AppendLine("{");
         builder.IncreaseIndent();
         builder.AppendLine($"var decision = ShouldUseService(service);");
@@ -291,7 +354,7 @@ internal static class HelperCodeGenerator
             builder.IncreaseIndent();
             builder.AppendLine($"{typeName} result = default!;");
             builder.AppendLine("var hasResult = false;");
-            builder.AppendLine("foreach (var service in _services)");
+            builder.AppendLine("foreach (var service in services)");
             builder.AppendLine("{");
             builder.IncreaseIndent();
             builder.AppendLine("var decision = ShouldUseService(service);");
@@ -324,7 +387,7 @@ internal static class HelperCodeGenerator
             builder.AppendLine("set");
             builder.AppendLine("{");
             builder.IncreaseIndent();
-            builder.AppendLine("foreach (var service in _services)");
+            builder.AppendLine("foreach (var service in services)");
             builder.AppendLine("{");
             builder.IncreaseIndent();
             builder.AppendLine("var decision = ShouldUseService(service);");
@@ -391,6 +454,36 @@ internal static class HelperCodeGenerator
         return string.Join(", ", parts);
     }
 
+    private static string BuildInterceptArgumentList(EquatableArray<HelperParameter> parameters)
+    {
+        if (parameters.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var parts = parameters.Select(parameter =>
+            parameter.RefKindPrefix == "out " ? "null" : parameter.Name
+        );
+
+        return string.Join(", ", parts);
+    }
+
+    private static string BuildInterceptArgumentListWithValue(
+        EquatableArray<HelperParameter> parameters
+    )
+    {
+        if (parameters.Count == 0)
+        {
+            return "value";
+        }
+
+        var parts = parameters
+            .Select(parameter => parameter.RefKindPrefix == "out " ? "null" : parameter.Name)
+            .Concat(new[] { "value" });
+
+        return string.Join(", ", parts);
+    }
+
     private static string BuildHelperClassName(string interfaceHelperName, bool isDecorator)
     {
         return isDecorator
@@ -399,7 +492,7 @@ internal static class HelperCodeGenerator
     }
 
     private static void GeneratePartialConstructor(
-        SourceProductionContext context,
+        IndentedStringBuilder builder,
         HelperImplementingTarget target
     )
     {
@@ -412,9 +505,6 @@ internal static class HelperCodeGenerator
             .ToImmutableArray()
             .Where(parameter => parameter.Name != target.BaseParameterName)
             .ToArray();
-
-        var builder = new IndentedStringBuilder();
-        builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
         var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
         builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
         using (builder.BeginScopeIf(useNamespace))
@@ -450,22 +540,5 @@ internal static class HelperCodeGenerator
             builder.DecreaseIndent();
             builder.AppendLine("}");
         }
-
-        var suffix = SanitizeIdentifier(
-            $"{target.ImplementingTypeNamespace}_{target.ImplementingTypeName}_{helperName}"
-        );
-        context.AddSource($"Qudi.Helper.Constructor.{suffix}.g.cs", builder.ToString());
-    }
-
-    private static string SanitizeIdentifier(string text)
-    {
-        var span = text.Replace("global::", string.Empty);
-        var builder = new StringBuilder();
-        foreach (var ch in span)
-        {
-            builder.Append(char.IsLetterOrDigit(ch) ? ch : '_');
-        }
-
-        return builder.ToString();
     }
 }

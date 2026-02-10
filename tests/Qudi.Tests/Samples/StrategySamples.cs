@@ -14,7 +14,7 @@ public sealed class HelperService : IHelperService
     public string Echo(string value) => value;
 }
 
-[QudiDecorator(Lifetime = Lifetime.Transient, Order = 0, AsTypes = [typeof(IHelperService)])]
+[QudiDecorator(Lifetime = Lifetime.Transient)]
 public sealed partial class HelperDecorator : IHelperService
 {
     public partial HelperDecorator(IHelperService inner);
@@ -39,7 +39,7 @@ public sealed class StrategyServiceBeta : IStrategyService
     public string Name => "beta";
 }
 
-[QudiStrategy(Lifetime = Lifetime.Singleton, Order = 0, AsTypes = [typeof(IStrategyService)])]
+[QudiStrategy(Lifetime = Lifetime.Singleton)]
 public sealed partial class StrategySelector : IStrategyService
 {
     public partial StrategySelector(IEnumerable<IStrategyService> services);
@@ -65,7 +65,7 @@ public sealed class OrderedService : IOrderedService
     public string Get() => "base";
 }
 
-[QudiDecorator(Lifetime = Lifetime.Transient, Order = 0, AsTypes = [typeof(IOrderedService)])]
+[QudiDecorator(Lifetime = Lifetime.Transient)]
 public sealed partial class OrderedDecorator : IOrderedService
 {
     public partial OrderedDecorator(IOrderedService inner);
@@ -73,7 +73,7 @@ public sealed partial class OrderedDecorator : IOrderedService
     public override string Get() => $"decorator({base.Get()})";
 }
 
-[QudiStrategy(Lifetime = Lifetime.Singleton, Order = 0, AsTypes = [typeof(IOrderedService)])]
+[QudiStrategy(Lifetime = Lifetime.Singleton)]
 public sealed partial class OrderedStrategy : IOrderedService
 {
     public partial OrderedStrategy(IEnumerable<IOrderedService> services);
