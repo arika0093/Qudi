@@ -11,6 +11,7 @@ internal static class RegistrationCodeGenerator
     private const string TRInfo = "global::Qudi.TypeRegistrationInfo";
     private const string List = "global::System.Collections.Generic.List";
     private const string IReadOnlyList = "global::System.Collections.Generic.IReadOnlyList";
+    private const string VisitedHashSet = "global::System.Collections.Generic.HashSet<long>";
 
     public static void GenerateAddQudiServicesCode(
         SourceProductionContext context,
@@ -53,7 +54,11 @@ internal static class RegistrationCodeGenerator
             internal static partial class QudiInternalRegistrations
             {
                 public static {{IReadOnlyList}}<{{TRInfo}}> FetchAll()
-                    => global::Qudi.Generated__{{projectInfo.ProjectHash}}.QudiRegistrations.WithDependencies(fromOther: false);
+                {
+                    return global::Qudi.Generated__{{projectInfo.ProjectHash}}.QudiRegistrations.WithDependencies(
+                        visited: new {{VisitedHashSet}} { }, fromOther: false
+                    );
+                }
             }
             """
         );
@@ -104,19 +109,25 @@ internal static class RegistrationCodeGenerator
             /// </summary>
             /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
             /// <returns>All registrations including dependencies.</returns>
-            public static {IReadOnlyList}<{TRInfo}> WithDependencies(bool fromOther = false)
+            public static {IReadOnlyList}<{TRInfo}> WithDependencies({VisitedHashSet} visited, bool fromOther)
             """
         );
         using (builder.BeginScope())
         {
             builder.AppendLine($"var list = new {List}<{TRInfo}>();");
+            // add self registrations
+            // check visited to avoid duplicate registrations
+            builder.AppendLine($$"""
+                if (!visited.Add(0x{{projectInfo.ProjectHash}}))
+                {
+                    return list;
+                }
+                """);
+            builder.AppendLine($"list.AddRange(Self(fromOther: fromOther));");
             foreach (var dep in projectInfo.Dependencies)
             {
-                builder.AppendLine(
-                    $"list.AddRange(global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(fromOther: true));"
-                );
+                builder.AppendLine($"list.AddRange(global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(visited, fromOther: true));");
             }
-            builder.AppendLine($"list.AddRange(Self(fromOther: fromOther));");
             builder.AppendLine("return list;");
         }
     }
