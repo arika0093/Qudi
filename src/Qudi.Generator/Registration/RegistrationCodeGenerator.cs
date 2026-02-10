@@ -183,6 +183,7 @@ internal static class RegistrationCodeGenerator
             foreach (var reg in registrations)
             {
                 var when = string.Join(", ", reg.When.Select(t => $"\"{t}\""));
+                var requiredTypes = string.Join(", ", reg.RequiredTypes);
                 var asTypes = string.Join(", ", reg.AsTypes);
                 var usePublicLiteral = reg.UsePublic ? "true" : "false";
                 var markAsDecoratorLiteral = reg.MarkAsDecorator ? "true" : "false";
@@ -193,8 +194,9 @@ internal static class RegistrationCodeGenerator
                     {
                         Type = typeof({{reg.TypeName}}),
                         Lifetime = "{{reg.Lifetime}}",
-                        When = new global::System.Collections.Generic.List<string> { {{when}} },
-                        AsTypes = new global::System.Collections.Generic.List<global::System.Type> { {{asTypes}} },
+                        When = new {{List}}<string> { {{when}} },
+                        RequiredTypes = new {{List}}<global::System.Type> { {{requiredTypes}} },
+                        AsTypes = new {{List}}<global::System.Type> { {{asTypes}} },
                         UsePublic = {{usePublicLiteral}},
                         Key = {{(reg.KeyLiteral is null ? "null" : reg.KeyLiteral)}},
                         Order = {{reg.Order}},

@@ -21,6 +21,12 @@ public sealed record TypeRegistrationInfo
     public string Lifetime { get; init; } = string.Empty;
 
     /// <summary>
+    /// Required types for this registration.
+    /// This information will be used for validation and diagnostics.
+    /// </summary>
+    public IReadOnlyList<Type> RequiredTypes { get; init; } = [];
+
+    /// <summary>
     /// The types to register as.
     /// It is automatically identified, but you can also specify it explicitly
     /// </summary>

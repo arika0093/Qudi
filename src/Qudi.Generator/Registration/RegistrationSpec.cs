@@ -24,6 +24,9 @@ internal sealed record RegistrationSpec
     // The types to register the service as.
     public EquatableArray<string> AsTypes { get; init; } = new([]);
 
+    // Required types for this registration.
+    public EquatableArray<string> RequiredTypes { get; init; } = new([]);
+
     // Whether to use public visibility for the registration method.
     public bool UsePublic { get; init; }
 

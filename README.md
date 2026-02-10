@@ -648,19 +648,29 @@ namespace Qudi.Generated
     [global::Microsoft.CodeAnalysis.EmbeddedAttribute]
     internal static partial class QudiInternalRegistrations
     {
-        public static global::System.Collections.Generic.IReadOnlyList<global::Qudi.TypeRegistrationInfo> FetchAll()
+        public static global::System.Collections.Generic.IReadOnlyList<global::Qudi.TypeRegistrationInfo> FetchAll(bool selfOnly = false)
         {
             var collection = new global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> { };
-            global::Qudi.Generated__D716A8865CAE.QudiRegistrations.WithDependencies(
-                collection: collection,
-                visited: new global::System.Collections.Generic.HashSet<long> { },
-                fromOther: false
-            );
+            if (selfOnly)
+            {
+                global::Qudi.Generated__4e72f6940c99.QudiRegistrations.Self(
+                    collection: collection,
+                    fromOther: false
+                );
+            }
+            else
+            {
+                global::Qudi.Generated__4e72f6940c99.QudiRegistrations.WithDependencies(
+                    collection: collection,
+                    visited: new global::System.Collections.Generic.HashSet<long> { },
+                    fromOther: false
+                );
+            }
             return collection;
         }
     }
 }
-namespace Qudi.Generated__D716A8865CAE
+namespace Qudi.Generated__4e72f6940c99
 {
     /// <summary>
     /// Contains Qudi registration information for this project.
@@ -675,8 +685,9 @@ namespace Qudi.Generated__D716A8865CAE
         /// <returns>All registrations including dependencies.</returns>
         public static void WithDependencies(global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> collection, global::System.Collections.Generic.HashSet<long> visited, bool fromOther)
         {
-            if (!visited.Add(0xD716A8865CAE)) return;
+            if (!visited.Add(0x4e72f6940c99)) return;
             Self(collection, fromOther: fromOther);
+            global::Qudi.Generated__cee6ef8da00c.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);
         }
         
         /// <summary>
@@ -696,31 +707,18 @@ namespace Qudi.Generated__D716A8865CAE
         {
             new global::Qudi.TypeRegistrationInfo
             {
-                Type = typeof(global::Altaria),
+                Type = typeof(global::Qudi.Example.Worker.NotifyToLogger),
                 Lifetime = "Singleton",
                 When = new global::System.Collections.Generic.List<string> {  },
-                AsTypes = new global::System.Collections.Generic.List<global::System.Type> { typeof(global::IPokemon) },
+                RequiredTypes = new global::System.Collections.Generic.List<global::System.Type> { typeof(global::Microsoft.Extensions.Logging.ILogger<global::Qudi.Example.Worker.NotifyToLogger>) },
+                AsTypes = new global::System.Collections.Generic.List<global::System.Type> { typeof(global::Qudi.Example.Core.INotificationService) },
                 UsePublic = true,
                 Key = null,
                 Order = 0,
                 MarkAsDecorator = false,
                 MarkAsStrategy = false,
-                AssemblyName = "Qudi.Example.Readme",
-                Namespace = "",
-            },
-            new global::Qudi.TypeRegistrationInfo
-            {
-                Type = typeof(global::Abomasnow),
-                Lifetime = "Transient",
-                When = new global::System.Collections.Generic.List<string> {  },
-                AsTypes = new global::System.Collections.Generic.List<global::System.Type> { typeof(global::IPokemon) },
-                UsePublic = true,
-                Key = null,
-                Order = 0,
-                MarkAsDecorator = false,
-                MarkAsStrategy = false,
-                AssemblyName = "Qudi.Example.Readme",
-                Namespace = "",
+                AssemblyName = "Qudi.Example.Worker",
+                Namespace = "Qudi.Example.Worker",
             },
         };
     }
@@ -748,22 +746,14 @@ internal static partial class QudiAddServiceExtensions
         Action<QudiConfiguration>? configuration = null
     )
     {
-        // Apply user configuration
         var config = new global::Qudi.QudiConfiguration();
         configuration?.Invoke(config);
-        // Create options to pass to registration handlers
-        var options = new global::Qudi.QudiAddServicesOptions
-        {
-            SelfAssemblyName = "Qudi.Tests"
-        };
-        // Fetch registration information
-        var types = global::Qudi.Generated.QudiInternalRegistrations.FetchAll();
+        var types = global::Qudi.Generated.QudiInternalRegistrations.FetchAll(selfOnly: config.UseSelfImplementsOnlyEnabled);
         foreach (var filter in config.Filters)
         {
             types = types.Where(t => filter(t)).ToList();
         }
-        // Call the registration handler for Microsoft.Extensions.DependencyInjection
-        global::Qudi.Container.Microsoft.QudiAddServiceToContainer.AddQudiServices(services, types, config, options);
+        global::Qudi.Container.Microsoft.QudiAddServiceToContainer.AddQudiServices(services, types, config);
         return services;
     }
 }

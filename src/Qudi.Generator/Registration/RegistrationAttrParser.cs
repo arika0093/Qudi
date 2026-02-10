@@ -95,6 +95,19 @@ internal static class RegistrationAttrParser
 
         // overwrite with type information
         var typeFullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        // determine required types (all constructor-injectable interfaces and classes)
+        var requiredTypes = new EquatableArray<string>(
+            typeSymbol
+                .GetMembers()
+                .OfType<IMethodSymbol>()
+                .Where(m => m.MethodKind == MethodKind.Constructor)
+                .SelectMany(m => m.Parameters)
+                .Select(p => p.Type)
+                .Distinct(SymbolEqualityComparer.Default)
+                .Cast<ITypeSymbol>()
+                .Select(t => CodeGenerationUtility.ToTypeOfLiteral(t))
+        );
+        // default AsTypes to all implemented interfaces if not specified
         var defaultAsTypes = new EquatableArray<string>(
             typeSymbol.AllInterfaces.Select(CodeGenerationUtility.ToTypeOfLiteral)
         );
@@ -103,6 +116,7 @@ internal static class RegistrationAttrParser
         {
             TypeName = typeFullName,
             Namespace = DetermineNamespace(typeSymbol),
+            RequiredTypes = requiredTypes,
             AsTypes = spec.AsTypes.Count > 0 ? spec.AsTypes : defaultAsTypes,
             Lifetime = lifetime ?? spec.Lifetime,
             MarkAsDecorator = asDecorator || spec.MarkAsDecorator,
@@ -117,7 +131,7 @@ internal static class RegistrationAttrParser
     {
         return new RegistrationSpec
         {
-            // TypeName, Namespace is should be overwritten later.
+            // TypeName, Namespace, RequiredTypes is should be overwritten later.
             Lifetime = SGAttributeParser.GetValue<string>(attr, "Lifetime") ?? DefaultLifetime,
             When = SGAttributeParser.GetValues<string>(attr, "When"),
             AsTypes = SGAttributeParser.GetValueAsTypes(attr, "AsTypes"),
