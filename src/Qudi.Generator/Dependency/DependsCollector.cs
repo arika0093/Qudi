@@ -23,8 +23,8 @@ internal static class DependsCollector
         IncrementalGeneratorInitializationContext context
     )
     {
-        return context.CompilationProvider
-            .Select(
+        return context
+            .CompilationProvider.Select(
                 static (compilation, cancellationToken) =>
                     CollectProjectInfo(compilation, cancellationToken)
             )
@@ -128,14 +128,7 @@ internal static class DependsCollector
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        // TODO: use xxHash(XXH3) for better performance!!
-        using var sha256 = SHA256.Create();
-        // hash based on assembly identity and global namespace
-        var input = $"{assemblySymbol.Identity}-{assemblySymbol.GlobalNamespace.ToDisplayString()}";
-        var bytes = Encoding.UTF8.GetBytes(input);
-        var hash = sha256.ComputeHash(bytes);
-        // and get as hex string (12 characters)
-        return BitConverter.ToString(hash).Replace("-", "")[..12];
+        return FastHashGenerator.Generate(assemblySymbol.Identity.ToString());
     }
 
     private static bool IsProjectReferencePath(string? filePath)
@@ -160,4 +153,3 @@ internal static class DependsCollector
             || normalized.Contains("\\obj\\", StringComparison.OrdinalIgnoreCase);
     }
 }
-
