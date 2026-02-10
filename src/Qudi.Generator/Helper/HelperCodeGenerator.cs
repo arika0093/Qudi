@@ -520,8 +520,8 @@ internal static class HelperCodeGenerator
             ? helperName
             : $"global::{target.InterfaceNamespace}.{helperName}";
         var constructorParameters = BuildParameterList(target.ConstructorParameters);
-        var fieldParameters = target.ConstructorParameters
-            .ToImmutableArray()
+        var fieldParameters = target
+            .ConstructorParameters.ToImmutableArray()
             .Where(parameter => parameter.Name != target.BaseParameterName)
             .ToArray();
         var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);

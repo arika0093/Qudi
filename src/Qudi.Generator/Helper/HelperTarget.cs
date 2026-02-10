@@ -20,6 +20,7 @@ internal sealed record HelperImplementingTarget
 {
     public required string ImplementingTypeName { get; init; }
     public required string ImplementingTypeNamespace { get; init; }
+
     // such as class, struct, record,
     public required string ImplementingTypeKeyword { get; init; }
     public required string ConstructorAccessibility { get; init; }

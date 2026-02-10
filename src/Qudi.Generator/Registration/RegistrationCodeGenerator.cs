@@ -55,14 +55,24 @@ internal static class RegistrationCodeGenerator
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             internal static partial class QudiInternalRegistrations
             {
-                public static {{TRResult}} FetchAll()
+                public static {{TRResult}} FetchAll(bool selfOnly = false)
                 {
                     var collection = new {{TRList}} { };
-                    global::Qudi.Generated__{{projectInfo.ProjectHash}}.QudiRegistrations.WithDependencies(
-                        collection: collection,
-                        visited: new {{VisitedHashSet}} { },
-                        fromOther: false
-                    );
+                    if (selfOnly)
+                    {
+                        global::Qudi.Generated__{{projectInfo.ProjectHash}}.QudiRegistrations.Self(
+                            collection: collection,
+                            fromOther: false
+                        );
+                    }
+                    else
+                    {
+                        global::Qudi.Generated__{{projectInfo.ProjectHash}}.QudiRegistrations.WithDependencies(
+                            collection: collection,
+                            visited: new {{VisitedHashSet}} { },
+                            fromOther: false
+                        );
+                    }
                     return collection;
                 }
             }
@@ -130,7 +140,9 @@ internal static class RegistrationCodeGenerator
             );
             foreach (var dep in projectInfo.Dependencies)
             {
-                builder.AppendLine($"global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);");
+                builder.AppendLine(
+                    $"global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);"
+                );
             }
         }
     }
@@ -166,7 +178,7 @@ internal static class RegistrationCodeGenerator
             private static readonly {{TRList}} Original = new {{TRList}}
             """
         );
-        using(builder.BeginScope(start: "{", end: "};"))
+        using (builder.BeginScope(start: "{", end: "};"))
         {
             foreach (var reg in registrations)
             {

@@ -121,12 +121,14 @@ internal static class HelperTargetCollector
             implementingTargets.Add(constructorTarget);
         }
         var members = CollectInterfaceMembers(iface);
-        var decoratorParameterName = isDecorator && constructorTarget is not null
-            ? constructorTarget.BaseParameterName
-            : string.Empty;
-        var strategyParameterName = isStrategy && constructorTarget is not null
-            ? constructorTarget.BaseParameterName
-            : string.Empty;
+        var decoratorParameterName =
+            isDecorator && constructorTarget is not null
+                ? constructorTarget.BaseParameterName
+                : string.Empty;
+        var strategyParameterName =
+            isStrategy && constructorTarget is not null
+                ? constructorTarget.BaseParameterName
+                : string.Empty;
         var target = new HelperInterfaceTarget
         {
             InterfaceName = interfaceName,
@@ -157,13 +159,11 @@ internal static class HelperTargetCollector
         ImmutableArray<HelperGenerationInput> right
     )
     {
-        var interfaceTargets = left
-            .SelectMany(t => t.InterfaceTargets)
+        var interfaceTargets = left.SelectMany(t => t.InterfaceTargets)
             .Concat(right.SelectMany(t => t.InterfaceTargets))
             .ToImmutableArray();
 
-        var implementingTargets = left
-            .SelectMany(t => t.ImplementingTargets)
+        var implementingTargets = left.SelectMany(t => t.ImplementingTargets)
             .Concat(right.SelectMany(t => t.ImplementingTargets))
             .ToImmutableArray();
 
@@ -323,10 +323,11 @@ internal static class HelperTargetCollector
 
     private static bool IsVisibleInHelper(ISymbol member)
     {
-        return member.DeclaredAccessibility is Accessibility.Public
-            or Accessibility.Protected
-            or Accessibility.ProtectedOrInternal
-            or Accessibility.ProtectedAndInternal;
+        return member.DeclaredAccessibility
+            is Accessibility.Public
+                or Accessibility.Protected
+                or Accessibility.ProtectedOrInternal
+                or Accessibility.ProtectedAndInternal;
     }
 
     private static HelperMember CreateMethodMember(IMethodSymbol method)
@@ -415,8 +416,7 @@ internal static class HelperTargetCollector
         }
 
         var partialConstructor = classSyntax
-            .Members
-            .OfType<ConstructorDeclarationSyntax>()
+            .Members.OfType<ConstructorDeclarationSyntax>()
             .FirstOrDefault(constructor =>
                 constructor.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PartialKeyword))
             );
@@ -487,7 +487,10 @@ internal static class HelperTargetCollector
         return null;
     }
 
-    private static bool ImplementsIEnumerableOf(ITypeSymbol typeSymbol, INamedTypeSymbol elementType)
+    private static bool ImplementsIEnumerableOf(
+        ITypeSymbol typeSymbol,
+        INamedTypeSymbol elementType
+    )
     {
         if (typeSymbol is not INamedTypeSymbol namedType)
         {
