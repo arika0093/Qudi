@@ -50,16 +50,12 @@ internal abstract class AddServiceCore
             {
                 var config = new {{QudiNS}}.QudiConfiguration();
                 configuration?.Invoke(config);
-                var options = new {{QudiNS}}.QudiAddServicesOptions
-                {
-                    SelfAssemblyName = "{{info.AssemblyName}}"
-                };
-                var types = {{QudiGeneratedNS}}.QudiInternalRegistrations.FetchAll();
+                var types = {{QudiGeneratedNS}}.QudiInternalRegistrations.FetchAll(selfOnly: config.UseSelfImplementsOnlyEnabled);
                 foreach (var filter in config.Filters)
                 {
                     types = types.Where(t => filter(t)).ToList();
                 }
-                {{CalledMethodName}}(services, types, config, options);
+                {{CalledMethodName}}(services, types, config);
                 return services;
             }
             """;

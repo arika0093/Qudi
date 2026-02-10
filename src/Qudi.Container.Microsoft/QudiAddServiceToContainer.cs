@@ -17,15 +17,10 @@ public static class QudiAddServiceToContainer
     /// <param name="services">Service collection to register into.</param>
     /// <param name="types">Collected registrations from source generation.</param>
     /// <param name="configuration">Runtime registration configuration.</param>
-    /// <param name="options">
-    /// Additional options generated at compile time.
-    /// Used to honor <see cref="QudiConfiguration.UseSelfImplementsOnly" />.
-    /// </param>
     public static IServiceCollection AddQudiServices(
         IServiceCollection services,
         IReadOnlyList<TypeRegistrationInfo> types,
-        QudiConfiguration configuration,
-        QudiAddServicesOptions options
+        QudiConfiguration configuration
     )
     {
         if (services is null)
@@ -44,7 +39,7 @@ public static class QudiAddServiceToContainer
         }
 
         var applicable = types
-            .Where(t => ShouldRegister(t, configuration, options))
+            .Where(t => ShouldRegister(t, configuration.Conditions))
             .OrderBy(t => t.Order)
             .ToList();
 
@@ -79,25 +74,15 @@ public static class QudiAddServiceToContainer
 
     private static bool ShouldRegister(
         TypeRegistrationInfo registration,
-        QudiConfiguration configuration,
-        QudiAddServicesOptions options
+        IReadOnlyCollection<string> conditions
     )
     {
-        if (configuration.UseSelfImplementsOnlyEnabled)
-        {
-            return string.Equals(
-                registration.AssemblyName,
-                options.SelfAssemblyName,
-                StringComparison.Ordinal
-            );
-        }
-
         if (registration.When.Count == 0)
         {
             return true;
         }
 
-        return registration.When.Any(configuration.Conditions.Contains);
+        return registration.When.Any(conditions.Contains);
     }
 
     private static void RegisterService(
