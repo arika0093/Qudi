@@ -259,17 +259,23 @@ When you resolve `IMessageService`, the decorators will be applied in the order 
 To quickly implement decorators, by marking the target class as `partial`, an abstract helper class is automatically generated.
 
 ```csharp
-// when use QudiDecoratorAttribute, marked partial, and implementing interface
+// when use QudiDecoratorAttribute, marked partial and implements interface
 // the abstract helper class is automatically generated to help you implement decorator pattern.
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
-public partial class SampleDecorator(IManyFeatureService service) : IManyFeatureService
+public partial class SampleDecorator : IManyFeatureService
 {
+    // mark it partial and add constructor definition
+    public partial SampleDecorator(
+        IManyFeatureService innerService,
+        ILogger<SampleDecorator> logger    
+    );
+
     // Only override the methods you want to customize
     public override void FeatureA()
     {
-        Console.WriteLine("Before FeatureA");
+        logger.LogTrace("Before FeatureA");
         base.FeatureA();
-        Console.WriteLine("After FeatureA");
+        logger.LogTrace("After FeatureA");
     }
     // For other methods, code is automatically generated to simply call innerService.
 }
@@ -285,19 +291,28 @@ public interface IManyFeatureService
 
 // ---------------------
 // generated code
-partial class SampleDecorator(IManyFeatureService service) : DecoratorHelper_IManyFeatureService(service) { }
+partial class SampleDecorator : DecoratorHelper_IManyFeatureService
+{
+    private readonly ILogger<SampleDecorator> logger;
+    public partial SampleDecorator(IManyFeatureService innerService, ILogger<SampleDecorator> logger)
+        : base(innerService)
+    {
+        this.logger = logger;
+    }
+}
+
 public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
 {
-    protected readonly IManyFeatureService _innerService;
+    protected readonly IManyFeatureService innerService;
     protected DecoratorHelper_IManyFeatureService(IManyFeatureService innerService)
     {
-        _innerService = innerService;
+        this.innerService = innerService;
     }
 
-    public virtual void FeatureA() => _innerService.FeatureA();
-    public virtual void FeatureB(int val) => _innerService.FeatureB(val);
-    public virtual void FeatureC(string msg) => _innerService.FeatureC(msg);
-    public virtual Task FeatureD(params string[] items) => _innerService.FeatureD(items);
+    public virtual void FeatureA() => innerService.FeatureA();
+    public virtual void FeatureB(int val) => innerService.FeatureB(val);
+    public virtual void FeatureC(string msg) => innerService.FeatureC(msg);
+    public virtual Task FeatureD(params string[] items) => innerService.FeatureD(items);
     // and more...
 }
 ```
@@ -308,8 +323,10 @@ This is useful for logging, performance measurement, and other cross-cutting con
 
 ```csharp
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
-public partial class SampleInterceptor(IManyFeatureService service) : IManyFeatureService
+public partial class SampleInterceptor : IManyFeatureService
 {
+    public partial SampleInterceptor(IManyFeatureService innerService);
+
     // add it
     protected override IEnumerable<bool> Intercept(string methodName, object?[] args)
     {
@@ -335,13 +352,20 @@ public partial class SampleInterceptor(IManyFeatureService service) : IManyFeatu
 
 // ---------------------
 // generated code
-partial class SampleInterceptor(IManyFeatureService service) : DecoratorHelper_IManyFeatureService(service) { }
+partial class SampleInterceptor : DecoratorHelper_IManyFeatureService
+{
+    public partial SampleInterceptor(IManyFeatureService innerService)
+        : base(innerService)
+    {
+    }
+}
+
 public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
 {
-    protected readonly IManyFeatureService _innerService;
+    protected readonly IManyFeatureService innerService;
     protected DecoratorHelper_IManyFeatureService(IManyFeatureService innerService)
     {
-        _innerService = innerService;
+        this.innerService = innerService;
     }
 
     protected abstract IEnumerable<bool> Intercept(string methodName, object?[] args);
@@ -353,7 +377,7 @@ public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
         if (enumerator.MoveNext() && enumerator.Current)
         {
             // call the inner service
-            await _innerService.FeatureA();
+            await innerService.FeatureA();
             // call hook after execution
             enumerator.MoveNext();
         }
@@ -402,11 +426,16 @@ public class NotificationService(IMessageService messageService)
 Like Decorators, by marking the target class as `partial`, an abstract helper class for quickly implementing strategies is automatically generated.
 
 ```csharp
-// when use QudiStrategyAttribute, marked partial, and implementing interface
+// when use QudiStrategyAttribute, marked partial and implements interface
 // the abstract helper class is automatically generated to help you implement strategy pattern.
 [QudiStrategy(Lifetime = Lifetime.Singleton)]
-public partial class MessageServiceStrategy(IEnumerable<IMessageService> services) : IMessageService
+public partial class MessageServiceStrategy : IMessageService
 {
+    // mark it partial and add constructor definition
+    public partial MessageServiceStrategy(
+        IEnumerable<IMessageService> services
+    );
+
     protected override StrategyResult ShouldUseService(IMessageService service)
     {
         // Select which service to use based on conditions
@@ -419,13 +448,20 @@ public partial class MessageServiceStrategy(IEnumerable<IMessageService> service
 
 // ---------------------
 // generated code
-partial class MessageServiceStrategy(IEnumerable<IMessageService> services) : StrategyHelper_IMessageService(services) { }
+partial class MessageServiceStrategy : StrategyHelper_IMessageService
+{
+    public partial MessageServiceStrategy(IEnumerable<IMessageService> services)
+        : base(services)
+    {
+    }
+}
+
 public abstract class StrategyHelper_IMessageService : IMessageService
 {
-    protected readonly IEnumerable<IMessageService> _services;
+    protected readonly IEnumerable<IMessageService> services;
     protected StrategyHelper_IMessageService(IEnumerable<IMessageService> services)
     {
-        _services = services;
+        this.services = services;
     }
 
     protected abstract StrategyResult ShouldUseService(IMessageService service);
@@ -433,7 +469,7 @@ public abstract class StrategyHelper_IMessageService : IMessageService
     // For each method and property, code is generated to determine which service to use and invoke it.
     public virtual void SendMessage(string message)
     {
-        foreach (var service in _services)
+        foreach (var service in services)
         {
             var result = ShouldUseService(service);
             if (result.UseService)
@@ -453,9 +489,13 @@ You can also combine it with Decorators.
 
 ```csharp
 [QudiDecorator(Lifetime = Lifetime.Singleton)]
-public class LoggingStrategyDecorator(IMessageService innerService, ILogger<LoggingStrategyDecorator> logger)
-    : IMessageService
+public partial class LoggingStrategyDecorator : IMessageService
 {
+    public partial LoggingStrategyDecorator(
+        IMessageService innerService,
+        ILogger<LoggingStrategyDecorator> logger
+    );
+
     public override void SendMessage(string message)
     {
         logger.LogTrace("Sending message: {Message}", message);
@@ -464,8 +504,12 @@ public class LoggingStrategyDecorator(IMessageService innerService, ILogger<Logg
 }
 
 [QudiStrategy(Lifetime = Lifetime.Singleton)]
-public class SendMessageStrategy(IEnumerable<IMessageService> services) : IMessageService
+public partial class SendMessageStrategy : IMessageService
 {
+    public partial SendMessageStrategy(
+        IEnumerable<IMessageService> services
+    );
+
     protected override StrategyResult ShouldUseService(IMessageService service)
     {
         // ...
