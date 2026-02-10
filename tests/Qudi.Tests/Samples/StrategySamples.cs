@@ -80,7 +80,7 @@ public sealed partial class OrderedStrategy : IOrderedService
 
     protected override StrategyResult ShouldUseService(IOrderedService service)
     {
-        return new StrategyResult { UseService = true, Continue = false };
+        return true;
     }
 
     public override string Get() => $"strategy({base.Get()})";

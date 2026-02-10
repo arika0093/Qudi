@@ -449,10 +449,14 @@ public partial class MessageServiceStrategy : IMessageService
 
     protected override StrategyResult ShouldUseService(IMessageService service)
     {
-        // Select which service to use based on conditions
+        // short hand: you can return bool directly
+        return service is EmailMessageService;
+        // or return StrategyResult explicitly
         return new(){
-            UseService = service is EmailMessageService, // For example, use only EmailMessageService
-            Continue = true // Whether to continue checking other services
+            // For example, use only EmailMessageService
+            UseService = service is EmailMessageService,
+            // Whether to continue checking other services
+            Continue = true,
         };
     }
 }
