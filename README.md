@@ -756,7 +756,7 @@ dotnet test
 dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win-x64 && publish\Qudi.Tests.exe 
 ```
 
-## Well-known Issues
-- [ ] Assembly scan is performed every time, which is very slow for medium-sized projects or larger.
-- [x] Record types are not registered.
-- [ ] 
+## TODO
+- [ ] Add Analyzer/Codefix for convert Decorator/Strategy to use auto generated helper classes
+- [ ] Support more DI containers (e.g. Autofac, DryIoc, etc.)
+- [ ] Improve error messages and diagnostics
