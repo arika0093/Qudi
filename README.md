@@ -645,33 +645,54 @@ using System.Linq;
 
 namespace Qudi.Generated
 {
-    // Here we use an easy-to-reference namespace for internal calls
+    [global::Microsoft.CodeAnalysis.EmbeddedAttribute]
     internal static partial class QudiInternalRegistrations
     {
-        public static IReadOnlyList<TypeRegistrationInfo> FetchAll()
-            => Qudi.Generated__D716A886.QudiRegistrations.WithDependencies(fromOther: false);
+        public static global::System.Collections.Generic.IReadOnlyList<global::Qudi.TypeRegistrationInfo> FetchAll()
+        {
+            var collection = new global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> { };
+            global::Qudi.Generated__D716A8865CAE.QudiRegistrations.WithDependencies(
+                collection: collection,
+                visited: new global::System.Collections.Generic.HashSet<long> { },
+                fromOther: false
+            );
+            return collection;
+        }
     }
 }
-namespace Qudi.Generated__D716A886
+namespace Qudi.Generated__D716A8865CAE
 {
-    // Here we use an auto-generated namespace so Qudi can automatically invoke registrations including dependencies
+    /// <summary>
+    /// Contains Qudi registration information for this project.
+    /// </summary>
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     public static partial class QudiRegistrations
     {
-        public static IReadOnlyList<Qudi.TypeRegistrationInfo> WithDependencies(bool fromOther = false)
+        /// <summary>
+        /// Gets all registrations including dependencies. This method is used internally for Qudi.
+        /// </summary>
+        /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
+        /// <returns>All registrations including dependencies.</returns>
+        public static void WithDependencies(global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> collection, global::System.Collections.Generic.HashSet<long> visited, bool fromOther)
         {
-            var list = new List<TypeRegistrationInfo>();
-            // If there are dependencies, they will be added here.
-            // e.g. list.AddRange(Qudi.Generated__Deps1.QudiRegistrations.WithDependencies(fromOther: true));
-            list.AddRange(Self(fromOther: fromOther));
-            return list;
+            if (!visited.Add(0xD716A8865CAE)) return;
+            Self(collection, fromOther: fromOther);
         }
         
-        public static IReadOnlyList<TypeRegistrationInfo> Self(bool fromOther = false)
+        /// <summary>
+        /// Gets registrations defined in this project only. This method is used internally for Qudi.
+        /// </summary>
+        /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
+        /// <returns>Registrations defined in this project only.</returns>
+        public static void Self(global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> collection, bool fromOther = false)
         {
-            return Original.Where(t => t.UsePublic || !fromOther).ToList();
+            collection.AddRange(Original.Where(t => t.UsePublic || !fromOther));
         }
         
-        private static readonly IReadOnlyList<TypeRegistrationInfo> Original = new List<TypeRegistrationInfo>
+        /// <summary>
+        /// All registrations defined in this project.
+        /// </summary>
+        private static readonly global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> Original = new global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo>
         {
             new global::Qudi.TypeRegistrationInfo
             {
