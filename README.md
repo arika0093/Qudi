@@ -719,17 +719,21 @@ internal static partial class QudiAddServiceExtensions
     )
     {
         // Apply user configuration
-        var config = new QudiConfiguration();
+        var config = new global::Qudi.QudiConfiguration();
         configuration?.Invoke(config);
         // Create options to pass to registration handlers
-        var options = new QudiAddServicesOptions
+        var options = new global::Qudi.QudiAddServicesOptions
         {
-            SelfAssemblyName = "Qudi.Example.Readme"
+            SelfAssemblyName = "Qudi.Tests"
         };
         // Fetch registration information
-        var types = Generated.QudiInternalRegistrations.FetchAll();
+        var types = global::Qudi.Generated.QudiInternalRegistrations.FetchAll();
+        foreach (var filter in config.Filters)
+        {
+            types = types.Where(t => filter(t)).ToList();
+        }
         // Call the registration handler for Microsoft.Extensions.DependencyInjection
-        Qudi.QudiAddServiceForMicrosoftExtensionsDependencyInjection.AddQudiServices(services, types, config, options);
+        global::Qudi.Container.Microsoft.QudiAddServiceToContainer.AddQudiServices(services, types, config, options);
         return services;
     }
 }

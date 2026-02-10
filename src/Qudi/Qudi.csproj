@@ -1,9 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup></PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.2" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Qudi.Container.Microsoft\Qudi.Container.Microsoft.csproj" />
     <ProjectReference Include="..\Qudi.Core\Qudi.Core.csproj" />
   </ItemGroup>
