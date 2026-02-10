@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Qudi.Generator.Utility;
 
@@ -13,7 +14,7 @@ internal static class HelperTargetCollector
     private const string QudiDecoratorAttribute = "Qudi.QudiDecoratorAttribute";
     private const string QudiStrategyAttribute = "Qudi.QudiStrategyAttribute";
 
-    public static IncrementalValueProvider<ImmutableArray<HelperTarget>> CollectTargets(
+    public static IncrementalValueProvider<HelperGenerationInput> CollectTargets(
         IncrementalGeneratorInitializationContext context
     )
     {
@@ -23,7 +24,7 @@ internal static class HelperTargetCollector
                 static (node, _) => true,
                 static (ctx, _) => CreateTargets(ctx, isDecorator: true, isStrategy: false)
             )
-            .SelectMany(static (targets, _) => targets);
+            .Select(static (targets, _) => targets);
 
         var strategyTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
@@ -31,15 +32,13 @@ internal static class HelperTargetCollector
                 static (node, _) => true,
                 static (ctx, _) => CreateTargets(ctx, isDecorator: false, isStrategy: true)
             )
-            .SelectMany(static (targets, _) => targets);
+            .Select(static (targets, _) => targets);
 
         var combined = decoratorTargets.Collect().Combine(strategyTargets.Collect());
-        return combined.Select(
-            static (targets, _) => MergeTargets(targets.Left.AddRange(targets.Right))
-        );
+        return combined.Select(static (targets, _) => MergeTargets(targets.Left, targets.Right));
     }
 
-    private static ImmutableArray<HelperTarget> CreateTargets(
+    private static HelperGenerationInput CreateTargets(
         GeneratorAttributeSyntaxContext context,
         bool isDecorator,
         bool isStrategy
@@ -50,7 +49,15 @@ internal static class HelperTargetCollector
             || context.Attributes.Length == 0
         )
         {
-            return ImmutableArray<HelperTarget>.Empty;
+            return new HelperGenerationInput
+            {
+                InterfaceTargets = new EquatableArray<HelperInterfaceTarget>(
+                    ImmutableArray<HelperInterfaceTarget>.Empty
+                ),
+                ImplementingTargets = new EquatableArray<HelperImplementingTarget>(
+                    ImmutableArray<HelperImplementingTarget>.Empty
+                ),
+            };
         }
 
         // TODO: There may be multiple attributes
@@ -75,13 +82,20 @@ internal static class HelperTargetCollector
         IEnumerable<INamedTypeSymbol> interfaces =
             asTypes.Length > 0 ? asTypes : typeSymbol.AllInterfaces.OfType<INamedTypeSymbol>();
 
-        var targets = new List<HelperTarget>();
-        var iface = interfaces.FirstOrDefault(
-            iface => iface.TypeKind == TypeKind.Interface
-        );
-        if(iface == null)
+        var interfaceTargets = new List<HelperInterfaceTarget>();
+        var implementingTargets = new List<HelperImplementingTarget>();
+        var iface = interfaces.FirstOrDefault(iface => iface.TypeKind == TypeKind.Interface);
+        if (iface is null)
         {
-            return ImmutableArray<HelperTarget>.Empty;
+            return new HelperGenerationInput
+            {
+                InterfaceTargets = new EquatableArray<HelperInterfaceTarget>(
+                    ImmutableArray<HelperInterfaceTarget>.Empty
+                ),
+                ImplementingTargets = new EquatableArray<HelperImplementingTarget>(
+                    ImmutableArray<HelperImplementingTarget>.Empty
+                ),
+            };
         }
 
         var interfaceName = iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -92,11 +106,8 @@ internal static class HelperTargetCollector
             iface.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
         );
         var members = CollectInterfaceMembers(iface);
-        var target = new HelperTarget
+        var target = new HelperInterfaceTarget
         {
-            ImplementingTypeName = typeName,
-            ImplementingTypeNamespace = typeNamespace,
-            ImplementingTypeKeyword = typeKeyword,
             InterfaceName = interfaceName,
             InterfaceNamespace = interfaceNamespace,
             InterfaceHelperName = interfaceHelperName,
@@ -105,18 +116,70 @@ internal static class HelperTargetCollector
             IsDecorator = isDecorator,
             IsStrategy = isStrategy,
         };
+        interfaceTargets.Add(target);
 
-        return targets.Append(target).ToImmutableArray();
+        var constructorTarget = FindPartialConstructorTarget(
+            context,
+            typeName,
+            typeNamespace,
+            typeKeyword,
+            interfaceNamespace,
+            interfaceHelperName,
+            iface,
+            isDecorator,
+            isStrategy
+        );
+        if (constructorTarget is not null)
+        {
+            implementingTargets.Add(constructorTarget);
+        }
+
+        return new HelperGenerationInput
+        {
+            InterfaceTargets = new EquatableArray<HelperInterfaceTarget>(
+                interfaceTargets.ToImmutableArray()
+            ),
+            ImplementingTargets = new EquatableArray<HelperImplementingTarget>(
+                implementingTargets.ToImmutableArray()
+            ),
+        };
     }
 
-    private static ImmutableArray<HelperTarget> MergeTargets(ImmutableArray<HelperTarget> targets)
+    private static HelperGenerationInput MergeTargets(
+        ImmutableArray<HelperGenerationInput> left,
+        ImmutableArray<HelperGenerationInput> right
+    )
+    {
+        var interfaceTargets = left
+            .SelectMany(t => t.InterfaceTargets)
+            .Concat(right.SelectMany(t => t.InterfaceTargets))
+            .ToImmutableArray();
+
+        var implementingTargets = left
+            .SelectMany(t => t.ImplementingTargets)
+            .Concat(right.SelectMany(t => t.ImplementingTargets))
+            .ToImmutableArray();
+
+        var mergedInterfaces = MergeInterfaceTargets(interfaceTargets);
+        var mergedImplementing = MergeImplementingTargets(implementingTargets);
+
+        return new HelperGenerationInput
+        {
+            InterfaceTargets = new EquatableArray<HelperInterfaceTarget>(mergedInterfaces),
+            ImplementingTargets = new EquatableArray<HelperImplementingTarget>(mergedImplementing),
+        };
+    }
+
+    private static ImmutableArray<HelperInterfaceTarget> MergeInterfaceTargets(
+        ImmutableArray<HelperInterfaceTarget> targets
+    )
     {
         if (targets.IsDefaultOrEmpty)
         {
-            return ImmutableArray<HelperTarget>.Empty;
+            return ImmutableArray<HelperInterfaceTarget>.Empty;
         }
 
-        var map = new Dictionary<string, HelperTarget>(StringComparer.Ordinal);
+        var map = new Dictionary<string, HelperInterfaceTarget>(StringComparer.Ordinal);
         foreach (var target in targets)
         {
             if (!map.TryGetValue(target.InterfaceName, out var existing))
@@ -131,6 +194,35 @@ internal static class HelperTargetCollector
                 IsStrategy = existing.IsStrategy || target.IsStrategy,
             };
         }
+        return map.Values.ToImmutableArray();
+    }
+
+    private static ImmutableArray<HelperImplementingTarget> MergeImplementingTargets(
+        ImmutableArray<HelperImplementingTarget> targets
+    )
+    {
+        if (targets.IsDefaultOrEmpty)
+        {
+            return ImmutableArray<HelperImplementingTarget>.Empty;
+        }
+
+        var map = new Dictionary<string, HelperImplementingTarget>(StringComparer.Ordinal);
+        foreach (var target in targets)
+        {
+            var key = target.ImplementingTypeNamespace + "." + target.ImplementingTypeName;
+            if (!map.TryGetValue(key, out var existing))
+            {
+                map[key] = target;
+                continue;
+            }
+
+            map[key] = existing with
+            {
+                IsDecorator = existing.IsDecorator || target.IsDecorator,
+                IsStrategy = existing.IsStrategy || target.IsStrategy,
+            };
+        }
+
         return map.Values.ToImmutableArray();
     }
 
@@ -256,5 +348,145 @@ internal static class HelperTargetCollector
         }
 
         return builder.ToString();
+    }
+
+    private static HelperImplementingTarget? FindPartialConstructorTarget(
+        GeneratorAttributeSyntaxContext context,
+        string typeName,
+        string typeNamespace,
+        string typeKeyword,
+        string interfaceNamespace,
+        string interfaceHelperName,
+        INamedTypeSymbol interfaceSymbol,
+        bool isDecorator,
+        bool isStrategy
+    )
+    {
+        if (context.TargetNode is not ClassDeclarationSyntax classSyntax)
+        {
+            return null;
+        }
+
+        var partialConstructor = classSyntax
+            .Members
+            .OfType<ConstructorDeclarationSyntax>()
+            .FirstOrDefault(constructor =>
+                constructor.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PartialKeyword))
+            );
+        if (partialConstructor is null)
+        {
+            return null;
+        }
+
+        var ctorSymbol = context.SemanticModel.GetDeclaredSymbol(partialConstructor);
+        if (ctorSymbol is null)
+        {
+            return null;
+        }
+
+        var baseParameter = FindBaseParameter(ctorSymbol.Parameters, interfaceSymbol, isDecorator);
+        if (baseParameter is null)
+        {
+            return null;
+        }
+
+        var constructorParameters = ctorSymbol.Parameters.Select(parameter => new HelperParameter
+        {
+            TypeName = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            Name = parameter.Name,
+            RefKindPrefix = GetRefKindPrefix(parameter.RefKind),
+            IsParams = parameter.IsParams,
+        });
+
+        return new HelperImplementingTarget
+        {
+            ImplementingTypeName = typeName,
+            ImplementingTypeNamespace = typeNamespace,
+            ImplementingTypeKeyword = typeKeyword,
+            ConstructorAccessibility = GetAccessibility(ctorSymbol.DeclaredAccessibility),
+            InterfaceNamespace = interfaceNamespace,
+            InterfaceHelperName = interfaceHelperName,
+            ConstructorParameters = new EquatableArray<HelperParameter>(constructorParameters),
+            BaseParameterName = baseParameter.Name,
+            IsDecorator = isDecorator,
+            IsStrategy = isStrategy,
+        };
+    }
+
+    private static IParameterSymbol? FindBaseParameter(
+        ImmutableArray<IParameterSymbol> parameters,
+        INamedTypeSymbol interfaceSymbol,
+        bool isDecorator
+    )
+    {
+        foreach (var parameter in parameters)
+        {
+            if (isDecorator)
+            {
+                if (SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol))
+                {
+                    return parameter;
+                }
+
+                continue;
+            }
+
+            if (ImplementsIEnumerableOf(parameter.Type, interfaceSymbol))
+            {
+                return parameter;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool ImplementsIEnumerableOf(ITypeSymbol typeSymbol, INamedTypeSymbol elementType)
+    {
+        if (typeSymbol is not INamedTypeSymbol namedType)
+        {
+            return false;
+        }
+
+        foreach (var iface in namedType.AllInterfaces.Concat(new[] { namedType }))
+        {
+            if (iface is not INamedTypeSymbol ifaceNamed)
+            {
+                continue;
+            }
+
+            if (
+                ifaceNamed.OriginalDefinition.SpecialType
+                != SpecialType.System_Collections_Generic_IEnumerable_T
+            )
+            {
+                continue;
+            }
+
+            if (ifaceNamed.TypeArguments.Length != 1)
+            {
+                continue;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(ifaceNamed.TypeArguments[0], elementType))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string GetAccessibility(Accessibility accessibility)
+    {
+        return accessibility switch
+        {
+            Accessibility.Public => "public",
+            Accessibility.Internal => "internal",
+            Accessibility.Private => "private",
+            Accessibility.Protected => "protected",
+            Accessibility.ProtectedOrInternal => "protected internal",
+            Accessibility.ProtectedAndInternal => "private protected",
+            _ => "internal",
+        };
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -137,4 +138,5 @@ internal static class RegistrationAttrParser
         }
         return ns;
     }
+
 }

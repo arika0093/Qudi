@@ -9,49 +9,66 @@ namespace Qudi.Generator.Helper;
 
 internal static class HelperCodeGenerator
 {
-    public static void GenerateHelpers(
-        SourceProductionContext context,
-        ImmutableArray<HelperTarget> targets
-    )
+    private const string IEnumerable = "global::System.Collections.Generic.IEnumerable";
+
+    public static void GenerateHelpers(SourceProductionContext context, HelperGenerationInput input)
     {
-        if (targets.IsDefaultOrEmpty)
+        var interfaceTargets = input.InterfaceTargets;
+        var implementingTargets = input.ImplementingTargets;
+
+        if (interfaceTargets.Count == 0 && implementingTargets.Count == 0)
         {
             return;
         }
 
-        var helpers = targets.ToImmutableArray();
-        foreach (var helper in helpers)
+        try
         {
-            GenerateHelperForInterface(context, helper);
+            // TODO: Separate generation for concrete and interface sides
+            // Output to Qudi.Helper.Concrete.g.cs and Qudi.Helper.Abstract.g.cs
+            foreach (var helper in interfaceTargets)
+            {
+                GenerateHelperForInterface(context, helper);
+            }
+
+            foreach (var target in implementingTargets)
+            {
+                GeneratePartialConstructor(context, target);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            context.AddSource(
+                "Qudi.Helper.GenerationError.g.cs",
+                $"""
+                /* {ex} */
+                """
+            );
         }
     }
 
     private static void GenerateHelperForInterface(
         SourceProductionContext context,
-        HelperTarget helper
+        HelperInterfaceTarget helper
     )
     {
-        var interfaceName = helper.InterfaceName;
-        var members = helper.Members.ToImmutableArray();
-        var namespaceName = $"Qudi.Helper.{helper.HelperNamespaceSuffix}";
+        var namespaceName = helper.InterfaceNamespace;
 
         var builder = new IndentedStringBuilder();
         builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
-        builder.AppendLine("using System;");
-        builder.AppendLine("using System.Collections.Generic;");
-        builder.AppendLine("using Qudi;");
-        builder.AppendLine($"namespace {namespaceName};");
-        builder.AppendLine("");
-
-        if (helper.IsDecorator)
+        var isUseNamespace = !string.IsNullOrEmpty(namespaceName);
+        builder.AppendLineIf(isUseNamespace, $"namespace {namespaceName}");
+        using(builder.BeginScopeIf(isUseNamespace))
         {
-            GenerateDecoratorHelper(builder, interfaceName, members);
-            builder.AppendLine("");
-        }
+            if (helper.IsDecorator)
+            {
+                GenerateDecoratorHelper(builder, helper);
+                builder.AppendLine("");
+            }
 
-        if (helper.IsStrategy)
-        {
-            GenerateStrategyHelper(builder, interfaceName, members);
+            if (helper.IsStrategy)
+            {
+                GenerateStrategyHelper(builder, helper);
+            }
         }
 
         context.AddSource($"Qudi.Helper.{helper.HelperNamespaceSuffix}.g.cs", builder.ToString());
@@ -59,16 +76,18 @@ internal static class HelperCodeGenerator
 
     private static void GenerateDecoratorHelper(
         IndentedStringBuilder builder,
-        string interfaceName,
-        ImmutableArray<HelperMember> members
+        HelperInterfaceTarget helper
     )
     {
-        builder.AppendLine($"public abstract class DecoratorHelper<T> : {interfaceName}");
-        builder.AppendLine($"    where T : {interfaceName}");
+        var interfaceName = helper.InterfaceName;
+        var interfaceHelperName = helper.InterfaceHelperName;
+        var members = helper.Members.ToImmutableArray();
+        var helperName = BuildHelperClassName(interfaceHelperName, isDecorator: true);
+        builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
         builder.AppendLine("{");
-        builder.AppendLine("    protected readonly T _innerService;");
+        builder.AppendLine($"    protected readonly {interfaceName} _innerService;");
         builder.AppendLine("");
-        builder.AppendLine("    protected DecoratorHelper(T innerService)");
+        builder.AppendLine($"    protected {helperName}({interfaceName} innerService)");
         builder.AppendLine("    {");
         builder.AppendLine("        _innerService = innerService;");
         builder.AppendLine("    }");
@@ -92,22 +111,29 @@ internal static class HelperCodeGenerator
 
     private static void GenerateStrategyHelper(
         IndentedStringBuilder builder,
-        string interfaceName,
-        ImmutableArray<HelperMember> members
+        HelperInterfaceTarget helper
     )
     {
-        builder.AppendLine($"public abstract class StrategyHelper<T> : {interfaceName}");
-        builder.AppendLine($"    where T : {interfaceName}");
+        var interfaceName = helper.InterfaceName;
+        var interfaceHelperName = helper.InterfaceHelperName;
+        var members = helper.Members.ToImmutableArray();
+
+        var helperName = BuildHelperClassName(interfaceHelperName, isDecorator: false);
+        builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
         builder.AppendLine("{");
-        builder.AppendLine("    protected readonly IEnumerable<T> _services;");
+        builder.AppendLine(
+            $"    protected readonly {IEnumerable}<{interfaceName}> _services;"
+        );
         builder.AppendLine("");
-        builder.AppendLine("    protected StrategyHelper(IEnumerable<T> services)");
+        builder.AppendLine(
+            $"    protected {helperName}({IEnumerable}<{interfaceName}> services)"
+        );
         builder.AppendLine("    {");
         builder.AppendLine("        _services = services;");
         builder.AppendLine("    }");
         builder.AppendLine("");
         builder.AppendLine(
-            "    protected abstract global::Qudi.StrategyResult ShouldUseService(T service);"
+            $"    protected abstract global::Qudi.StrategyResult ShouldUseService({interfaceName} service);"
         );
         builder.IncreaseIndent();
 
@@ -363,5 +389,83 @@ internal static class HelperCodeGenerator
         var parts = parameters.Select(parameter => $"{parameter.RefKindPrefix}{parameter.Name}");
 
         return string.Join(", ", parts);
+    }
+
+    private static string BuildHelperClassName(string interfaceHelperName, bool isDecorator)
+    {
+        return isDecorator
+            ? $"DecoratorHelper_{interfaceHelperName}"
+            : $"StrategyHelper_{interfaceHelperName}";
+    }
+
+    private static void GeneratePartialConstructor(
+        SourceProductionContext context,
+        HelperImplementingTarget target
+    )
+    {
+        var helperName = BuildHelperClassName(target.InterfaceHelperName, target.IsDecorator);
+        var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
+            ? helperName
+            : $"global::{target.InterfaceNamespace}.{helperName}";
+        var constructorParameters = BuildParameterList(target.ConstructorParameters);
+        var fieldParameters = target.ConstructorParameters
+            .ToImmutableArray()
+            .Where(parameter => parameter.Name != target.BaseParameterName)
+            .ToArray();
+
+        var builder = new IndentedStringBuilder();
+        builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
+        var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
+        builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
+        using (builder.BeginScopeIf(useNamespace))
+        {
+            builder.AppendLine(
+                $"partial {target.ImplementingTypeKeyword} {target.ImplementingTypeName} : {helperTypeName}"
+            );
+            builder.AppendLine("{");
+            builder.IncreaseIndent();
+
+            foreach (var parameter in fieldParameters)
+            {
+                builder.AppendLine($"private readonly {parameter.TypeName} {parameter.Name};");
+            }
+
+            if (fieldParameters.Length > 0)
+            {
+                builder.AppendLine("");
+            }
+
+            builder.AppendLine(
+                $"{target.ConstructorAccessibility} partial {target.ImplementingTypeName}({constructorParameters}) : base({target.BaseParameterName})"
+            );
+            builder.AppendLine("{");
+            builder.IncreaseIndent();
+            foreach (var parameter in fieldParameters)
+            {
+                builder.AppendLine($"this.{parameter.Name} = {parameter.Name};");
+            }
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
+
+            builder.DecreaseIndent();
+            builder.AppendLine("}");
+        }
+
+        var suffix = SanitizeIdentifier(
+            $"{target.ImplementingTypeNamespace}_{target.ImplementingTypeName}_{helperName}"
+        );
+        context.AddSource($"Qudi.Helper.Constructor.{suffix}.g.cs", builder.ToString());
+    }
+
+    private static string SanitizeIdentifier(string text)
+    {
+        var span = text.Replace("global::", string.Empty);
+        var builder = new StringBuilder();
+        foreach (var ch in span)
+        {
+            builder.Append(char.IsLetterOrDigit(ch) ? ch : '_');
+        }
+
+        return builder.ToString();
     }
 }

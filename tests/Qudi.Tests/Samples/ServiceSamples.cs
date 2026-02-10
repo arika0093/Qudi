@@ -61,19 +61,19 @@ public interface IMessageService
 }
 
 [DITransient]
-public sealed class MessageService : IMessageService
+public class MessageService : IMessageService
 {
     public string Send(string message) => message;
 }
 
 [QudiDecorator(Order = 1)]
-public sealed class DecoratorOne(IMessageService inner) : IMessageService
+public partial class DecoratorOne(IMessageService foo) : IMessageService
 {
-    public string Send(string message) => $"D1({inner.Send(message)})";
+    public string Send(string message) => $"D1({foo.Send(message)})";
 }
 
 [QudiDecorator(Order = 2)]
-public sealed class DecoratorTwo(IMessageService inner) : IMessageService
+public partial class DecoratorTwo(IMessageService inner) : IMessageService
 {
     public string Send(string message) => $"D2({inner.Send(message)})";
 }
@@ -96,7 +96,7 @@ public sealed class SendB : ISend
 }
 
 [QudiDecorator]
-public sealed class SendDecorator(ISend send) : ISend
+public sealed partial class SendDecorator(ISend send) : ISend
 {
     public string Msg(string a) => send.Msg($"MESSAGE IS {a}");
 }
@@ -156,7 +156,7 @@ public sealed class KeyedDecoratedSample : IKeyedDecoratedSample
 }
 
 [QudiDecorator]
-public sealed class KeyedDecoratedSampleDecorator(IKeyedDecoratedSample inner)
+public sealed partial class KeyedDecoratedSampleDecorator(IKeyedDecoratedSample inner)
     : IKeyedDecoratedSample
 {
     public string Value => $"decorated:{inner.Value}";
@@ -174,7 +174,7 @@ public sealed class TransientDecoratedSample : ITransientDecoratedSample
 }
 
 [QudiDecorator]
-public sealed class TransientDecoratedSampleDecorator(ITransientDecoratedSample inner)
+public sealed partial class TransientDecoratedSampleDecorator(ITransientDecoratedSample inner)
     : ITransientDecoratedSample
 {
     public string Id { get; } = inner.Id;

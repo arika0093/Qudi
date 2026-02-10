@@ -1,9 +1,5 @@
 using System.Collections.Generic;
 using Qudi;
-using Qudi.Helper;
-using Qudi.Helper.Qudi_Tests_IHelperService;
-using Qudi.Helper.Qudi_Tests_IOrderedService;
-using Qudi.Helper.Qudi_Tests_IStrategyService;
 
 namespace Qudi.Tests;
 
@@ -19,9 +15,10 @@ public sealed class HelperService : IHelperService
 }
 
 [QudiDecorator(Lifetime = Lifetime.Transient, Order = 0, AsTypes = [typeof(IHelperService)])]
-public sealed class HelperDecorator(IHelperService inner)
-    : Qudi.Helper.Qudi_Tests_IHelperService.DecoratorHelper<IHelperService>(inner)
+public sealed partial class HelperDecorator : IHelperService
 {
+    public partial HelperDecorator(IHelperService inner);
+
     public override string Echo(string value) => $"decorator({base.Echo(value)})";
 }
 
@@ -43,9 +40,10 @@ public sealed class StrategyServiceBeta : IStrategyService
 }
 
 [QudiStrategy(Lifetime = Lifetime.Singleton, Order = 0, AsTypes = [typeof(IStrategyService)])]
-public sealed class StrategySelector(IEnumerable<IStrategyService> services)
-    : Qudi.Helper.Qudi_Tests_IStrategyService.StrategyHelper<IStrategyService>(services)
+public sealed partial class StrategySelector : IStrategyService
 {
+    public partial StrategySelector(IEnumerable<IStrategyService> services);
+
     protected override StrategyResult ShouldUseService(IStrategyService service)
     {
         return new StrategyResult
@@ -68,16 +66,18 @@ public sealed class OrderedService : IOrderedService
 }
 
 [QudiDecorator(Lifetime = Lifetime.Transient, Order = 0, AsTypes = [typeof(IOrderedService)])]
-public sealed class OrderedDecorator(IOrderedService inner)
-    : Qudi.Helper.Qudi_Tests_IOrderedService.DecoratorHelper<IOrderedService>(inner)
+public sealed partial class OrderedDecorator : IOrderedService
 {
+    public partial OrderedDecorator(IOrderedService inner);
+
     public override string Get() => $"decorator({base.Get()})";
 }
 
 [QudiStrategy(Lifetime = Lifetime.Singleton, Order = 0, AsTypes = [typeof(IOrderedService)])]
-public sealed class OrderedStrategy(IEnumerable<IOrderedService> services)
-    : Qudi.Helper.Qudi_Tests_IOrderedService.StrategyHelper<IOrderedService>(services)
+public sealed partial class OrderedStrategy : IOrderedService
 {
+    public partial OrderedStrategy(IEnumerable<IOrderedService> services);
+
     protected override StrategyResult ShouldUseService(IOrderedService service)
     {
         return new StrategyResult { UseService = true, Continue = false };
