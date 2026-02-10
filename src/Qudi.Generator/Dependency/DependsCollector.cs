@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Qudi.Generator.Container;
 using Qudi.Generator.Utility;
@@ -24,27 +25,35 @@ internal static class DependsCollector
     {
         return context.CompilationProvider
             .Select(
-                // TODO: use cancellation token and check for cancellation anytime!!
-                static (compilation, _) => CollectProjectInfo(compilation)
+                static (compilation, cancellationToken) =>
+                    CollectProjectInfo(compilation, cancellationToken)
             )
-            // TODO: Add WithComparer for caching
-            ;
+            .WithComparer(EqualityComparer<ProjectInfo>.Default);
     }
 
     /// <summary>
     /// Collects project info with dependencies that contain Qudi registrations.
     /// </summary>
-    public static ProjectInfo CollectProjectInfo(Compilation compilation)
+    public static ProjectInfo CollectProjectInfo(
+        Compilation compilation,
+        CancellationToken cancellationToken
+    )
     {
         // fetch dependencies
         var dependencies = new List<ProjectDependencyInfo>();
         foreach (var reference in compilation.References)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (reference is CompilationReference)
             {
                 if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assembly)
                 {
-                    FindRegistrationExtensions(assembly, assembly.GlobalNamespace, dependencies);
+                    FindRegistrationExtensions(
+                        assembly,
+                        assembly.GlobalNamespace,
+                        dependencies,
+                        cancellationToken
+                    );
                 }
 
                 continue;
@@ -60,7 +69,8 @@ internal static class DependsCollector
                 FindRegistrationExtensions(
                     projectAssembly,
                     projectAssembly.GlobalNamespace,
-                    dependencies
+                    dependencies,
+                    cancellationToken
                 );
             }
         }
@@ -68,7 +78,7 @@ internal static class DependsCollector
         {
             AssemblyName = compilation.AssemblyName ?? "UnknownAssembly",
             Namespace = compilation.Assembly.GlobalNamespace.ToDisplayString(),
-            ProjectHash = GenerateProjectHash(compilation.Assembly),
+            ProjectHash = GenerateProjectHash(compilation.Assembly, cancellationToken),
             AddServicesAvailable = AddServiceSupportChecker.IsSupported(compilation),
             Dependencies = new EquatableArray<ProjectDependencyInfo>(dependencies),
         };
@@ -78,13 +88,16 @@ internal static class DependsCollector
     private static void FindRegistrationExtensions(
         IAssemblySymbol assemblySymbol,
         INamespaceSymbol namespaceSymbol,
-        List<ProjectDependencyInfo> results
+        List<ProjectDependencyInfo> results,
+        CancellationToken cancellationToken
     )
     {
+        cancellationToken.ThrowIfCancellationRequested();
         // Look for types named QudiRegistrationExtensions in namespaces
         // that start with Qudi.Generated.Registrations__
         foreach (var type in namespaceSymbol.GetTypeMembers())
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var ns = type.ContainingNamespace.ToDisplayString();
             if (
                 type.Name == QudiRegistrationExtensionsName
@@ -96,7 +109,7 @@ internal static class DependsCollector
                     {
                         AssemblyName = assemblySymbol.Name,
                         Namespace = ns,
-                        ProjectHash = GenerateProjectHash(assemblySymbol),
+                        ProjectHash = GenerateProjectHash(assemblySymbol, cancellationToken),
                     }
                 );
             }
@@ -104,20 +117,25 @@ internal static class DependsCollector
         // Recurse into child namespaces
         foreach (var child in namespaceSymbol.GetNamespaceMembers())
         {
-            FindRegistrationExtensions(assemblySymbol, child, results);
+            cancellationToken.ThrowIfCancellationRequested();
+            FindRegistrationExtensions(assemblySymbol, child, results, cancellationToken);
         }
     }
 
-    private static string GenerateProjectHash(IAssemblySymbol assemblySymbol)
+    private static string GenerateProjectHash(
+        IAssemblySymbol assemblySymbol,
+        CancellationToken cancellationToken
+    )
     {
+        cancellationToken.ThrowIfCancellationRequested();
         // TODO: use xxHash(XXH3) for better performance!!
         using var sha256 = SHA256.Create();
         // hash based on assembly identity and global namespace
         var input = $"{assemblySymbol.Identity}-{assemblySymbol.GlobalNamespace.ToDisplayString()}";
         var bytes = Encoding.UTF8.GetBytes(input);
         var hash = sha256.ComputeHash(bytes);
-        // and get as hex string (8 characters)
-        return BitConverter.ToString(hash).Replace("-", "").Substring(0, 8);
+        // and get as hex string (12 characters)
+        return BitConverter.ToString(hash).Replace("-", "")[..12];
     }
 
     private static bool IsProjectReferencePath(string? filePath)
