@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 using Qudi.Generator.Container;
 using Qudi.Generator.Utility;
 
-namespace Qudi.Generator;
+namespace Qudi.Generator.Dependency;
 
 internal static class DependsCollector
 {
@@ -22,9 +22,13 @@ internal static class DependsCollector
         IncrementalGeneratorInitializationContext context
     )
     {
-        return context.CompilationProvider.Select(
-            static (compilation, _) => CollectProjectInfo(compilation)
-        );
+        return context.CompilationProvider
+            .Select(
+                // TODO: use cancellation token and check for cancellation anytime!!
+                static (compilation, _) => CollectProjectInfo(compilation)
+            )
+            // TODO: Add WithComparer for caching
+            ;
     }
 
     /// <summary>
@@ -106,6 +110,7 @@ internal static class DependsCollector
 
     private static string GenerateProjectHash(IAssemblySymbol assemblySymbol)
     {
+        // TODO: use xxHash(XXH3) for better performance!!
         using var sha256 = SHA256.Create();
         // hash based on assembly identity and global namespace
         var input = $"{assemblySymbol.Identity}-{assemblySymbol.GlobalNamespace.ToDisplayString()}";
@@ -117,6 +122,7 @@ internal static class DependsCollector
 
     private static bool IsProjectReferencePath(string? filePath)
     {
+        // TODO: Is there a better way to identify? For example, using symbol information.
         if (string.IsNullOrWhiteSpace(filePath))
         {
             return false;
@@ -137,48 +143,3 @@ internal static class DependsCollector
     }
 }
 
-internal record ProjectInfo
-{
-    /// <summary>
-    /// The assembly name of the dependency.
-    /// </summary>
-    public required string AssemblyName { get; init; }
-
-    /// <summary>
-    /// Matching namespace for the dependency.
-    /// </summary>
-    public required string Namespace { get; init; }
-
-    /// <summary>
-    /// A hash representing the state of the project.
-    /// </summary>
-    public required string ProjectHash { get; init; }
-
-    /// <summary>
-    /// Whether the dependency is usable for registration generation.
-    /// </summary>
-    public required Dictionary<Type, bool> AddServicesAvailable { get; init; } = [];
-
-    /// <summary>
-    /// The dependencies of the project.
-    /// </summary>
-    public EquatableArray<ProjectDependencyInfo> Dependencies { get; init; } = [];
-}
-
-internal record ProjectDependencyInfo
-{
-    /// <summary>
-    /// The assembly name of the dependency.
-    /// </summary>
-    public required string AssemblyName { get; init; }
-
-    /// <summary>
-    /// Matching namespace for the dependency.
-    /// </summary>
-    public required string Namespace { get; init; }
-
-    /// <summary>
-    /// A hash representing the state of the project.
-    /// </summary>
-    public required string ProjectHash { get; init; }
-}

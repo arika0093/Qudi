@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Qudi.Generator.Container;
+using Qudi.Generator.Dependency;
 using Qudi.Generator.Helper;
 using Qudi.Generator.Registration;
 

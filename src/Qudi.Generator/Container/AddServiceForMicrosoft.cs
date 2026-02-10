@@ -1,5 +1,7 @@
 #pragma warning disable S101 // Types should be named in PascalCase
 
+using Qudi.Generator.Dependency;
+
 namespace Qudi.Generator.Container;
 
 internal class AddServiceForMicrosoft : AddServiceCore

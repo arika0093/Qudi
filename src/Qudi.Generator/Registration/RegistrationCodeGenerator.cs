@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Qudi.Generator.Dependency;
 
 namespace Qudi.Generator.Registration;
 
