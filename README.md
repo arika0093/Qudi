@@ -394,6 +394,8 @@ public abstract class DecoratorHelper_IManyFeatureService : IManyFeatureService
 }
 ```
 
+</details>
+
 ### (TODO) Strategy Pattern
 #### Overview
 This is similar to the Decorator pattern, but switches services in a 1-to-many relationship instead of 1-to-1.
