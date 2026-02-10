@@ -133,23 +133,28 @@ internal static class DependsCollector
 
     private static bool IsProjectReferencePath(string? filePath)
     {
-        // TODO: Is there a better way to identify? For example, using symbol information.
         if (string.IsNullOrWhiteSpace(filePath))
         {
             return false;
         }
-
-        var normalized = filePath!.Replace('/', '\\');
-        if (
-            normalized.Contains("\\.nuget\\", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("\\packages\\", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("\\packs\\", StringComparison.OrdinalIgnoreCase)
-        )
+        var path = filePath!.ToLowerInvariant();
+        if (ExcludePath.Any(exclude => path.Contains(exclude)))
         {
             return false;
         }
-
-        return normalized.Contains("\\bin\\", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("\\obj\\", StringComparison.OrdinalIgnoreCase);
+        if (IncludePath.Any(include => path.Contains(include)))
+        {
+            return true;
+        }
+        return false;
     }
+
+    private static readonly IReadOnlyCollection<string> ExcludePath =
+    [
+        "\\.nuget\\",
+        "\\packages\\",
+        "\\packs\\",
+    ];
+
+    private static readonly IReadOnlyCollection<string> IncludePath = ["\\bin\\", "\\obj\\"];
 }
