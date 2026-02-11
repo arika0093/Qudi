@@ -26,22 +26,13 @@ internal static class RegistrationAttrGenerator
         namespace Qudi
         {
             /// <summary>
-            /// Full configuration attribute for Qudi registration.
+            /// Full configuration attribute for Qudi registration without Lifetime. This is used only internally.
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            {{CodeTemplateContents.EditorBrowsableAttribute}}
             {{AttributeClassUsage}}
-            public class QudiAttribute : Attribute
+            public class QudiCoreAttribute : Attribute
             {
-                /// <summary>
-                /// Initializes a new instance of the <see cref="QudiAttribute"/> class.
-                /// </summary>
-                public QudiAttribute() { }
-
-                /// <summary>
-                /// The lifetime of the registration.
-                /// </summary>
-                public string? Lifetime { get; set; }
-
                 /// <summary>
                 /// Trigger registration only in specific conditions.
                 /// </summary>
@@ -75,6 +66,19 @@ internal static class RegistrationAttrGenerator
             }
 
             /// <summary>
+            /// Full configuration attribute for Qudi registration.
+            /// </summary>
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            {{AttributeClassUsage}}
+            public class QudiAttribute : QudiCoreAttribute
+            {
+                /// <summary>
+                /// The lifetime of the registration.
+                /// </summary>
+                public string? Lifetime { get; set; }
+            }
+
+            /// <summary>
             /// Shorthand attribute for singleton lifetime.
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
@@ -97,38 +101,10 @@ internal static class RegistrationAttrGenerator
 
             /// <summary>
             /// Shorthand attribute for decorator registration.
-            /// Lifetime is not configurable for decorators.
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             {{AttributeClassUsage}}
-            public sealed class QudiDecoratorAttribute : Attribute
-            {
-                /// <summary>
-                /// Trigger registration only in specific conditions.
-                /// </summary>
-                public string[]? When { get; set; }
-
-                /// <summary>
-                /// The types to register the service as.
-                /// It is automatically identified, but you can also specify it explicitly
-                /// </summary>
-                public Type[]? AsTypes { get; set; }
-
-                /// <summary>
-                /// Make this class accessible from other projects?
-                /// </summary>
-                public bool UsePublic { get; set; }
-
-                /// <summary>
-                /// The key for keyed registrations. If null, no key is used.
-                /// </summary>
-                public object? Key { get; set; }
-
-                /// <summary>
-                /// The order of registration. Higher numbers are registered later.
-                /// </summary>
-                public int Order { get; set; }
-            }
+            public sealed class QudiDecoratorAttribute : QudiCoreAttribute {}
 
             /// <summary>
         }
