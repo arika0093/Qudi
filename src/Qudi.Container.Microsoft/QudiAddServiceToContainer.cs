@@ -80,7 +80,7 @@ public static class QudiAddServiceToContainer
             return true;
         }
 
-        return registration.When.Any(conditions.Contains);
+        return registration.When.Any(r => conditions.Contains(r, StringComparer.OrdinalIgnoreCase));
     }
 
     private static void RegisterService(
@@ -136,7 +136,7 @@ public static class QudiAddServiceToContainer
 
         if (decorator.Key is not null)
         {
-            // Keyed decorators are not supported yet.
+            // TODO: Keyed decorators are not supported yet.
             return;
         }
 
