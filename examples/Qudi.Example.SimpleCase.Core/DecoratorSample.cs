@@ -9,8 +9,8 @@ namespace Qudi.Example.Worker;
 /// This is an example of a decorator that adds a prefix to the notification message.
 /// </summary>
 /// <param name="decorated"></param>
-[QudiDecorator(Lifetime = Lifetime.Singleton)]
-internal class NotifyDecorator(INotificationService decorated) : INotificationService
+[QudiDecorator]
+internal partial class NotifyDecorator(INotificationService decorated) : INotificationService
 {
     public void Notify(string message) => decorated.Notify($"MSG<{message}>");
 }
