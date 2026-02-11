@@ -20,11 +20,17 @@ internal static class HelperTargetCollector
         var decoratorTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
-                static (node, _) => true,
+                static (node, _) => IsPartialClass(node),
                 static (ctx, _) => CreateTargets(ctx, isDecorator: true)
             )
             .Select(static (targets, _) => targets);
         return decoratorTargets.Collect().Select(static (targets, _) => MergeTargets(targets));
+    }
+
+    private static bool IsPartialClass(SyntaxNode node)
+    {
+        var classDecl = node as ClassDeclarationSyntax;
+        return classDecl?.Modifiers.Any(SyntaxKind.PartialKeyword) == true;
     }
 
     private static HelperGenerationInput CreateTargets(
@@ -136,14 +142,10 @@ internal static class HelperTargetCollector
         };
     }
 
-    private static HelperGenerationInput MergeTargets(
-        ImmutableArray<HelperGenerationInput> targets
-    )
+    private static HelperGenerationInput MergeTargets(ImmutableArray<HelperGenerationInput> targets)
     {
         var interfaceTargets = targets.SelectMany(t => t.InterfaceTargets).ToImmutableArray();
-        var implementingTargets = targets
-            .SelectMany(t => t.ImplementingTargets)
-            .ToImmutableArray();
+        var implementingTargets = targets.SelectMany(t => t.ImplementingTargets).ToImmutableArray();
 
         var mergedInterfaces = MergeInterfaceTargets(interfaceTargets);
         var mergedImplementing = MergeImplementingTargets(implementingTargets);
@@ -223,10 +225,7 @@ internal static class HelperTargetCollector
                 continue;
             }
 
-            map[key] = existing with
-            {
-                IsDecorator = existing.IsDecorator || target.IsDecorator,
-            };
+            map[key] = existing with { IsDecorator = existing.IsDecorator || target.IsDecorator };
         }
 
         return map.Values.ToImmutableArray();
@@ -389,8 +388,8 @@ internal static class HelperTargetCollector
 
         IParameterSymbol? baseParameter = null;
 
-        var ctorCandidates = typeSymbol.InstanceConstructors
-            .Where(ctor =>
+        var ctorCandidates = typeSymbol
+            .InstanceConstructors.Where(ctor =>
                 !ctor.IsStatic
                 && ctor.Parameters.Length > 0
                 && ctor.Parameters.Any(parameter =>
@@ -403,21 +402,23 @@ internal static class HelperTargetCollector
             return null;
         }
 
-        var ctorSymbol = ctorCandidates.FirstOrDefault(ctor => !ctor.IsImplicitlyDeclared)
-            ?? ctorCandidates[0];
+        var ctorSymbol =
+            ctorCandidates.FirstOrDefault(ctor => !ctor.IsImplicitlyDeclared) ?? ctorCandidates[0];
         baseParameter = FindBaseParameter(ctorSymbol.Parameters, interfaceSymbol);
         if (baseParameter is null)
         {
             return null;
         }
 
-        var constructorParameters = ctorSymbol.Parameters.Select(parameter => new HelperParameter
-        {
-            TypeName = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-            Name = parameter.Name,
-            RefKindPrefix = GetRefKindPrefix(parameter.RefKind),
-            IsParams = parameter.IsParams,
-        }).ToArray();
+        var constructorParameters = ctorSymbol
+            .Parameters.Select(parameter => new HelperParameter
+            {
+                TypeName = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                Name = parameter.Name,
+                RefKindPrefix = GetRefKindPrefix(parameter.RefKind),
+                IsParams = parameter.IsParams,
+            })
+            .ToArray();
         var accessibility = GetAccessibility(ctorSymbol.DeclaredAccessibility);
 
         if (baseParameter is null)
