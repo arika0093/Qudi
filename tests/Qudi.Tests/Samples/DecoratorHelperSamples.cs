@@ -21,11 +21,10 @@ public sealed class HelperLogger
 }
 
 [QudiDecorator]
-public sealed partial class HelperOnlyDecorator : IHelperOnlyService
+public sealed partial class HelperOnlyDecorator(IHelperOnlyService innerService, HelperLogger logger)
+    : IHelperOnlyService
 {
-    public partial HelperOnlyDecorator(IHelperOnlyService innerService, HelperLogger logger);
-
-    public override string Echo(string value) => $"{logger.Prefix}:{base.Echo(value)}";
+    public string Echo(string value) => $"{logger.Prefix}:{Base.Echo(value)}";
 }
 
 public interface IInterceptService
@@ -48,11 +47,10 @@ public sealed class InterceptState
 }
 
 [QudiDecorator]
-public sealed partial class InterceptDecorator : IInterceptService
+public sealed partial class InterceptDecorator(IInterceptService innerService, InterceptState state)
+    : IInterceptService
 {
-    public partial InterceptDecorator(IInterceptService innerService, InterceptState state);
-
-    protected override IEnumerable<bool> Intercept(string methodName, object?[] args)
+    public IEnumerable<bool> Intercept(string methodName, object?[] args)
     {
         state.Add($"before:{methodName}");
         yield return true;

@@ -14,11 +14,9 @@ public sealed class HelperService : IHelperService
 }
 
 [QudiDecorator]
-public sealed partial class HelperDecorator : IHelperService
+public sealed partial class HelperDecorator(IHelperService inner) : IHelperService
 {
-    public partial HelperDecorator(IHelperService inner);
-
-    public override string Echo(string value) => $"decorator({base.Echo(value)})";
+    public string Echo(string value) => $"decorator({Base.Echo(value)})";
 }
 
 public interface IOrderedService
@@ -33,11 +31,9 @@ public sealed class OrderedService : IOrderedService
 }
 
 [QudiDecorator]
-public sealed partial class OrderedDecorator : IOrderedService
+public sealed partial class OrderedDecorator(IOrderedService innerService) : IOrderedService
 {
-    public partial OrderedDecorator(IOrderedService innerService);
-
-    public override string Get() => $"decorator({base.Get()})";
+    public string Get() => $"decorator({Base.Get()})";
 
     private void CheckVariableIsExist()
     {

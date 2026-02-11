@@ -281,22 +281,24 @@ public interface IMessageService
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
 
-#### Using Auto Generated Helper
-To quickly implement decorators, by marking the target class as `partial`, an abstract helper class is automatically generated.
+#### Using Auto Implementation
+The decorator pattern is useful, but when the target interface has many members, overriding every method becomes tedious.
+To solve this, mark the decorator class as `partial` and implement only the methods you need — the remaining methods will be delegated to the auto-generated code.
+
+> [!NOTE]
+> This feature uses default interface implementations and therefore requires C# 8 / .NET Core 3.0 or later.
+
 
 ```csharp
-// when use QudiDecoratorAttribute, marked partial and implements interface
+// when use QudiDecoratorAttribute, marked partial and implement single interface
 [QudiDecorator]
-public partial class SampleDecorator(
-    IManyFeatureService innerService,
-    ILogger<SampleDecorator> logger    
-) : IManyFeatureService
+public partial class SampleDecorator(IManyFeatureService innerService, ILogger<SampleDecorator> logger) : IManyFeatureService
 {
     // Only generate the methods you want to customize
     public void FeatureA()
     {
         logger.LogTrace("Before FeatureA");
-        base.FeatureA();
+        Base.FeatureA(); // use Base instead of innerService to call common processing
         logger.LogTrace("After FeatureA");
     }
     // For other methods, code is automatically generated to simply call innerService.
@@ -316,23 +318,74 @@ public interface IManyFeatureService
 <summary>Generated Code Snippets</summary>
 
 ```csharp
+// Here, we inherit the auto-generated helper interface that implements the interface automatically.
+// and also provide access to common processing via the Base property.
 partial class SampleDecorator : IDecoratorHelper_IManyFeatureService
 {
-    IDecoratorHelper_IManyFeatureService.__InnerService {get;} = innerService;
+    // create base implementation instance
+    // if you want to call common processing (like Intercept), call innerService via here
+    private ISampleDecorator__Generated.__BaseImpl Base => __baseCache ??= new(innerService, this);
+    // cache base implementation
+    private ISampleDecorator__Generated.__BaseImpl? __baseCache;
+    // implement base interface by delegating to Base
+    ISampleDecorator__Generated.__BaseImpl ISampleDecorator__Generated.__Base => Base;
 }
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 public interface IDecoratorHelper_IManyFeatureService : IManyFeatureService
 {
-    IManyFeatureService __InnerService { get; }
+    // Property to access common processing from the interface auto-implementation side
+    // The content is implemented in the upper partial class
+    protected __BaseImpl __Base { get; }
 
-    void FeatureA() => __InnerService.FeatureA();
-    void FeatureB(int val) => __InnerService.FeatureB(val);
-    void FeatureC(string msg) => __InnerService.FeatureC(msg);
-    Task FeatureD(params string[] items) => __InnerService.FeatureD(items);
+    // default implementations that delegate to __Base
+    void IService.FeatureA() => __Base.FeatureA();
+    void IService.FeatureB(int val) => __Base.FeatureB(val);
+    void IService.FeatureC(string msg) => __Base.FeatureC(msg);
+    Task IService.FeatureD(params string[] items) => __Base.FeatureD(items);
     // and more...
+
+    // intercept hook
+    IEnumerable<bool> Intercept(string methodName, object?[] args)
+    {
+        yield return true; // allow execution by default
+    }
+
+    // for common processing implementation
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    protected class __BaseImpl(IManyFeatureService __Service, IDecoratorHelper_IManyFeatureService __Root)
+    {
+        public void FeatureA()
+        {
+            // call intercept hook
+            var e = __Root.Intercept("FeatureA", []).GetEnumerator();
+            if (e.MoveNext() && e.Current)
+            {
+                __Service.DoSomething();
+                e.MoveNext();
+                return;
+            }
+            throw new InvalidOperationException("Execution of FeatureA was cancelled by Intercept.");
+        }
+
+        public void FeatureB(int val)
+        {
+            var e = __Root.Intercept("FeatureB", [val]).GetEnumerator();
+            if (e.MoveNext() && e.Current)
+            {
+                __Service.DoSomethingElse(val);
+                e.MoveNext();
+                return;
+            }
+            throw new InvalidOperationException("Execution of FeatureB was cancelled by Intercept.");
+        }
+
+        // and more...
+    }
 }
 ```
+
+The generated code creates a helper interface and a base implementation class that handles method delegation and interception logic. The decorator class can then focus on implementing only the methods that require custom behavior, while the rest are automatically handled by the generated code.
 
 </details>
 
@@ -342,65 +395,30 @@ This is useful for logging, performance measurement, and other cross-cutting con
 
 ```csharp
 [QudiDecorator]
-public partial class SampleInterceptor(IManyFeatureService innerService) : IManyFeatureService
+public partial class SampleInterceptor(IManyFeatureService innerService, ILogger<SampleInterceptor> logger) : IManyFeatureService
 {
-    // add it
+    // you can implement the Intercept method to add common behavior
     public IEnumerable<bool> Intercept(string methodName, object?[] args)
     {
         // before
-        var timer = new System.Diagnostics.Stopwatch();
         Console.WriteLine("Timer started...");
-        timer.Start();
+        var start = Stopwatch.GetTimestamp();
         yield return true; // if cancel execution, yield return false;
         // after
-        timer.Stop();
-        Console.WriteLine($"Execute time is {timer.ElapsedMilliseconds} ms");
+        var end = Stopwatch.GetTimestamp();
+        var elapsed = (end - start) * 1000 / (double)Stopwatch.Frequency;
+        logger.LogDebug("Method {Method} executed in {Elapsed} ms", methodName, elapsed);
     }
 
-    // You can still generate specific methods if needed
-    public async Task FeatureA()
+    // you can still override specific methods if needed
+    public async void FeatureA()
     {
         Console.WriteLine("Before FeatureA");
-        await base.FeatureA(); // call base method to ensure Intercept is invoked
+        await Base.FeatureA(); // call Base.FeatureA() to use intercept processing
         Console.WriteLine("After FeatureA");
     }
-    // and more...
 }
 ```
-
-<details>
-<summary>Generated Code Snippets</summary>
-
-```csharp
-partial class SampleInterceptor : IDecoratorHelper_IManyFeatureService
-{
-    IDecoratorHelper_IManyFeatureService.__InnerService {get;} = innerService;
-}
-
-[EditorBrowsable(EditorBrowsableState.Never)]
-public interface DecoratorHelper_IManyFeatureService : IManyFeatureService
-{
-    IManyFeatureService __InnerService { get; }
-
-    IEnumerable<bool> Intercept(string methodName, object?[] args);
-
-    public async Task FeatureA()
-    {
-        var enumerator = Intercept(nameof(FeatureA), Array.Empty<object?>());
-        // call hook before execution
-        if (enumerator.MoveNext() && enumerator.Current)
-        {
-            // call the inner service
-            await innerService.FeatureA();
-            // call hook after execution
-            enumerator.MoveNext();
-        }
-    }
-    // and more...
-}
-```
-
-</details>
 
 ### (TODO) Visualize Missing Registrations
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:

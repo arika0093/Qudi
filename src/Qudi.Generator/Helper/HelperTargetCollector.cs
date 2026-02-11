@@ -100,6 +100,7 @@ internal static class HelperTargetCollector
             typeKeyword,
             interfaceNamespace,
             interfaceHelperName,
+            typeSymbol,
             iface,
             isDecorator
         );
@@ -376,32 +377,35 @@ internal static class HelperTargetCollector
         string typeKeyword,
         string interfaceNamespace,
         string interfaceHelperName,
+        INamedTypeSymbol typeSymbol,
         INamedTypeSymbol interfaceSymbol,
         bool isDecorator
     )
     {
-        if (context.TargetNode is not ClassDeclarationSyntax classSyntax)
+        if (context.TargetNode is not ClassDeclarationSyntax)
         {
             return null;
         }
 
-        var partialConstructor = classSyntax
-            .Members.OfType<ConstructorDeclarationSyntax>()
-            .FirstOrDefault(constructor =>
-                constructor.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PartialKeyword))
-            );
-        if (partialConstructor is null)
+        IParameterSymbol? baseParameter = null;
+
+        var ctorCandidates = typeSymbol.InstanceConstructors
+            .Where(ctor =>
+                !ctor.IsStatic
+                && ctor.Parameters.Length > 0
+                && ctor.Parameters.Any(parameter =>
+                    SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol)
+                )
+            )
+            .ToArray();
+        if (ctorCandidates.Length == 0)
         {
             return null;
         }
 
-        var ctorSymbol = context.SemanticModel.GetDeclaredSymbol(partialConstructor);
-        if (ctorSymbol is null)
-        {
-            return null;
-        }
-
-        var baseParameter = FindBaseParameter(ctorSymbol.Parameters, interfaceSymbol);
+        var ctorSymbol = ctorCandidates.FirstOrDefault(ctor => !ctor.IsImplicitlyDeclared)
+            ?? ctorCandidates[0];
+        baseParameter = FindBaseParameter(ctorSymbol.Parameters, interfaceSymbol);
         if (baseParameter is null)
         {
             return null;
@@ -413,14 +417,20 @@ internal static class HelperTargetCollector
             Name = parameter.Name,
             RefKindPrefix = GetRefKindPrefix(parameter.RefKind),
             IsParams = parameter.IsParams,
-        });
+        }).ToArray();
+        var accessibility = GetAccessibility(ctorSymbol.DeclaredAccessibility);
+
+        if (baseParameter is null)
+        {
+            return null;
+        }
 
         return new HelperImplementingTarget
         {
             ImplementingTypeName = typeName,
             ImplementingTypeNamespace = typeNamespace,
             ImplementingTypeKeyword = typeKeyword,
-            ConstructorAccessibility = GetAccessibility(ctorSymbol.DeclaredAccessibility),
+            ConstructorAccessibility = accessibility,
             InterfaceNamespace = interfaceNamespace,
             InterfaceHelperName = interfaceHelperName,
             ConstructorParameters = new EquatableArray<HelperParameter>(constructorParameters),
