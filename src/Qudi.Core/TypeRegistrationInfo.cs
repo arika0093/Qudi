@@ -58,11 +58,6 @@ public sealed record TypeRegistrationInfo
     public bool MarkAsDecorator { get; init; }
 
     /// <summary>
-    /// Whether this registration is a strategy.
-    /// </summary>
-    public bool MarkAsStrategy { get; init; }
-
-    /// <summary>
     /// The namespace where the type is defined.
     /// </summary>
     public string Namespace { get; init; } = string.Empty;

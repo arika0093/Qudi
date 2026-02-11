@@ -54,30 +54,17 @@ public static class QudiAddServiceToContainer
             .OrderBy(t => t.Order)
             .ToList();
 
-        var registrations = applicable.Where(t => !t.MarkAsDecorator && !t.MarkAsStrategy).ToList();
-        var postProcessors = applicable
-            .Where(t => t.MarkAsDecorator || t.MarkAsStrategy)
-            .OrderBy(t => t.Order)
-            .ThenBy(t => t.MarkAsDecorator ? 0 : 1)
-            .ToList();
+        var registrations = applicable.Where(t => !t.MarkAsDecorator).ToList();
+        var decorators = applicable.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
 
         foreach (var registration in registrations)
         {
             RegisterService(services, registration);
         }
 
-        foreach (var processor in postProcessors)
+        foreach (var decorator in decorators)
         {
-            if (processor.MarkAsDecorator)
-            {
-                ApplyDecorator(services, processor);
-                continue;
-            }
-
-            if (processor.MarkAsStrategy)
-            {
-                ApplyStrategy(services, processor);
-            }
+            ApplyDecorator(services, decorator);
         }
 
         return services;
@@ -159,79 +146,6 @@ public static class QudiAddServiceToContainer
         }
     }
 
-    private static void ApplyStrategy(IServiceCollection services, TypeRegistrationInfo strategy)
-    {
-        if (strategy.AsTypes.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var asType in strategy.AsTypes)
-        {
-            ApplyStrategyToServiceType(services, asType, strategy);
-        }
-    }
-
-    private static void ApplyStrategyToServiceType(
-        IServiceCollection services,
-        Type serviceType,
-        TypeRegistrationInfo strategy
-    )
-    {
-        var descriptors = CollectMatchingDescriptors(services, serviceType, strategy.Key);
-        if (descriptors.Count == 0)
-        {
-            return;
-        }
-
-        RemoveDescriptors(services, descriptors);
-
-        var lifetime = ResolveStrategyLifetime(descriptors);
-        if (strategy.Key is null)
-        {
-            services.Add(
-                ServiceDescriptor.Describe(
-                    serviceType,
-                    sp => CreateStrategyInstance(sp, strategy, serviceType, descriptors, null),
-                    lifetime
-                )
-            );
-            return;
-        }
-
-        var key = strategy.Key;
-        services.Add(
-            ServiceDescriptor.DescribeKeyed(
-                serviceType,
-                key,
-                (sp, serviceKey) =>
-                    CreateStrategyInstance(sp, strategy, serviceType, descriptors, serviceKey),
-                lifetime
-            )
-        );
-    }
-
-    private static ServiceLifetime ResolveStrategyLifetime(
-        List<(int Index, ServiceDescriptor Descriptor)> descriptors
-    )
-    {
-        if (descriptors.Count == 0)
-        {
-            return ServiceLifetime.Transient;
-        }
-
-        var lifetime = descriptors[0].Descriptor.Lifetime;
-        for (var i = 1; i < descriptors.Count; i++)
-        {
-            if (descriptors[i].Descriptor.Lifetime != lifetime)
-            {
-                return ServiceLifetime.Transient;
-            }
-        }
-
-        return lifetime;
-    }
-
     private static void ApplyDecoratorToServiceType(
         IServiceCollection services,
         Type serviceType,
@@ -296,82 +210,6 @@ public static class QudiAddServiceToContainer
         );
     }
 
-    private static List<(int Index, ServiceDescriptor Descriptor)> CollectMatchingDescriptors(
-        IServiceCollection services,
-        Type serviceType,
-        object? key
-    )
-    {
-        var descriptors = new List<(int, ServiceDescriptor)>();
-        for (var i = 0; i < services.Count; i++)
-        {
-            var descriptor = services[i];
-            if (!MatchesService(descriptor, serviceType, key))
-            {
-                continue;
-            }
-
-            descriptors.Add((i, descriptor));
-        }
-
-        return descriptors;
-    }
-
-    private static void RemoveDescriptors(
-        IServiceCollection services,
-        List<(int Index, ServiceDescriptor Descriptor)> descriptors
-    )
-    {
-        for (var i = descriptors.Count - 1; i >= 0; i--)
-        {
-            services.RemoveAt(descriptors[i].Index);
-        }
-    }
-
-    private static bool MatchesService(ServiceDescriptor descriptor, Type serviceType, object? key)
-    {
-        if (descriptor.ServiceType != serviceType)
-        {
-            return false;
-        }
-
-        if (key is null)
-        {
-            return !descriptor.IsKeyedService;
-        }
-
-        return descriptor.IsKeyedService && Equals(descriptor.ServiceKey, key);
-    }
-
-    private static object CreateStrategyInstance(
-        IServiceProvider provider,
-        TypeRegistrationInfo strategy,
-        Type serviceType,
-        List<(int Index, ServiceDescriptor Descriptor)> descriptors,
-        object? serviceKey
-    )
-    {
-        var services = CreateServiceList(provider, serviceType, descriptors, serviceKey);
-        return ActivatorUtilities.CreateInstance(provider, strategy.Type, services);
-    }
-
-    private static object CreateServiceList(
-        IServiceProvider provider,
-        Type serviceType,
-        List<(int Index, ServiceDescriptor Descriptor)> descriptors,
-        object? serviceKey
-    )
-    {
-        var listType = typeof(List<>).MakeGenericType(serviceType);
-        var list = (System.Collections.IList)Activator.CreateInstance(listType)!;
-        foreach (var (_, descriptor) in descriptors)
-        {
-            var instance = CreateFromDescriptor(provider, descriptor, serviceKey);
-            list.Add(instance);
-        }
-
-        return list;
-    }
 
     private static object CreateFromDescriptor(
         IServiceProvider provider,

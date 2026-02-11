@@ -16,7 +16,6 @@ internal static class RegistrationAttrParser
     private const string QudiScopedAttribute = $"Qudi.DIScopedAttribute";
     private const string QudiTransientAttribute = $"Qudi.DITransientAttribute";
     private const string QudiDecoratorAttribute = $"Qudi.QudiDecoratorAttribute";
-    private const string QudiStrategyAttribute = $"Qudi.QudiStrategyAttribute";
 
     public static IncrementalValueProvider<
         ImmutableArray<RegistrationSpec?>
@@ -47,24 +46,17 @@ internal static class RegistrationAttrParser
             static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, asDecorator: true)
         );
-        var strategyProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-            QudiStrategyAttribute,
-            static (node, _) => true,
-            static (context, _) => CreateFromAttribute(context, asStrategy: true)
-        );
 
         var qudiRegistrations = qudiProvider.Collect();
         var singletonCollections = singletonProvider.Collect();
         var transientCollections = transientProvider.Collect();
         var scopedCollections = scopedProvider.Collect();
         var decoratorCollections = decoratorProvider.Collect();
-        var strategyCollections = strategyProvider.Collect();
         return qudiRegistrations
             .CombineAndMerge(singletonCollections)
             .CombineAndMerge(transientCollections)
             .CombineAndMerge(scopedCollections)
-            .CombineAndMerge(decoratorCollections)
-            .CombineAndMerge(strategyCollections);
+            .CombineAndMerge(decoratorCollections);
     }
 
     /// <summary>
@@ -73,8 +65,7 @@ internal static class RegistrationAttrParser
     public static RegistrationSpec? CreateFromAttribute(
         GeneratorAttributeSyntaxContext context,
         string? lifetime = null,
-        bool asDecorator = false,
-        bool asStrategy = false
+        bool asDecorator = false
     )
     {
         // filter some invalid cases
@@ -120,7 +111,6 @@ internal static class RegistrationAttrParser
             AsTypes = spec.AsTypes.Count > 0 ? spec.AsTypes : defaultAsTypes,
             Lifetime = lifetime ?? spec.Lifetime,
             MarkAsDecorator = asDecorator || spec.MarkAsDecorator,
-            MarkAsStrategy = asStrategy || spec.MarkAsStrategy,
         };
     }
 
@@ -139,7 +129,6 @@ internal static class RegistrationAttrParser
             KeyLiteral = SGAttributeParser.GetValueAsLiteral(attr, "Key"),
             Order = SGAttributeParser.GetValue<int?>(attr, "Order") ?? 0,
             MarkAsDecorator = SGAttributeParser.GetValue<bool?>(attr, "MarkAsDecorator") ?? false,
-            MarkAsStrategy = SGAttributeParser.GetValue<bool?>(attr, "MarkAsStrategy") ?? false,
         };
     }
 

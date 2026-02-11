@@ -12,7 +12,6 @@ namespace Qudi.Generator.Helper;
 internal static class HelperTargetCollector
 {
     private const string QudiDecoratorAttribute = "Qudi.QudiDecoratorAttribute";
-    private const string QudiStrategyAttribute = "Qudi.QudiStrategyAttribute";
 
     public static IncrementalValueProvider<HelperGenerationInput> CollectTargets(
         IncrementalGeneratorInitializationContext context
@@ -22,26 +21,15 @@ internal static class HelperTargetCollector
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
                 static (node, _) => true,
-                static (ctx, _) => CreateTargets(ctx, isDecorator: true, isStrategy: false)
+                static (ctx, _) => CreateTargets(ctx, isDecorator: true)
             )
             .Select(static (targets, _) => targets);
-
-        var strategyTargets = context
-            .SyntaxProvider.ForAttributeWithMetadataName(
-                QudiStrategyAttribute,
-                static (node, _) => true,
-                static (ctx, _) => CreateTargets(ctx, isDecorator: false, isStrategy: true)
-            )
-            .Select(static (targets, _) => targets);
-
-        var combined = decoratorTargets.Collect().Combine(strategyTargets.Collect());
-        return combined.Select(static (targets, _) => MergeTargets(targets.Left, targets.Right));
+        return decoratorTargets.Collect().Select(static (targets, _) => MergeTargets(targets));
     }
 
     private static HelperGenerationInput CreateTargets(
         GeneratorAttributeSyntaxContext context,
-        bool isDecorator,
-        bool isStrategy
+        bool isDecorator
     )
     {
         if (
@@ -113,8 +101,7 @@ internal static class HelperTargetCollector
             interfaceNamespace,
             interfaceHelperName,
             iface,
-            isDecorator,
-            isStrategy
+            isDecorator
         );
         if (constructorTarget is not null)
         {
@@ -125,10 +112,6 @@ internal static class HelperTargetCollector
             isDecorator && constructorTarget is not null
                 ? constructorTarget.BaseParameterName
                 : string.Empty;
-        var strategyParameterName =
-            isStrategy && constructorTarget is not null
-                ? constructorTarget.BaseParameterName
-                : string.Empty;
         var target = new HelperInterfaceTarget
         {
             InterfaceName = interfaceName,
@@ -136,10 +119,8 @@ internal static class HelperTargetCollector
             InterfaceHelperName = interfaceHelperName,
             HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
             DecoratorParameterName = decoratorParameterName,
-            StrategyParameterName = strategyParameterName,
             Members = new EquatableArray<HelperMember>(members),
             IsDecorator = isDecorator,
-            IsStrategy = isStrategy,
         };
         interfaceTargets.Add(target);
 
@@ -155,16 +136,12 @@ internal static class HelperTargetCollector
     }
 
     private static HelperGenerationInput MergeTargets(
-        ImmutableArray<HelperGenerationInput> left,
-        ImmutableArray<HelperGenerationInput> right
+        ImmutableArray<HelperGenerationInput> targets
     )
     {
-        var interfaceTargets = left.SelectMany(t => t.InterfaceTargets)
-            .Concat(right.SelectMany(t => t.InterfaceTargets))
-            .ToImmutableArray();
-
-        var implementingTargets = left.SelectMany(t => t.ImplementingTargets)
-            .Concat(right.SelectMany(t => t.ImplementingTargets))
+        var interfaceTargets = targets.SelectMany(t => t.InterfaceTargets).ToImmutableArray();
+        var implementingTargets = targets
+            .SelectMany(t => t.ImplementingTargets)
             .ToImmutableArray();
 
         var mergedInterfaces = MergeInterfaceTargets(interfaceTargets);
@@ -198,14 +175,9 @@ internal static class HelperTargetCollector
             map[target.InterfaceName] = existing with
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
-                IsStrategy = existing.IsStrategy || target.IsStrategy,
                 DecoratorParameterName = MergeParameterName(
                     existing.DecoratorParameterName,
                     target.DecoratorParameterName
-                ),
-                StrategyParameterName = MergeParameterName(
-                    existing.StrategyParameterName,
-                    target.StrategyParameterName
                 ),
             };
         }
@@ -253,7 +225,6 @@ internal static class HelperTargetCollector
             map[key] = existing with
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
-                IsStrategy = existing.IsStrategy || target.IsStrategy,
             };
         }
 
@@ -406,8 +377,7 @@ internal static class HelperTargetCollector
         string interfaceNamespace,
         string interfaceHelperName,
         INamedTypeSymbol interfaceSymbol,
-        bool isDecorator,
-        bool isStrategy
+        bool isDecorator
     )
     {
         if (context.TargetNode is not ClassDeclarationSyntax classSyntax)
@@ -431,7 +401,7 @@ internal static class HelperTargetCollector
             return null;
         }
 
-        var baseParameter = FindBaseParameter(ctorSymbol.Parameters, interfaceSymbol, isDecorator);
+        var baseParameter = FindBaseParameter(ctorSymbol.Parameters, interfaceSymbol);
         if (baseParameter is null)
         {
             return null;
@@ -456,74 +426,23 @@ internal static class HelperTargetCollector
             ConstructorParameters = new EquatableArray<HelperParameter>(constructorParameters),
             BaseParameterName = baseParameter.Name,
             IsDecorator = isDecorator,
-            IsStrategy = isStrategy,
         };
     }
 
     private static IParameterSymbol? FindBaseParameter(
         ImmutableArray<IParameterSymbol> parameters,
-        INamedTypeSymbol interfaceSymbol,
-        bool isDecorator
+        INamedTypeSymbol interfaceSymbol
     )
     {
         foreach (var parameter in parameters)
         {
-            if (isDecorator)
-            {
-                if (SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol))
-                {
-                    return parameter;
-                }
-
-                continue;
-            }
-
-            if (ImplementsIEnumerableOf(parameter.Type, interfaceSymbol))
+            if (SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol))
             {
                 return parameter;
             }
         }
 
         return null;
-    }
-
-    private static bool ImplementsIEnumerableOf(
-        ITypeSymbol typeSymbol,
-        INamedTypeSymbol elementType
-    )
-    {
-        if (typeSymbol is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        foreach (var iface in namedType.AllInterfaces.Concat(new[] { namedType }))
-        {
-            if (iface is not INamedTypeSymbol ifaceNamed)
-            {
-                continue;
-            }
-
-            if (
-                ifaceNamed.OriginalDefinition.SpecialType
-                != SpecialType.System_Collections_Generic_IEnumerable_T
-            )
-            {
-                continue;
-            }
-
-            if (ifaceNamed.TypeArguments.Length != 1)
-            {
-                continue;
-            }
-
-            if (SymbolEqualityComparer.Default.Equals(ifaceNamed.TypeArguments[0], elementType))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static string GetAccessibility(Accessibility accessibility)

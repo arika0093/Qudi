@@ -206,7 +206,7 @@ builder.Services.AddQudiServices(conf => {
 ```
 
 > [!NOTE]
-> If you want to switch processing dynamically according to conditions during runtime, consider using [Strategy Pattern](#strategy-pattern) or [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
+> If you want to switch processing dynamically according to conditions during runtime, consider using Strategy Pattern or [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
 
 ### Decorator Pattern
 #### Overview
@@ -376,160 +376,6 @@ public interface DecoratorHelper_IManyFeatureService : IManyFeatureService
 
 </details>
 
-### Strategy Pattern
-#### Overview
-This is similar to the Decorator pattern, but switches services in a 1-to-many relationship instead of 1-to-1.
-For example, consider a case where you want to switch between multiple implementations of a message service based on conditions.
-
-```csharp
-[QudiStrategy]
-public class SendMessageStrategy(IEnumerable<IMessageService> services, MyConfiguration config) : IMessageService
-{
-    public void SendMessage(string message)
-    {
-        foreach (var service in services)
-        {
-            if (config.ShouldUseService(service))
-            {
-                service.SendMessage(message);
-            }
-        }
-    }
-}
-```
-
-Once defined this way, you can send messages through `SendMessageStrategy` instead of individual `IMessageService` implementations.
-
-```csharp
-[DISingleton]
-public class NotificationService(IMessageService messageService)
-{
-    public void Notify(string message)
-    {
-        // Here, SendMessageStrategy is invoked.
-        messageService.SendMessage(message); 
-    }
-}
-```
-
-#### Using Auto Generated Helper
-Like Decorators, by marking the target class as `partial`, an abstract helper class for quickly implementing strategies is automatically generated.
-
-```csharp
-// when use QudiStrategyAttribute, marked partial and implements interface
-// the abstract helper class is automatically generated to help you implement strategy pattern.
-[QudiStrategy]
-public partial class MessageServiceStrategy(IEnumerable<IMessageService> Services) : IMessageService
-{
-    // mark it partial and add constructor definition
-    // required C# 14 or later for 'partial' constructor
-    public partial MessageServiceStrategy(
-        
-    );
-
-    protected override StrategyResult ShouldUseService(IMessageService service)
-    {
-        // short hand: you can return bool directly
-        return service is EmailMessageService;
-        // or return StrategyResult explicitly
-        return new(){
-            // For example, use only EmailMessageService
-            UseService = service is EmailMessageService,
-            // Whether to continue checking other services
-            Continue = true,
-        };
-    }
-}
-```
-
-<details>
-<summary>Generated Code Snippets</summary>
-
-```csharp
-partial class MessageServiceStrategy : StrategyHelper_IMessageService
-{
-    public partial MessageServiceStrategy(IEnumerable<IMessageService> services)
-        : base(services)
-    {
-    }
-}
-
-public abstract class StrategyHelper_IMessageService : IMessageService
-{
-    protected readonly IEnumerable<IMessageService> services;
-    protected StrategyHelper_IMessageService(IEnumerable<IMessageService> services)
-    {
-        this.services = services;
-    }
-
-    protected abstract StrategyResult ShouldUseService(IMessageService service);
-
-    // For each method and property, code is generated to determine which service to use and invoke it.
-    public virtual void SendMessage(string message)
-    {
-        foreach (var service in services)
-        {
-            var result = ShouldUseService(service);
-            if (result.UseService)
-            {
-                service.SendMessage(message);
-            }
-            if (!result.Continue)
-            {
-                break;
-            }
-        }
-    }
-}
-```
-
-</details>
-
-> [!IMPORTANT]
-> Since `ShouldUseService` is executed for each method/property call, it is recommended to implement it as lightweight as possible and keep idempotent.
-> If the scale becomes large, consider separating it into a dedicated service/interface.
-
-#### Combine with Decorator
-You can also combine it with Decorators.
-
-```csharp
-[QudiDecorator]
-public partial class LoggingStrategyDecorator : IMessageService
-{
-    public partial LoggingStrategyDecorator(
-        IMessageService innerService,
-        ILogger<LoggingStrategyDecorator> logger
-    );
-
-    public override void SendMessage(string message)
-    {
-        logger.LogTrace("Sending message: {Message}", message);
-        base.SendMessage(message);
-    }
-}
-
-[QudiStrategy]
-public partial class SendMessageStrategy : IMessageService
-{
-    public partial SendMessageStrategy(
-        IEnumerable<IMessageService> services
-    );
-
-    protected override StrategyResult ShouldUseService(IMessageService service)
-    {
-        // ...
-    }
-}
-
-// call chain is:
-// IMessageService
-// -> LoggingStrategyDecorator -> SendMessageStrategy
-// -> ( individual IMessageService implementations )
-```
-
-When Order is the same, Decorators are applied first, followed by Strategies.
-
-
 ### (TODO) Visualize Missing Registrations
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
 
@@ -569,9 +415,7 @@ Are you a customization nerd? You can customize various registration settings us
     // Are you concerned about the order of registration? (default is 0, high value means later registration)
     Order = 0,
     // Set true if you want to register as a decorator
-    MarkAsDecorator = false,
-    // Set true if you want to register as a strategy
-    MarkAsStrategy = false
+    MarkAsDecorator = false
 )]
 public class YourClass : IYourService, IYourOtherService { /* ... */ }
 
@@ -696,7 +540,6 @@ namespace Qudi.Generated__4e72f6940c99
                 Key = null,
                 Order = 0,
                 MarkAsDecorator = false,
-                MarkAsStrategy = false,
                 AssemblyName = "Qudi.Example.Worker",
                 Namespace = "Qudi.Example.Worker",
             },
@@ -753,6 +596,6 @@ dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win
 ```
 
 ## TODO
-- [ ] Add Analyzer/Codefix for convert Decorator/Strategy to use auto generated helper classes
+- [ ] Add Analyzer/Codefix for convert Decorator to use auto generated helper classes
 - [ ] Support more DI containers (e.g. Autofac, DryIoc, etc.)
 - [ ] Improve error messages and diagnostics

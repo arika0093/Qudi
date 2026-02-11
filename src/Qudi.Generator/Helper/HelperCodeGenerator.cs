@@ -9,8 +9,6 @@ namespace Qudi.Generator.Helper;
 
 internal static class HelperCodeGenerator
 {
-    private const string IEnumerable = "global::System.Collections.Generic.IEnumerable";
-
     public static void GenerateHelpers(SourceProductionContext context, HelperGenerationInput input)
     {
         var interfaceTargets = input.InterfaceTargets;
@@ -70,16 +68,7 @@ internal static class HelperCodeGenerator
         builder.AppendLineIf(isUseNamespace, $"namespace {namespaceName}");
         using (builder.BeginScopeIf(isUseNamespace))
         {
-            if (helper.IsDecorator)
-            {
-                GenerateDecoratorHelper(builder, helper);
-                builder.AppendLine("");
-            }
-
-            if (helper.IsStrategy)
-            {
-                GenerateStrategyHelper(builder, helper);
-            }
+            GenerateDecoratorHelper(builder, helper);
         }
     }
 
@@ -94,7 +83,7 @@ internal static class HelperCodeGenerator
         var baseParameterName = string.IsNullOrEmpty(helper.DecoratorParameterName)
             ? "innerService"
             : helper.DecoratorParameterName;
-        var helperName = BuildHelperClassName(interfaceHelperName, isDecorator: true);
+        var helperName = BuildHelperClassName(interfaceHelperName);
         builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
         builder.AppendLine("{");
         builder.AppendLine($"    protected readonly {interfaceName} {baseParameterName};");
@@ -121,53 +110,6 @@ internal static class HelperCodeGenerator
             else if (member.Kind == HelperMemberKind.Property)
             {
                 AppendDecoratorProperty(builder, member, baseParameterName);
-            }
-        }
-
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-    }
-
-    private static void GenerateStrategyHelper(
-        IndentedStringBuilder builder,
-        HelperInterfaceTarget helper
-    )
-    {
-        var interfaceName = helper.InterfaceName;
-        var interfaceHelperName = helper.InterfaceHelperName;
-        var members = helper.Members.ToImmutableArray();
-        var servicesParameterName = string.IsNullOrEmpty(helper.StrategyParameterName)
-            ? "services"
-            : helper.StrategyParameterName;
-
-        var helperName = BuildHelperClassName(interfaceHelperName, isDecorator: false);
-        builder.AppendLine($"public abstract class {helperName} : {interfaceName}");
-        builder.AppendLine("{");
-        builder.AppendLine(
-            $"    protected readonly {IEnumerable}<{interfaceName}> {servicesParameterName};"
-        );
-        builder.AppendLine("");
-        builder.AppendLine(
-            $"    protected {helperName}({IEnumerable}<{interfaceName}> {servicesParameterName})"
-        );
-        builder.AppendLine("    {");
-        builder.AppendLine($"        this.{servicesParameterName} = {servicesParameterName};");
-        builder.AppendLine("    }");
-        builder.AppendLine("");
-        builder.AppendLine(
-            $"    protected abstract global::Qudi.StrategyResult ShouldUseService({interfaceName} service);"
-        );
-        builder.IncreaseIndent();
-
-        foreach (var member in members)
-        {
-            if (member.Kind == HelperMemberKind.Method)
-            {
-                AppendStrategyMethod(builder, member, servicesParameterName);
-            }
-            else if (member.Kind == HelperMemberKind.Property)
-            {
-                AppendStrategyProperty(builder, member, servicesParameterName);
             }
         }
 
@@ -288,154 +230,6 @@ internal static class HelperCodeGenerator
         builder.AppendLine("}");
     }
 
-    private static void AppendStrategyMethod(
-        IndentedStringBuilder builder,
-        HelperMember method,
-        string servicesParameterName
-    )
-    {
-        var returnType = method.ReturnTypeName;
-        var parameters = BuildParameterList(method.Parameters);
-        var arguments = BuildArgumentList(method.Parameters);
-        var returnsVoid = returnType == "void";
-
-        builder.AppendLine($"public virtual {returnType} {method.Name}({parameters})");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-
-        var resultVar = returnsVoid ? string.Empty : "result";
-        if (!returnsVoid)
-        {
-            builder.AppendLine($"{returnType} {resultVar} = default!;");
-            builder.AppendLine("var hasResult = false;");
-        }
-
-        builder.AppendLine($"foreach (var service in {servicesParameterName})");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-        builder.AppendLine($"var decision = ShouldUseService(service);");
-        builder.AppendLine("if (decision.UseService)");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-        if (returnsVoid)
-        {
-            builder.AppendLine($"service.{method.Name}({arguments});");
-        }
-        else
-        {
-            builder.AppendLine($"{resultVar} = service.{method.Name}({arguments});");
-            builder.AppendLine("hasResult = true;");
-        }
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-        builder.AppendLine("if (!decision.Continue)");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-        builder.AppendLine("break;");
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-
-        if (!returnsVoid)
-        {
-            builder.AppendLine("return hasResult ? result : default!;");
-        }
-
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-    }
-
-    private static void AppendStrategyProperty(
-        IndentedStringBuilder builder,
-        HelperMember property,
-        string servicesParameterName
-    )
-    {
-        var typeName = property.ReturnTypeName;
-        var propertyName = property.IsIndexer ? "this" : property.Name;
-        var parameters = property.IsIndexer
-            ? BuildParameterList(property.Parameters)
-            : string.Empty;
-        var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : string.Empty;
-        var accessSuffix = property.IsIndexer
-            ? $"[{BuildArgumentList(property.Parameters)}]"
-            : string.Empty;
-
-        builder.AppendLine($"public virtual {typeName} {propertyName}{indexerSuffix}");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-
-        if (property.HasGetter)
-        {
-            builder.AppendLine("get");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine($"{typeName} result = default!;");
-            builder.AppendLine("var hasResult = false;");
-            builder.AppendLine($"foreach (var service in {servicesParameterName})");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine("var decision = ShouldUseService(service);");
-            builder.AppendLine("if (decision.UseService)");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine(
-                property.IsIndexer
-                    ? $"result = service{accessSuffix};"
-                    : $"result = service.{propertyName}{accessSuffix};"
-            );
-            builder.AppendLine("hasResult = true;");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.AppendLine("if (!decision.Continue)");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine("break;");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.AppendLine("return hasResult ? result : default!;");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-        }
-
-        if (property.HasSetter)
-        {
-            builder.AppendLine("set");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine($"foreach (var service in {servicesParameterName})");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine("var decision = ShouldUseService(service);");
-            builder.AppendLine("if (decision.UseService)");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine(
-                property.IsIndexer
-                    ? $"service{accessSuffix} = value;"
-                    : $"service.{propertyName}{accessSuffix} = value;"
-            );
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.AppendLine("if (!decision.Continue)");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine("break;");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-        }
-
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-    }
-
     private static string BuildParameterList(EquatableArray<HelperParameter> parameters)
     {
         if (parameters.Count == 0)
@@ -503,11 +297,9 @@ internal static class HelperCodeGenerator
         return string.Join(", ", parts);
     }
 
-    private static string BuildHelperClassName(string interfaceHelperName, bool isDecorator)
+    private static string BuildHelperClassName(string interfaceHelperName)
     {
-        return isDecorator
-            ? $"DecoratorHelper_{interfaceHelperName}"
-            : $"StrategyHelper_{interfaceHelperName}";
+        return $"DecoratorHelper_{interfaceHelperName}";
     }
 
     private static void GeneratePartialConstructor(
@@ -515,7 +307,7 @@ internal static class HelperCodeGenerator
         HelperImplementingTarget target
     )
     {
-        var helperName = BuildHelperClassName(target.InterfaceHelperName, target.IsDecorator);
+        var helperName = BuildHelperClassName(target.InterfaceHelperName);
         var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
             ? helperName
             : $"global::{target.InterfaceNamespace}.{helperName}";

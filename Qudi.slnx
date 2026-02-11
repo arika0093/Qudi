@@ -4,7 +4,8 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/examples/">
+  <Folder Name="/examples/" />
+  <Folder Name="/examples/readme/">
     <Project Path="examples/Qudi.Example.Readme/Qudi.Example.Readme.csproj" Id="faa10edb-b998-4a76-a669-8766b17b1c2d" />
   </Folder>
   <Folder Name="/examples/simple/">

@@ -38,7 +38,4 @@ internal sealed record RegistrationSpec
 
     // Whether to mark the registration as a decorator.
     public bool MarkAsDecorator { get; init; }
-
-    // Whether to mark the registration as a strategy.
-    public bool MarkAsStrategy { get; init; }
 }
