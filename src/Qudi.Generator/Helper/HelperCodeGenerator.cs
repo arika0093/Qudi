@@ -81,17 +81,18 @@ internal static class HelperCodeGenerator
         var interfaceHelperName = helper.InterfaceHelperName;
         var members = helper.Members.ToImmutableArray();
         var helperName = BuildHelperInterfaceName(interfaceHelperName);
-        builder.AppendLine("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]");
+        builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
         builder.AppendLine($"public interface {helperName} : {interfaceName}");
         builder.AppendLine("{");
         builder.IncreaseIndent();
-        builder.AppendLine("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]");
-        builder.AppendLine("global::System.Collections.Generic.IEnumerable<bool> Intercept(string methodName, object?[] args)");
+        builder.AppendLine(
+            "global::System.Collections.Generic.IEnumerable<bool> Intercept(string methodName, object?[] args)"
+        );
         builder.AppendLine("{");
         builder.AppendLine("    yield return true;");
         builder.AppendLine("}");
         builder.AppendLine("");
-        builder.AppendLine("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]");
+        builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
         builder.AppendLine("protected __BaseImpl __Base { get; }");
         builder.AppendLine("");
 
@@ -107,8 +108,10 @@ internal static class HelperCodeGenerator
             }
         }
         builder.AppendLine("");
-        builder.AppendLine("[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]");
-        builder.AppendLine($"protected class __BaseImpl({interfaceName} __Service, {helperName} __Root)");
+        builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
+        builder.AppendLine(
+            $"protected class __BaseImpl({interfaceName} __Service, {helperName} __Root)"
+        );
         builder.AppendLine("{");
         builder.IncreaseIndent();
         foreach (var member in members)
@@ -137,7 +140,9 @@ internal static class HelperCodeGenerator
         var returnType = method.ReturnTypeName;
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
-        builder.AppendLine($"{returnType} {interfaceName}.{method.Name}({parameters}) => __Base.{method.Name}({arguments});");
+        builder.AppendLine(
+            $"{returnType} {interfaceName}.{method.Name}({parameters}) => __Base.{method.Name}({arguments});"
+        );
     }
 
     private static void AppendDecoratorProperty(
@@ -384,10 +389,10 @@ internal static class HelperCodeGenerator
             builder.AppendLine(
                 $"private {helperTypeName}.__BaseImpl Base => __baseCache ??= new({target.BaseParameterName}, this);"
             );
+            builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
             builder.AppendLine($"private {helperTypeName}.__BaseImpl? __baseCache;");
-            builder.AppendLine(
-                $"{helperTypeName}.__BaseImpl {helperTypeName}.__Base => Base;"
-            );
+            builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
+            builder.AppendLine($"{helperTypeName}.__BaseImpl {helperTypeName}.__Base => Base;");
 
             builder.DecreaseIndent();
             builder.AppendLine("}");

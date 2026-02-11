@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Qudi.Container.Microsoft;
@@ -209,7 +209,6 @@ public static class QudiAddServiceToContainer
             lifetime
         );
     }
-
 
     private static object CreateFromDescriptor(
         IServiceProvider provider,

@@ -21,8 +21,10 @@ public sealed class HelperLogger
 }
 
 [QudiDecorator]
-public sealed partial class HelperOnlyDecorator(IHelperOnlyService innerService, HelperLogger logger)
-    : IHelperOnlyService
+public sealed partial class HelperOnlyDecorator(
+    IHelperOnlyService innerService,
+    HelperLogger logger
+) : IHelperOnlyService
 {
     public string Echo(string value) => $"{logger.Prefix}:{Base.Echo(value)}";
 }
