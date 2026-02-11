@@ -126,6 +126,23 @@ services.AddQudiServices();
 
 That's it! Your services are now registered in the DI container.
 
+### Keyed Registration
+You can also use Keyed registrations by specifying the `Key` parameter in the attribute.
+
+```csharp
+[DITransient(Key = "A")]
+public class ServiceA : IService { /* ... */ }
+```
+
+Then, when resolving the service, specify the key as follows:
+
+```csharp
+// from service provider
+var serviceA = provider.GetRequiredServiceByKey<IService>("A");
+// from constructor injection
+public class MyComponent([FromKeyedServicesAttribute("A")] IService service);
+```
+
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
 For example, consider a case where code implemented inside a Core project is used from another project via an interface.
@@ -233,6 +250,30 @@ builder.Services.AddQudiServices(conf => {
 
 > [!NOTE]
 > If you want to switch processing dynamically according to conditions during runtime, consider using Strategy Pattern or [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
+
+
+### (TODO) Open Generic Registration
+You can register open generic types using Qudi attributes.
+
+```csharp
+[DITransient]
+public class GenericRepository<T> : IRepository<T> where T : class
+{
+    public void Add(T entity) { /* ... */ }
+    public T Get(int id) { /* ... */ }
+}
+```
+
+You can also restrict it to specific interfaces.
+
+```csharp
+[DITransient]
+public class SpecificGenericService<T> : ISpecificService<T>
+    where T : ISpecificInterface
+{
+    public void DoSomething(T item) { /* ... */ }
+}
+```
 
 ### Decorator Pattern
 #### Overview
@@ -640,6 +681,5 @@ dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win
 ```
 
 ## TODO
-- [ ] Add Analyzer/Codefix for convert Decorator to use auto generated helper classes
 - [ ] Support more DI containers (e.g. Autofac, DryIoc, etc.)
 - [ ] Improve error messages and diagnostics
