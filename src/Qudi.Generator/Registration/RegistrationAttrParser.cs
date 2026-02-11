@@ -72,6 +72,7 @@ internal static class RegistrationAttrParser
         if (
             context.TargetSymbol is not INamedTypeSymbol typeSymbol
             || typeSymbol.IsAbstract
+            // TODO: generic types are not supported yet
             || typeSymbol.TypeParameters.Length > 0
             || context.Attributes.Length == 0
         )
