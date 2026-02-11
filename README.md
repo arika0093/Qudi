@@ -100,6 +100,32 @@ Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of th
 * **No Assembly Scan**: No assembly scanning. It works in AOT environments and is very fast.
 
 ## Features
+### Simple Usage
+Just mark your classes with the following attributes:
+```csharp
+using Qudi;
+
+[DISingleton] // mark as singleton
+public class YourSingletonService : IService // auto register as IService
+{ /* ... */ }
+
+[DITransient] // mark as transient
+public class YourTransientService : IService, IOtherService // auto register as IService and IOtherService
+{ /* ... */ }
+
+[DIScoped] // mark as scoped
+public class YourScopedService // auto register as itself
+{ /* ... */ }
+```
+
+Then, call `AddQudiServices` in your startup code.
+
+```csharp
+services.AddQudiServices();
+```
+
+That's it! Your services are now registered in the DI container.
+
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
 For example, consider a case where code implemented inside a Core project is used from another project via an interface.
