@@ -72,10 +72,13 @@ internal static class RegistrationAttrParser
         if (
             context.TargetSymbol is not INamedTypeSymbol typeSymbol
             || typeSymbol.IsAbstract
-            // TODO: generic types are not supported yet
-            || typeSymbol.TypeParameters.Length > 0
             || context.Attributes.Length == 0
         )
+        {
+            return null;
+        }
+
+        if (asDecorator && typeSymbol.TypeParameters.Length > 0)
         {
             return null;
         }
@@ -86,7 +89,7 @@ internal static class RegistrationAttrParser
         var spec = CreateDefault(attribute);
 
         // overwrite with type information
-        var typeFullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var typeFullName = CodeGenerationUtility.ToTypeName(typeSymbol);
         // determine required types (all constructor-injectable interfaces and classes)
         var requiredTypes = new EquatableArray<string>(
             typeSymbol
@@ -97,6 +100,7 @@ internal static class RegistrationAttrParser
                 .Select(p => p.Type)
                 .Distinct(SymbolEqualityComparer.Default)
                 .Cast<ITypeSymbol>()
+                .Where(t => t is INamedTypeSymbol || !t.ContainsTypeParameters)
                 .Select(t => CodeGenerationUtility.ToTypeOfLiteral(t))
         );
         // default AsTypes to all implemented interfaces if not specified

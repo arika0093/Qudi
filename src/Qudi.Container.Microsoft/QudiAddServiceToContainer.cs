@@ -90,6 +90,7 @@ public static class QudiAddServiceToContainer
     {
         // Register implementation first, then map interfaces to the same instance path.
         var lifetime = ConvertLifetime(registration.Lifetime);
+        var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
 
         if (registration.AsTypes.Count == 0)
         {
@@ -100,6 +101,21 @@ public static class QudiAddServiceToContainer
         if (registration.Key is null)
         {
             services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
+
+            if (isOpenGeneric || registration.AsTypes.Any(t => t.IsGenericTypeDefinition))
+            {
+                foreach (var asType in registration.AsTypes)
+                {
+                    if (asType == registration.Type)
+                    {
+                        continue;
+                    }
+
+                    services.Add(new ServiceDescriptor(asType, registration.Type, lifetime));
+                }
+
+                return;
+            }
 
             foreach (var asType in registration.AsTypes)
             {
