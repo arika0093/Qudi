@@ -95,7 +95,7 @@ dotnet add package Qudi.Container.Microsoft
 ### Benefits
 Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of this library are as follows:
 
-* **Explicit**: Registration is controlled using attributes. While this style depends on preference, I prefer explicit registration.
+* **Explicit**: While this style depends on preference, I prefer explicit registration.
 * **No Assembly Scan**: No assembly scanning. It works in AOT environments and is very fast.
 * **Battery Included**: It has various built-in utility features (see Features section).
 
@@ -125,28 +125,6 @@ services.AddQudiServices();
 ```
 
 That's it! Your services are now registered in the DI container.
-
-### Control Registration Order
-By default, the registration order is not guaranteed, but you can explicitly control the registration order using the `Order` property.
-Default is `0`, and lower values are registered first.
-
-```csharp
-[DITransient(Order = 1)]
-public class FirstService : IService { /* ... */ }
-// This service will be registered first.
-```
-
-You can use this to provide a default implementation by setting `int.MinValue`.
-
-```csharp
-// in MyApp.Core
-[DITransient(Order = int.MinValue)]
-public class DefaultDataRepository : IDataRepository { /* ... */ }
-
-// in MyApp.Web
-[DITransient] // Order=0 by default
-public class MyDataRepository : IDataRepository { /* ... */ }
-```
 
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
@@ -205,6 +183,37 @@ If you don't want to register implementations from other libraries, you can spec
 services.AddQudiServices(conf => {
     conf.UseSelfImplementsOnly();
 });
+```
+
+### Control Registration Order
+By default, the registration order is not guaranteed, but you can explicitly control the registration order using the `Order` property.
+Default is `0`, and lower values are registered first.
+
+```csharp
+[DITransient(Order = -1)]
+public class FirstService : IService { /* ... */ }
+// This service will be registered first.
+
+[DITransient] // Order=0 by default
+public class SecondService : IService { /* ... */ }
+// This service will be registered second.
+
+[DITransient(Order = 1)]
+public class ThirdService : IService { /* ... */ }
+// This service will be registered last.
+```
+
+You can use this to provide a default implementation by setting `int.MinValue`.
+
+```csharp
+// in MyApp.Core
+[DITransient(Order = int.MinValue)]
+public class DefaultDataRepository : IDataRepository { /* ... */ }
+
+// in MyApp.Web
+[DITransient] // Order=0 by default
+public class MyDataRepository : IDataRepository { /* ... */ }
+// user can override default implementation by registering later
 ```
 
 ### Keyed Registration
