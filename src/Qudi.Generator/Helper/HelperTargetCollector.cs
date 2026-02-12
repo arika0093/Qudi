@@ -386,8 +386,6 @@ internal static class HelperTargetCollector
             return null;
         }
 
-        IParameterSymbol? baseParameter = null;
-
         var ctorCandidates = typeSymbol
             .InstanceConstructors.Where(ctor =>
                 !ctor.IsStatic
@@ -404,7 +402,9 @@ internal static class HelperTargetCollector
 
         var ctorSymbol =
             ctorCandidates.FirstOrDefault(ctor => !ctor.IsImplicitlyDeclared) ?? ctorCandidates[0];
-        baseParameter = FindBaseParameter(ctorSymbol.Parameters, interfaceSymbol);
+        var baseParameter =  ctorSymbol.Parameters.FirstOrDefault(parameter =>
+            SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol)
+        );
         if (baseParameter is null)
         {
             return null;
@@ -438,22 +438,6 @@ internal static class HelperTargetCollector
             BaseParameterName = baseParameter.Name,
             IsDecorator = isDecorator,
         };
-    }
-
-    private static IParameterSymbol? FindBaseParameter(
-        ImmutableArray<IParameterSymbol> parameters,
-        INamedTypeSymbol interfaceSymbol
-    )
-    {
-        foreach (var parameter in parameters)
-        {
-            if (SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol))
-            {
-                return parameter;
-            }
-        }
-
-        return null;
     }
 
     private static string GetAccessibility(Accessibility accessibility)
