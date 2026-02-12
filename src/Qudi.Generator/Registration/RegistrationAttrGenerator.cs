@@ -104,9 +104,13 @@ internal static class RegistrationAttrGenerator
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             {{AttributeClassUsage}}
-            public sealed class QudiDecoratorAttribute : QudiCoreAttribute {}
-
-            /// <summary>
+            public sealed class QudiDecoratorAttribute : QudiCoreAttribute
+            {
+                /// <summary>
+                /// Whether to use interception for this decorator. default is false.
+                /// </summary>
+                public bool UseIntercept { get; set; }
+            }
         }
         """;
 }
