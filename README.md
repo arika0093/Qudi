@@ -126,6 +126,28 @@ services.AddQudiServices();
 
 That's it! Your services are now registered in the DI container.
 
+### Control Registration Order
+By default, the registration order is not guaranteed, but you can explicitly control the registration order using the `Order` property.
+Default is `0`, and lower values are registered first.
+
+```csharp
+[DITransient(Order = 1)]
+public class FirstService : IService { /* ... */ }
+// This service will be registered first.
+```
+
+You can use this to provide a default implementation by setting `int.MinValue`.
+
+```csharp
+// in MyApp.Core
+[DITransient(Order = int.MinValue)]
+public class DefaultDataRepository : IDataRepository { /* ... */ }
+
+// in MyApp.Web
+[DITransient] // Order=0 by default
+public class MyDataRepository : IDataRepository { /* ... */ }
+```
+
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
 For example, consider a case where code implemented inside a Core project is used from another project via an interface.
