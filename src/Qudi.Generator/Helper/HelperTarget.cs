@@ -2,67 +2,214 @@ using Qudi.Generator.Utility;
 
 namespace Qudi.Generator.Helper;
 
-// Represents a target for which helper code should be generated.
+/// <summary>
+/// Represents a target for which helper code should be generated.
+/// </summary>
 internal sealed record HelperInterfaceTarget
 {
+    /// <summary>
+    /// Fully qualified interface name (e.g., global::Foo.Bar.IFoo).
+    /// </summary>
     public required string InterfaceName { get; init; }
+
+    /// <summary>
+    /// Namespace that contains the interface.
+    /// </summary>
     public required string InterfaceNamespace { get; init; }
+
+    /// <summary>
+    /// Sanitized name used to build helper identifiers.
+    /// </summary>
     public required string InterfaceHelperName { get; init; }
+
+    /// <summary>
+    /// Suffix used for helper namespace generation.
+    /// </summary>
     public required string HelperNamespaceSuffix { get; init; }
+
+    /// <summary>
+    /// Constructor parameter name used to access the inner service.
+    /// </summary>
     public required string DecoratorParameterName { get; init; }
+
+    /// <summary>
+    /// Members collected from the interface (and its inherited interfaces).
+    /// </summary>
     public required EquatableArray<HelperMember> Members { get; init; }
+
+    /// <summary>
+    /// Whether the target type is a decorator.
+    /// </summary>
     public required bool IsDecorator { get; init; }
+
+    /// <summary>
+    /// Whether intercept-style helpers should be generated.
+    /// </summary>
     public required bool UseIntercept { get; init; }
 }
 
+/// <summary>
+/// Represents a target type that should implement a decorator helper interface.
+/// </summary>
 internal sealed record HelperImplementingTarget
 {
+    /// <summary>
+    /// Name of the implementing type (without namespace).
+    /// </summary>
     public required string ImplementingTypeName { get; init; }
+
+    /// <summary>
+    /// Namespace of the implementing type.
+    /// </summary>
     public required string ImplementingTypeNamespace { get; init; }
 
     // such as class, struct, record,
+    /// <summary>
+    /// Keyword describing the implementing type (e.g., class, struct, record).
+    /// </summary>
     public required string ImplementingTypeKeyword { get; init; }
+
+    /// <summary>
+    /// Accessibility of the constructor used for helper generation.
+    /// </summary>
     public required string ConstructorAccessibility { get; init; }
+
+    /// <summary>
+    /// Fully qualified interface name this helper is generated for.
+    /// </summary>
     public required string InterfaceName { get; init; }
+
+    /// <summary>
+    /// Namespace that contains the interface.
+    /// </summary>
     public required string InterfaceNamespace { get; init; }
+
+    /// <summary>
+    /// Sanitized helper name for the interface.
+    /// </summary>
     public required string InterfaceHelperName { get; init; }
+
+    /// <summary>
+    /// Constructor parameters used when building the partial helper.
+    /// </summary>
     public required EquatableArray<HelperParameter> ConstructorParameters { get; init; }
+
+    /// <summary>
+    /// Name of the parameter used as the inner service in decorators.
+    /// </summary>
     public required string BaseParameterName { get; init; }
+
+    /// <summary>
+    /// Whether the target type is a decorator.
+    /// </summary>
     public required bool IsDecorator { get; init; }
+
+    /// <summary>
+    /// Whether intercept-style helpers should be generated.
+    /// </summary>
     public required bool UseIntercept { get; init; }
 }
 
+/// <summary>
+/// Represents input data for helper code generation.
+/// </summary>
 internal sealed record HelperGenerationInput
 {
+    /// <summary>
+    /// Helper interface targets to generate.
+    /// </summary>
     public required EquatableArray<HelperInterfaceTarget> InterfaceTargets { get; init; }
+
+    /// <summary>
+    /// Types that should implement helper interfaces.
+    /// </summary>
     public required EquatableArray<HelperImplementingTarget> ImplementingTargets { get; init; }
 }
 
-// Represents a member (method or property) of a helper interface.
+/// <summary>
+/// Represents a member (method or property) of a helper interface.
+/// </summary>
 internal sealed record HelperMember
 {
+    /// <summary>
+    /// Kind of the member (method or property).
+    /// </summary>
     public required HelperMemberKind Kind { get; init; }
+
+    /// <summary>
+    /// Member name.
+    /// </summary>
     public required string Name { get; init; }
+
+    /// <summary>
+    /// Fully qualified return type name.
+    /// </summary>
     public required string ReturnTypeName { get; init; }
+
+    /// <summary>
+    /// Declaring interface for explicit implementation.
+    /// </summary>
     public required string DeclaringInterfaceName { get; init; }
+
+    /// <summary>
+    /// Parameters of the member.
+    /// </summary>
     public required EquatableArray<HelperParameter> Parameters { get; init; }
+
+    /// <summary>
+    /// Whether the property has a getter.
+    /// </summary>
     public required bool HasGetter { get; init; }
+
+    /// <summary>
+    /// Whether the property has a setter.
+    /// </summary>
     public required bool HasSetter { get; init; }
+
+    /// <summary>
+    /// Whether the property is an indexer.
+    /// </summary>
     public required bool IsIndexer { get; init; }
 }
 
-// Represents a parameter of a helper member.
+/// <summary>
+/// Represents a parameter of a helper member.
+/// </summary>
 internal sealed record HelperParameter
 {
+    /// <summary>
+    /// Fully qualified parameter type name.
+    /// </summary>
     public required string TypeName { get; init; }
+
+    /// <summary>
+    /// Parameter name.
+    /// </summary>
     public required string Name { get; init; }
+
+    /// <summary>
+    /// Prefix for ref/out/in parameters.
+    /// </summary>
     public required string RefKindPrefix { get; init; }
+
+    /// <summary>
+    /// Whether the parameter is a params array.
+    /// </summary>
     public required bool IsParams { get; init; }
 }
 
-// The kind of helper member (method or property).
+/// <summary>
+/// The kind of helper member (method or property).
+/// </summary>
 internal enum HelperMemberKind
 {
+    /// <summary>
+    /// A method member.
+    /// </summary>
     Method,
+
+    /// <summary>
+    /// A property member.
+    /// </summary>
     Property,
 }
