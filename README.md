@@ -296,7 +296,7 @@ builder.Services.AddQudiServices(conf => {
 
 
 ### Generic Registration
-#### (TODO) Open Generic Registration
+#### Open Generic Registration
 You can register open generic types using Qudi attributes.
 
 ```csharp
@@ -318,7 +318,7 @@ public class UserService(IRepository<User> userRepository)
 }
 ```
 
-#### (TODO) Constrained Generic Registration
+#### Constrained Generic Registration
 You can also restrict it to specific interfaces.
 
 ```csharp
