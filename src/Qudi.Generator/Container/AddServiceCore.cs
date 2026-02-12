@@ -70,6 +70,11 @@ internal abstract class AddServiceCore
             )
             {
                 var multiBuilder = new {{QudiNS}}.QudiConfigurationRootBuilder();
+            #if DEBUG
+                multiBuilder.SetCondition({{QudiNS}}.Condition.Development);
+            #else
+                multiBuilder.SetCondition({{QudiNS}}.Condition.Production);
+            #endif
                 var builderOfCurrent = new {{QudiNS}}.QudiConfigurationBuilder()
                 {
                     ConfigurationAction = (config) => {{CalledMethodName}}(services, config)
