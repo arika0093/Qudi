@@ -599,7 +599,7 @@ public interface IDecoratorHelper_IManyFeatureService : IManyFeatureService
             var e = __Root.Intercept("FeatureA", []).GetEnumerator();
             if (e.MoveNext() && e.Current)
             {
-                __Service.DoSomething();
+                __Service.FeatureA();
                 e.MoveNext();
                 return;
             }
@@ -611,7 +611,7 @@ public interface IDecoratorHelper_IManyFeatureService : IManyFeatureService
             var e = __Root.Intercept("FeatureB", [val]).GetEnumerator();
             if (e.MoveNext() && e.Current)
             {
-                __Service.DoSomethingElse(val);
+                __Service.FeatureB(val);
                 e.MoveNext();
                 return;
             }
