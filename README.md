@@ -221,7 +221,7 @@ Then, when resolving the service, specify the key as follows:
 // from service provider
 var serviceA = provider.GetRequiredServiceByKey<IService>("A");
 // from constructor injection
-public class MyComponent([FromKeyedServicesAttribute("A")] IService service);
+public class MyComponent([FromKeyedServices("A")] IService service);
 ```
 
 ### Conditional Registration
@@ -274,26 +274,74 @@ builder.Services.AddQudiServices(conf => {
 > If you want to switch processing dynamically according to conditions during runtime, consider using Strategy Pattern or [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
 
 
-### (TODO) Open Generic Registration
+### Generic Registration
+#### (TODO) Open Generic Registration
 You can register open generic types using Qudi attributes.
 
 ```csharp
-[DITransient]
-public class GenericRepository<T> : IRepository<T> where T : class
+[DISingleton]
+public class GenericRepository<T> : IRepository<T>
 {
     public void Add(T entity) { /* ... */ }
     public T Get(int id) { /* ... */ }
 }
 ```
 
+Then, just use it normally in the dependent project.
+
+```csharp
+[DISingleton]
+public class UserService(IRepository<User> userRepository)
+{
+    public void CreateUser(User user) => userRepository.Add(user);
+}
+```
+
+#### (TODO) Constrained Generic Registration
 You can also restrict it to specific interfaces.
 
 ```csharp
 [DITransient]
-public class SpecificGenericService<T> : ISpecificService<T>
-    where T : ISpecificInterface
+public class SpecificGenericService<T> : ISpecificService<T> where T : ISpecificInterface
 {
     public void DoSomething(T item) { /* ... */ }
+}
+```
+
+and you can also register specialized implementations for specific types.
+
+```csharp
+// components
+public interface IComponent;
+public class Battery : IComponent { /* ... */ }
+public class Screen : IComponent { /* ... */ }
+public class Keyboard : IComponent { /* ... */ }
+
+// validator
+public interface IComponentValidator<T> where T : IComponent
+{
+    bool Validate(T component);
+}
+
+// default(fallback) implementation
+[DITransient]
+public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
+{
+    public bool Validate(T component) => true; // always valid
+}
+
+// specialized implementation for Battery
+[DITransient]
+public class BatteryValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* specific validation logic */ }
+}
+
+// and for Screen
+[DITransient]
+public class ScreenValidator : IComponentValidator<Screen>
+{
+    public bool Validate(Screen component) { /* specific validation logic */ }
 }
 ```
 
@@ -403,8 +451,6 @@ public interface IDecoratorHelper_IManyFeatureService : IManyFeatureService
     // and more...
 }
 ```
-
-The generated code creates a helper interface and a base implementation class that handles method delegation and interception logic. The decorator class can then focus on implementing only the methods that require custom behavior, while the rest are automatically handled by the generated code.
 
 </details>
 
