@@ -126,23 +126,6 @@ services.AddQudiServices();
 
 That's it! Your services are now registered in the DI container.
 
-### Keyed Registration
-You can also use Keyed registrations by specifying the `Key` parameter in the attribute.
-
-```csharp
-[DITransient(Key = "A")]
-public class ServiceA : IService { /* ... */ }
-```
-
-Then, when resolving the service, specify the key as follows:
-
-```csharp
-// from service provider
-var serviceA = provider.GetRequiredServiceByKey<IService>("A");
-// from constructor injection
-public class MyComponent([FromKeyedServicesAttribute("A")] IService service);
-```
-
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
 For example, consider a case where code implemented inside a Core project is used from another project via an interface.
@@ -200,6 +183,23 @@ If you don't want to register implementations from other libraries, you can spec
 services.AddQudiServices(conf => {
     conf.UseSelfImplementsOnly();
 });
+```
+
+### Keyed Registration
+You can also use Keyed registrations by specifying the `Key` parameter in the attribute.
+
+```csharp
+[DITransient(Key = "A")]
+public class ServiceA : IService { /* ... */ }
+```
+
+Then, when resolving the service, specify the key as follows:
+
+```csharp
+// from service provider
+var serviceA = provider.GetRequiredServiceByKey<IService>("A");
+// from constructor injection
+public class MyComponent([FromKeyedServicesAttribute("A")] IService service);
 ```
 
 ### Conditional Registration
