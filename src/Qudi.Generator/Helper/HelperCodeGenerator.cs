@@ -111,11 +111,11 @@ internal static class HelperCodeGenerator
         {
             if (member.Kind == HelperMemberKind.Method)
             {
-                AppendDecoratorMethod(builder, member, interfaceName, helperAccessor);
+                AppendDecoratorMethod(builder, member, helperAccessor);
             }
             else if (member.Kind == HelperMemberKind.Property)
             {
-                AppendDecoratorProperty(builder, member, interfaceName, helperAccessor);
+                AppendDecoratorProperty(builder, member, helperAccessor);
             }
         }
         if (useIntercept)
@@ -148,13 +148,13 @@ internal static class HelperCodeGenerator
     private static void AppendDecoratorMethod(
         IndentedStringBuilder builder,
         HelperMember method,
-        string interfaceName,
         string helperAccessor
     )
     {
         var returnType = method.ReturnTypeName;
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
+        var interfaceName = method.DeclaringInterfaceName;
         builder.AppendLine(
             $"{returnType} {interfaceName}.{method.Name}({parameters}) => {helperAccessor}.{method.Name}({arguments});"
         );
@@ -163,7 +163,6 @@ internal static class HelperCodeGenerator
     private static void AppendDecoratorProperty(
         IndentedStringBuilder builder,
         HelperMember property,
-        string interfaceName,
         string helperAccessor
     )
     {
@@ -176,6 +175,7 @@ internal static class HelperCodeGenerator
         var accessSuffix = property.IsIndexer
             ? $"[{BuildArgumentList(property.Parameters)}]"
             : string.Empty;
+        var interfaceName = property.DeclaringInterfaceName;
         builder.AppendLine($"{typeName} {interfaceName}.{propertyName}{indexerSuffix}");
         builder.AppendLine("{");
         builder.IncreaseIndent();

@@ -44,6 +44,7 @@ internal sealed record HelperMember
     public required HelperMemberKind Kind { get; init; }
     public required string Name { get; init; }
     public required string ReturnTypeName { get; init; }
+    public required string DeclaringInterfaceName { get; init; }
     public required EquatableArray<HelperParameter> Parameters { get; init; }
     public required bool HasGetter { get; init; }
     public required bool HasSetter { get; init; }

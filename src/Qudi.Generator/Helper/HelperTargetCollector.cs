@@ -76,11 +76,11 @@ internal static class HelperTargetCollector
 
         IEnumerable<INamedTypeSymbol> interfaces =
             asTypes.Length > 0 ? asTypes : typeSymbol.AllInterfaces.OfType<INamedTypeSymbol>();
-
-        var interfaceTargets = new List<HelperInterfaceTarget>();
-        var implementingTargets = new List<HelperImplementingTarget>();
-        var iface = interfaces.FirstOrDefault(iface => iface.TypeKind == TypeKind.Interface);
-        if (iface is null)
+        var interfaceList = interfaces
+            .Where(iface => iface.TypeKind == TypeKind.Interface)
+            .Distinct(NamedTypeSymbolComparer.Instance)
+            .ToImmutableArray();
+        if (interfaceList.IsDefaultOrEmpty)
         {
             return new HelperGenerationInput
             {
@@ -93,47 +93,57 @@ internal static class HelperTargetCollector
             };
         }
 
-        var interfaceName = iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var interfaceNamespace = iface.ContainingNamespace.IsGlobalNamespace
-            ? string.Empty
-            : iface.ContainingNamespace.ToDisplayString();
-        var interfaceHelperName = SanitizeIdentifier(
-            iface.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
-        );
-        var constructorTarget = FindPartialConstructorTarget(
-            context,
-            typeName,
-            typeNamespace,
-            typeKeyword,
-            interfaceName,
-            interfaceNamespace,
-            interfaceHelperName,
-            typeSymbol,
-            iface,
-            isDecorator,
-            useIntercept
-        );
-        if (constructorTarget is not null)
+        var prunedInterfaces = FilterDerivedInterfaces(interfaceList);
+        var interfaceTargets = new List<HelperInterfaceTarget>();
+        var implementingTargets = new List<HelperImplementingTarget>();
+        foreach (
+            var iface in prunedInterfaces.OrderBy(iface =>
+                iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            )
+        )
         {
-            implementingTargets.Add(constructorTarget);
+            var interfaceName = iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var interfaceNamespace = iface.ContainingNamespace.IsGlobalNamespace
+                ? string.Empty
+                : iface.ContainingNamespace.ToDisplayString();
+            var interfaceHelperName = SanitizeIdentifier(
+                iface.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+            );
+            var constructorTarget = FindPartialConstructorTarget(
+                context,
+                typeName,
+                typeNamespace,
+                typeKeyword,
+                interfaceName,
+                interfaceNamespace,
+                interfaceHelperName,
+                typeSymbol,
+                iface,
+                isDecorator,
+                useIntercept
+            );
+            if (constructorTarget is not null)
+            {
+                implementingTargets.Add(constructorTarget);
+            }
+            var members = CollectInterfaceMembers(iface);
+            var decoratorParameterName =
+                isDecorator && constructorTarget is not null
+                    ? constructorTarget.BaseParameterName
+                    : string.Empty;
+            var target = new HelperInterfaceTarget
+            {
+                InterfaceName = interfaceName,
+                InterfaceNamespace = interfaceNamespace,
+                InterfaceHelperName = interfaceHelperName,
+                HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
+                DecoratorParameterName = decoratorParameterName,
+                Members = new EquatableArray<HelperMember>(members),
+                IsDecorator = isDecorator,
+                UseIntercept = useIntercept,
+            };
+            interfaceTargets.Add(target);
         }
-        var members = CollectInterfaceMembers(iface);
-        var decoratorParameterName =
-            isDecorator && constructorTarget is not null
-                ? constructorTarget.BaseParameterName
-                : string.Empty;
-        var target = new HelperInterfaceTarget
-        {
-            InterfaceName = interfaceName,
-            InterfaceNamespace = interfaceNamespace,
-            InterfaceHelperName = interfaceHelperName,
-            HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),
-            DecoratorParameterName = decoratorParameterName,
-            Members = new EquatableArray<HelperMember>(members),
-            IsDecorator = isDecorator,
-            UseIntercept = useIntercept,
-        };
-        interfaceTargets.Add(target);
 
         return new HelperGenerationInput
         {
@@ -235,7 +245,12 @@ internal static class HelperTargetCollector
             )
                 ? use
                 : target.UseIntercept;
-            var key = target.ImplementingTypeNamespace + "." + target.ImplementingTypeName;
+            var key =
+                target.ImplementingTypeNamespace
+                + "."
+                + target.ImplementingTypeName
+                + ":"
+                + target.InterfaceName;
             if (!map.TryGetValue(key, out var existing))
             {
                 map[key] = target with { UseIntercept = useIntercept };
@@ -276,6 +291,33 @@ internal static class HelperTargetCollector
         return ImmutableArray<INamedTypeSymbol>.Empty;
     }
 
+    private static ImmutableArray<INamedTypeSymbol> FilterDerivedInterfaces(
+        ImmutableArray<INamedTypeSymbol> interfaces
+    )
+    {
+        if (interfaces.Length <= 1)
+        {
+            return interfaces;
+        }
+
+        var list = new List<INamedTypeSymbol>();
+        foreach (var iface in interfaces)
+        {
+            var isBase = interfaces.Any(other =>
+                !SymbolEqualityComparer.Default.Equals(other, iface)
+                && other.AllInterfaces.Any(inherited =>
+                    SymbolEqualityComparer.Default.Equals(inherited, iface)
+                )
+            );
+            if (!isBase)
+            {
+                list.Add(iface);
+            }
+        }
+
+        return list.ToImmutableArray();
+    }
+
     private static IEnumerable<HelperMember> CollectInterfaceMembers(
         INamedTypeSymbol interfaceSymbol
     )
@@ -299,13 +341,13 @@ internal static class HelperTargetCollector
 
                 if (member is IMethodSymbol method && method.MethodKind == MethodKind.Ordinary)
                 {
-                    members.Add(CreateMethodMember(method));
+                    members.Add(CreateMethodMember(method, iface));
                     continue;
                 }
 
                 if (member is IPropertySymbol property)
                 {
-                    members.Add(CreatePropertyMember(property));
+                    members.Add(CreatePropertyMember(property, iface));
                 }
             }
         }
@@ -322,7 +364,10 @@ internal static class HelperTargetCollector
                 or Accessibility.ProtectedAndInternal;
     }
 
-    private static HelperMember CreateMethodMember(IMethodSymbol method)
+    private static HelperMember CreateMethodMember(
+        IMethodSymbol method,
+        INamedTypeSymbol declaringInterface
+    )
     {
         var parameters = method.Parameters.Select(CreateParameter).ToImmutableArray();
         return new HelperMember()
@@ -332,6 +377,9 @@ internal static class HelperTargetCollector
             ReturnTypeName = method.ReturnType.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat
             ),
+            DeclaringInterfaceName = declaringInterface.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat
+            ),
             Parameters = new EquatableArray<HelperParameter>(parameters),
             HasGetter = false,
             HasSetter = false,
@@ -339,7 +387,10 @@ internal static class HelperTargetCollector
         };
     }
 
-    private static HelperMember CreatePropertyMember(IPropertySymbol property)
+    private static HelperMember CreatePropertyMember(
+        IPropertySymbol property,
+        INamedTypeSymbol declaringInterface
+    )
     {
         var parameters = property.Parameters.Select(CreateParameter).ToImmutableArray();
         return new HelperMember()
@@ -347,6 +398,9 @@ internal static class HelperTargetCollector
             Kind = HelperMemberKind.Property,
             Name = property.Name,
             ReturnTypeName = property.Type.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat
+            ),
+            DeclaringInterfaceName = declaringInterface.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat
             ),
             Parameters = new EquatableArray<HelperParameter>(parameters),
@@ -414,7 +468,7 @@ internal static class HelperTargetCollector
                 !ctor.IsStatic
                 && ctor.Parameters.Length > 0
                 && ctor.Parameters.Any(parameter =>
-                    SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol)
+                    IsAssignableToInterface(parameter.Type, interfaceSymbol)
                 )
             )
             .ToArray();
@@ -425,9 +479,7 @@ internal static class HelperTargetCollector
 
         var ctorSymbol =
             ctorCandidates.FirstOrDefault(ctor => !ctor.IsImplicitlyDeclared) ?? ctorCandidates[0];
-        var baseParameter = ctorSymbol.Parameters.FirstOrDefault(parameter =>
-            SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol)
-        );
+        var baseParameter = FindParameterForInterface(ctorSymbol.Parameters, interfaceSymbol);
         if (baseParameter is null)
         {
             return null;
@@ -463,6 +515,59 @@ internal static class HelperTargetCollector
             IsDecorator = isDecorator,
             UseIntercept = useIntercept,
         };
+    }
+
+    private static IParameterSymbol? FindParameterForInterface(
+        ImmutableArray<IParameterSymbol> parameters,
+        INamedTypeSymbol interfaceSymbol
+    )
+    {
+        var exact = parameters.FirstOrDefault(parameter =>
+            SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol)
+        );
+        if (exact is not null)
+        {
+            return exact;
+        }
+
+        return parameters.FirstOrDefault(parameter =>
+            IsAssignableToInterface(parameter.Type, interfaceSymbol)
+        );
+    }
+
+    private static bool IsAssignableToInterface(
+        ITypeSymbol parameterType,
+        INamedTypeSymbol interfaceSymbol
+    )
+    {
+        if (SymbolEqualityComparer.Default.Equals(parameterType, interfaceSymbol))
+        {
+            return true;
+        }
+
+        if (parameterType is INamedTypeSymbol namedType)
+        {
+            return namedType.AllInterfaces.Any(iface =>
+                SymbolEqualityComparer.Default.Equals(iface, interfaceSymbol)
+            );
+        }
+
+        return false;
+    }
+
+    private sealed class NamedTypeSymbolComparer : IEqualityComparer<INamedTypeSymbol>
+    {
+        public static readonly NamedTypeSymbolComparer Instance = new();
+
+        public bool Equals(INamedTypeSymbol? x, INamedTypeSymbol? y)
+        {
+            return SymbolEqualityComparer.Default.Equals(x, y);
+        }
+
+        public int GetHashCode(INamedTypeSymbol obj)
+        {
+            return SymbolEqualityComparer.Default.GetHashCode(obj);
+        }
     }
 
     private static string GetAccessibility(Accessibility accessibility)
