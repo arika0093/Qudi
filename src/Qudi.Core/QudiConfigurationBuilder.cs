@@ -4,16 +4,18 @@ using System.Collections.Generic;
 namespace Qudi;
 
 /// <summary>
-/// Builder for multiple Qudi configurations.
+/// Builder for root Qudi configurations.
 /// </summary>
-public sealed class QudiConfigurationMultiBuilder
+public sealed class QudiConfigurationRootBuilder
 {
     internal readonly List<QudiConfigurationBuilder> _builders = [];
+    internal readonly HashSet<string> _conditions = [];
 
     // shared builder for common configurations
-    internal readonly QudiConfigurationBuilder _sharedBuilder = new() {
+    internal readonly QudiConfigurationBuilder _sharedBuilder = new()
+    {
         // default no-op action
-        ConfigurationAction = _ => {}
+        ConfigurationAction = _ => { },
     };
 
     /// <summary>
@@ -22,11 +24,16 @@ public sealed class QudiConfigurationMultiBuilder
     public IReadOnlyCollection<QudiConfigurationBuilder> Builders => _builders;
 
     /// <summary>
+    /// Condition keys for conditional registrations.
+    /// </summary>
+    public IReadOnlyCollection<string> Conditions => _conditions;
+
+    /// <summary>
     /// Adds a new Qudi configuration builder.
     /// </summary>
     public QudiConfigurationBuilder AddService(Action<QudiConfiguration> action)
     {
-        var builder = new QudiConfigurationBuilder(){ ConfigurationAction = action };
+        var builder = new QudiConfigurationBuilder() { ConfigurationAction = action };
         _builders.Add(builder);
         return builder;
     }
@@ -34,32 +41,21 @@ public sealed class QudiConfigurationMultiBuilder
     /// <summary>
     /// Adds an existing Qudi configuration builder.
     /// </summary>
-    public QudiConfigurationMultiBuilder AddBuilder(QudiConfigurationBuilder builder)
+    public QudiConfigurationRootBuilder AddBuilder(QudiConfigurationBuilder builder)
     {
         _builders.Add(builder);
-        return this;
-    }
-
-    // --------------------------
-    // Below is the shared builder methods wrappers
-
-    /// <summary>
-    /// Only register implementations from the current project.
-    /// </summary>
-    public QudiConfigurationMultiBuilder UseSelfImplementsOnly(bool enable = true)
-    {
-        _sharedBuilder.UseSelfImplementsOnly(enable);
         return this;
     }
 
     /// <summary>
     /// Sets a condition key explicitly.
     /// </summary>
-    public QudiConfigurationMultiBuilder SetCondition(string condition)
+    public QudiConfigurationRootBuilder SetCondition(string condition)
     {
         if (!string.IsNullOrWhiteSpace(condition))
         {
-            _sharedBuilder.SetCondition(condition);
+            _conditions.Clear();
+            _conditions.Add(condition);
         }
         return this;
     }
@@ -67,7 +63,7 @@ public sealed class QudiConfigurationMultiBuilder
     /// <summary>
     /// Sets a condition key from the environment variable value.
     /// </summary>
-    public QudiConfigurationMultiBuilder SetConditionFromEnvironment(string variableName)
+    public QudiConfigurationRootBuilder SetConditionFromEnvironment(string variableName)
     {
         if (string.IsNullOrWhiteSpace(variableName))
         {
@@ -81,10 +77,22 @@ public sealed class QudiConfigurationMultiBuilder
         return this;
     }
 
+    // --------------------------
+    // Below is the shared builder methods wrappers
+
+    /// <summary>
+    /// Only register implementations from the current project.
+    /// </summary>
+    public QudiConfigurationRootBuilder UseSelfImplementsOnly(bool enable = true)
+    {
+        _sharedBuilder.UseSelfImplementsOnly(enable);
+        return this;
+    }
+
     /// <summary>
     /// Adds a filter to modify registrations.
     /// </summary>
-    public QudiConfigurationMultiBuilder AddFilter(Func<TypeRegistrationInfo, bool> filter)
+    public QudiConfigurationRootBuilder AddFilter(Func<TypeRegistrationInfo, bool> filter)
     {
         _sharedBuilder.AddFilter(filter);
         return this;
@@ -96,7 +104,7 @@ public sealed class QudiConfigurationMultiBuilder
 /// </summary>
 public class QudiConfigurationBuilder
 {
-    private readonly HashSet<string> _conditions = [];
+    private readonly HashSet<string> _onlyWorkedConditions = [];
     private readonly List<Func<TypeRegistrationInfo, bool>> _filters = [];
 
     /// <summary>
@@ -105,9 +113,9 @@ public class QudiConfigurationBuilder
     public required Action<QudiConfiguration> ConfigurationAction { get; init; }
 
     /// <summary>
-    /// Condition keys for conditional registrations.
+    /// Conditions on which this builder works.
     /// </summary>
-    public IReadOnlyCollection<string> Conditions => _conditions;
+    public IReadOnlyCollection<string> OnlyWorkedConditions => _onlyWorkedConditions;
 
     /// <summary>
     /// Filters to modify registrations.
@@ -130,38 +138,6 @@ public class QudiConfigurationBuilder
     }
 
     /// <summary>
-    /// Sets a condition key explicitly.
-    /// </summary>
-    public QudiConfigurationBuilder SetCondition(string condition)
-    {
-        if (!string.IsNullOrWhiteSpace(condition))
-        {
-            _conditions.Add(condition);
-        }
-
-        return this;
-    }
-
-    /// <summary>
-    /// Sets a condition key from the environment variable value.
-    /// </summary>
-    public QudiConfigurationBuilder SetConditionFromEnvironment(string variableName)
-    {
-        if (string.IsNullOrWhiteSpace(variableName))
-        {
-            return this;
-        }
-
-        var value = Environment.GetEnvironmentVariable(variableName);
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-            SetCondition(value);
-        }
-
-        return this;
-    }
-
-    /// <summary>
     /// Adds a filter to modify registrations.
     /// </summary>
     public QudiConfigurationBuilder AddFilter(Func<TypeRegistrationInfo, bool> filter)
@@ -171,9 +147,45 @@ public class QudiConfigurationBuilder
     }
 
     /// <summary>
+    /// This builder only works on the specified condition.
+    /// </summary>
+    public QudiConfigurationBuilder OnlyWorkOnSpecificCondition(string condition)
+    {
+        _onlyWorkedConditions.Clear();
+        _onlyWorkedConditions.Add(condition);
+        return this;
+    }
+
+    /// <summary>
+    /// This builder only works on the specified conditions.
+    /// </summary>
+    public QudiConfigurationBuilder OnlyWorkOnSpecificConditions(IEnumerable<string> conditions)
+    {
+        _onlyWorkedConditions.Clear();
+        foreach (var condition in conditions)
+        {
+            _onlyWorkedConditions.Add(condition);
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// This builder only works on the "Development" condition.
+    /// </summary>
+    public QudiConfigurationBuilder OnlyWorkOnDevelopment() =>
+        OnlyWorkOnSpecificCondition(Condition.Development);
+
+    /// <summary>
+    /// This builder only works on the "Production" condition.
+    /// </summary>
+    public QudiConfigurationBuilder OnlyWorkOnProduction() =>
+        OnlyWorkOnSpecificCondition(Condition.Production);
+
+    /// <summary>
     /// Executes the configuration action.
     /// </summary>
-    protected internal virtual void Execute(QudiConfiguration configuration) => ConfigurationAction(configuration);
+    protected internal virtual void Execute(QudiConfiguration configuration) =>
+        ConfigurationAction(configuration);
 }
 
 /// <summary>

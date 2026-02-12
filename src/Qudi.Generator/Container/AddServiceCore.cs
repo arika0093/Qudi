@@ -7,7 +7,8 @@ internal abstract class AddServiceCore
 {
     protected const string QudiNS = "global::Qudi";
     protected const string QudiGeneratedNS = "global::Qudi.Generated";
-    protected const string QudiExecuteAllMethod = $"{QudiNS}.Internal.QudiConfigurationExecutor.ExecuteAll";
+    protected const string QudiExecuteAllMethod =
+        $"{QudiNS}.Internal.QudiConfigurationExecutor.ExecuteAll";
     protected const string SystemAction = "global::System.Action";
     protected const string IReadOnlyList = "global::System.Collections.Generic.IReadOnlyList";
 
@@ -51,7 +52,7 @@ internal abstract class AddServiceCore
             /// <param name="configuration">Configuration action for builder.</param>
             public static {{TargetTypeName}} AddQudiServices(
                 this {{TargetTypeName}} services,
-                {{SystemAction}}<{{QudiNS}}.QudiConfigurationMultiBuilder>? configuration
+                {{SystemAction}}<{{QudiNS}}.QudiConfigurationRootBuilder>? configuration
             )
             {
                 return AddQudiServices(services, (multiBuilder, _) => configuration?.Invoke(multiBuilder));
@@ -65,10 +66,10 @@ internal abstract class AddServiceCore
             /// </param>
             public static {{TargetTypeName}} AddQudiServices(
                 this {{TargetTypeName}} services,
-                {{SystemAction}}<{{QudiNS}}.QudiConfigurationMultiBuilder, {{QudiNS}}.QudiConfigurationBuilder>? configuration
+                {{SystemAction}}<{{QudiNS}}.QudiConfigurationRootBuilder, {{QudiNS}}.QudiConfigurationBuilder>? configuration
             )
             {
-                var multiBuilder = new {{QudiNS}}.QudiConfigurationMultiBuilder();
+                var multiBuilder = new {{QudiNS}}.QudiConfigurationRootBuilder();
                 var builderOfCurrent = new {{QudiNS}}.QudiConfigurationBuilder()
                 {
                     ConfigurationAction = (config) => {{CalledMethodName}}(services, config)

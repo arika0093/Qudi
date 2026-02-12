@@ -229,7 +229,10 @@ internal static class HelperTargetCollector
         var map = new Dictionary<string, HelperImplementingTarget>(StringComparer.Ordinal);
         foreach (var target in targets)
         {
-            var useIntercept = useInterceptByInterface.TryGetValue(target.InterfaceName, out var use)
+            var useIntercept = useInterceptByInterface.TryGetValue(
+                target.InterfaceName,
+                out var use
+            )
                 ? use
                 : target.UseIntercept;
             var key = target.ImplementingTypeNamespace + "." + target.ImplementingTypeName;
@@ -422,7 +425,7 @@ internal static class HelperTargetCollector
 
         var ctorSymbol =
             ctorCandidates.FirstOrDefault(ctor => !ctor.IsImplicitlyDeclared) ?? ctorCandidates[0];
-        var baseParameter =  ctorSymbol.Parameters.FirstOrDefault(parameter =>
+        var baseParameter = ctorSymbol.Parameters.FirstOrDefault(parameter =>
             SymbolEqualityComparer.Default.Equals(parameter.Type, interfaceSymbol)
         );
         if (baseParameter is null)

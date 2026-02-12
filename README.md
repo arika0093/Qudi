@@ -665,6 +665,7 @@ services.AddQudiServices(conf => {
 });
 ```
 
+## Customization
 ### Customize Registration
 Are you a customization nerd? You can customize various registration settings using the `[Qudi]` attribute.
 
@@ -709,6 +710,29 @@ services.AddQudiServices(conf => {
 ```
 
 ### Use Collected Information Directly
+You can add processing that uses the collected registration information by using `conf.AddService`.
+
+```csharp
+services.AddQudiServices(conf => {
+    conf
+        // customize action for all registrations
+        .AddService(config => {
+            var registrations = config.Registrations;
+            foreach (var reg in registrations)
+            {
+                // e.g. log registration info
+                Console.WriteLine($"Registering {reg.Type.FullName}");
+            }
+        })
+        // customize action only work on specific namespace
+        .AddFilter(reg => {
+            return reg.Namespace.Contains("MyApp.Services");
+        })
+        // This service will be applied only in development environment
+        .OnlyWorkOnDevelopment();
+});
+```
+
 You can also refer to the collected information only and register it manually to the DI container.
 
 ```csharp
@@ -837,10 +861,10 @@ internal static partial class QudiAddServiceExtensions
 {
     public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddQudiServices(
         this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services,
-        global::System.Action<global::Qudi.QudiConfigurationMultiBuilder, global::Qudi.QudiConfigurationBuilder>? configuration
+        global::System.Action<global::Qudi.QudiConfigurationRootBuilder, global::Qudi.QudiConfigurationBuilder>? configuration
     )
     {
-        var multiBuilder = new global::Qudi.QudiConfigurationMultiBuilder();
+        var multiBuilder = new global::Qudi.QudiConfigurationRootBuilder();
         var builderOfCurrent = new global::Qudi.QudiConfigurationBuilder()
         {
             ConfigurationAction = (config) => global::Qudi.Container.Microsoft.QudiAddServiceToContainer.AddQudiServices(services, config)
@@ -855,7 +879,7 @@ internal static partial class QudiAddServiceExtensions
 
 </details>
 
-Here, we create a QudiConfigurationMultiBuilder, add the DI-container-specific builder (builderOfCurrent) at the end, and then call ExecuteAll for all registered QudiConfigurationBuilder instances together with the auto-generated definition data. This design allows users to apply various extensions using the definition data (for example, Visualize Registration) while ultimately performing the registrations into the DI container.
+Here, we create a QudiConfigurationRootBuilder, add the DI-container-specific builder (builderOfCurrent) at the end, and then call ExecuteAll for all registered QudiConfigurationBuilder instances together with the auto-generated definition data. This design allows users to apply various extensions using the definition data (for example, Visualize Registration) while ultimately performing the registrations into the DI container.
 
 ## Development Guides
 ### Testing

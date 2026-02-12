@@ -19,8 +19,8 @@ public sealed class ConstrainedGenericRegistrationTests
         var valid = provider.GetRequiredService<ISpecificService<SpecificModel>>();
         valid.ValueType.ShouldBe(typeof(SpecificModel));
 
-        Should.Throw<ArgumentException>(
-            () => provider.GetService<ISpecificService<NonSpecificModel>>()
+        Should.Throw<ArgumentException>(() =>
+            provider.GetService<ISpecificService<NonSpecificModel>>()
         );
     }
 
@@ -48,7 +48,6 @@ public sealed class ConstrainedGenericRegistrationTests
         screen.Validate(screenComponent).ShouldBeTrue();
     }
 
-
     public interface ISpecificInterface;
 
     public sealed class SpecificModel : ISpecificInterface;
@@ -61,7 +60,8 @@ public sealed class ConstrainedGenericRegistrationTests
     }
 
     [DITransient]
-    public class SpecificGenericService<T> : ISpecificService<T> where T : ISpecificInterface
+    public class SpecificGenericService<T> : ISpecificService<T>
+        where T : ISpecificInterface
     {
         public System.Type ValueType => typeof(T);
     }
@@ -72,13 +72,15 @@ public sealed class ConstrainedGenericRegistrationTests
 
     public sealed class Screen : IComponent;
 
-    public interface IComponentValidator<T> where T : IComponent
+    public interface IComponentValidator<T>
+        where T : IComponent
     {
         bool Validate(T component);
     }
 
     [DITransient]
-    public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
+    public class NullComponentValidator<T> : IComponentValidator<T>
+        where T : IComponent
     {
         public bool Validate(T component) => true;
     }
@@ -88,7 +90,4 @@ public sealed class ConstrainedGenericRegistrationTests
     {
         public bool Validate(Battery component) => false;
     }
-
 }
-
-

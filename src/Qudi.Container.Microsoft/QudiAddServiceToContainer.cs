@@ -44,8 +44,8 @@ public static class QudiAddServiceToContainer
         }
 
         // TODO: The logic here needs to be clearly refactored.
-        var applicable = configuration.Registrations
-            .Where(t => ShouldRegister(t, configuration.Conditions))
+        var applicable = configuration
+            .Registrations.Where(t => ShouldRegister(t, configuration.Conditions))
             .OrderBy(t => IsOpenGenericRegistration(t) ? 0 : 1)
             .ThenBy(t => t.Order)
             .ToList();
