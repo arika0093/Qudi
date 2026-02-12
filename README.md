@@ -96,8 +96,8 @@ dotnet add package Qudi.Container.Microsoft
 Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of this library are as follows:
 
 * **Explicit**: Registration is controlled using attributes. While this style depends on preference, I prefer explicit registration.
-* **Conditional**: Conditional registration is possible via attribute parameters. Of course, Scrutor can do this too, but Qudi makes it easier to achieve.
 * **No Assembly Scan**: No assembly scanning. It works in AOT environments and is very fast.
+* **Battery Included**: It has various built-in utility features (see Features section).
 
 ## Features
 ### Simple Usage
