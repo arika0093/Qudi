@@ -249,19 +249,6 @@ internal static class HelperTargetCollector
         return map.Values.ToImmutableArray();
     }
 
-    private static bool GetUseIntercept(AttributeData attribute)
-    {
-        foreach (var argument in attribute.NamedArguments)
-        {
-            if (argument.Key == "UseIntercept" && argument.Value.Value is bool flag)
-            {
-                return flag;
-            }
-        }
-
-        return false;
-    }
-
     private static ImmutableArray<INamedTypeSymbol> GetExplicitAsTypes(AttributeData attribute)
     {
         foreach (var argument in attribute.NamedArguments)
