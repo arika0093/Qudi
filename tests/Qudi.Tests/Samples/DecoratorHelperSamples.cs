@@ -59,3 +59,67 @@ public sealed partial class InterceptDecorator(IInterceptService innerService, I
         state.Add($"after:{methodName}");
     }
 }
+
+public interface IAsyncInterceptService
+{
+    System.Threading.Tasks.Task<string> EchoAsync(string value);
+    System.Threading.Tasks.ValueTask<string> EchoValueAsync(string value);
+    System.Threading.Tasks.Task DoAsync();
+    System.Threading.Tasks.ValueTask DoValueAsync();
+}
+
+[DISingleton]
+public sealed class AsyncInterceptState
+{
+    public List<string> Entries { get; } = new();
+
+    public void Add(string value) => Entries.Add(value);
+}
+
+[DITransient]
+public sealed class AsyncInterceptService(AsyncInterceptState state) : IAsyncInterceptService
+{
+    public async System.Threading.Tasks.Task<string> EchoAsync(string value)
+    {
+        state.Add("service:start:EchoAsync");
+        await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(false);
+        state.Add("service:end:EchoAsync");
+        return value;
+    }
+
+    public async System.Threading.Tasks.ValueTask<string> EchoValueAsync(string value)
+    {
+        state.Add("service:start:EchoValueAsync");
+        await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(false);
+        state.Add("service:end:EchoValueAsync");
+        return value;
+    }
+
+    public async System.Threading.Tasks.Task DoAsync()
+    {
+        state.Add("service:start:DoAsync");
+        await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(false);
+        state.Add("service:end:DoAsync");
+    }
+
+    public async System.Threading.Tasks.ValueTask DoValueAsync()
+    {
+        state.Add("service:start:DoValueAsync");
+        await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(false);
+        state.Add("service:end:DoValueAsync");
+    }
+}
+
+[QudiDecorator(UseIntercept = true)]
+public sealed partial class AsyncInterceptDecorator(
+    IAsyncInterceptService innerService,
+    AsyncInterceptState state
+) : IAsyncInterceptService
+{
+    public IEnumerable<bool> Intercept(string methodName, object?[] args)
+    {
+        state.Add($"before:{methodName}");
+        yield return true;
+        state.Add($"after:{methodName}");
+    }
+}

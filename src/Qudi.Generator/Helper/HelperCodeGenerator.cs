@@ -207,8 +207,11 @@ internal static class HelperCodeGenerator
         var arguments = BuildArgumentList(method.Parameters);
         var interceptArguments = BuildInterceptArgumentList(method.Parameters);
         var returnsVoid = returnType == "void";
+        var isTaskLike = IsTaskLikeReturnType(returnType);
+        var isTaskLikeNonGeneric = IsTaskLikeNonGenericReturnType(returnType);
+        var asyncModifier = isTaskLike ? "async " : string.Empty;
 
-        builder.AppendLine($"public {returnType} {method.Name}({parameters})");
+        builder.AppendLine($"public {asyncModifier}{returnType} {method.Name}({parameters})");
         builder.AppendLine("{");
         builder.IncreaseIndent();
         builder.AppendLine(
@@ -222,6 +225,18 @@ internal static class HelperCodeGenerator
             builder.AppendLine($"__Service.{method.Name}({arguments});");
             builder.AppendLine("enumerator.MoveNext();");
             builder.AppendLine("return;");
+        }
+        else if (isTaskLikeNonGeneric)
+        {
+            builder.AppendLine($"await __Service.{method.Name}({arguments});");
+            builder.AppendLine("enumerator.MoveNext();");
+            builder.AppendLine("return;");
+        }
+        else if (isTaskLike)
+        {
+            builder.AppendLine($"var result = await __Service.{method.Name}({arguments});");
+            builder.AppendLine("enumerator.MoveNext();");
+            builder.AppendLine("return result;");
         }
         else
         {
@@ -381,6 +396,19 @@ internal static class HelperCodeGenerator
     private static string BuildHelperInterfaceName(string interfaceHelperName)
     {
         return $"IDecoratorHelper_{interfaceHelperName}";
+    }
+
+    private static bool IsTaskLikeReturnType(string returnType)
+    {
+        return IsTaskLikeNonGenericReturnType(returnType)
+            || returnType.StartsWith("global::System.Threading.Tasks.Task<")
+            || returnType.StartsWith("global::System.Threading.Tasks.ValueTask<");
+    }
+
+    private static bool IsTaskLikeNonGenericReturnType(string returnType)
+    {
+        return returnType == "global::System.Threading.Tasks.Task"
+            || returnType == "global::System.Threading.Tasks.ValueTask";
     }
 
     private static void GeneratePartialConstructor(
