@@ -11,7 +11,7 @@ public sealed class ConditionRegistrationTests
     private const string EnvKey = "QUDI_TEST_ENV";
 
     [Test]
-    public void DoesNotRegisterConditionalServicesWithoutConditions()
+    public void ConditionalServicesWithoutConditions()
     {
         var services = new ServiceCollection();
         services.AddQudiServices();
@@ -19,7 +19,44 @@ public sealed class ConditionRegistrationTests
         var provider = services.BuildServiceProvider();
         var registered = provider.GetServices<IConditionSample>().ToList();
 
+#if DEBUG
         registered.ShouldBeEmpty();
+#else
+        registered.Count.ShouldBe(1);
+        registered[0].ShouldBeOfType<ConditionSampleProduction>();
+#endif
+    }
+
+    [Test]
+    public void RegisterCConfigurationConstantKey()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices(conf =>
+        {
+            conf.SetCondition(Condition.Production);
+        });
+
+        var provider = services.BuildServiceProvider();
+        var registered = provider.GetServices<IConditionSample>().ToList();
+
+        registered.Count.ShouldBe(1);
+        registered[0].ShouldBeOfType<ConditionSampleProduction>();
+    }
+
+    [Test]
+    public void RegisterCConfigurationDirect()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices(conf =>
+        {
+            conf.SetCondition("Testing");
+        });
+
+        var provider = services.BuildServiceProvider();
+        var registered = provider.GetServices<IConditionSample>().ToList();
+
+        registered.Count.ShouldBe(1);
+        registered[0].ShouldBeOfType<ConditionSampleTesting>();
     }
 
     [Test]
