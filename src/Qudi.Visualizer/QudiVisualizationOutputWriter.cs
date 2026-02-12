@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Qudi.Visualizer;
 
@@ -66,7 +67,7 @@ internal static class QudiVisualizationOutputWriter
         var payload = new QudiVisualizationPayload(report, graph);
         return JsonSerializer.Serialize(
             payload,
-            new JsonSerializerOptions { WriteIndented = true }
+            QudiVisualizationJsonContext.Default.QudiVisualizationPayload
         );
     }
 
@@ -244,9 +245,13 @@ internal static class QudiVisualizationOutputWriter
             .Replace("<", "&lt;")
             .Replace(">", "&gt;");
     }
-
-    private sealed record QudiVisualizationPayload(
-        QudiVisualizationReport Report,
-        QudiVisualizationGraph Graph
-    );
 }
+
+internal sealed record QudiVisualizationPayload(
+    QudiVisualizationReport Report,
+    QudiVisualizationGraph Graph
+);
+
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(QudiVisualizationPayload))]
+internal partial class QudiVisualizationJsonContext : JsonSerializerContext;
