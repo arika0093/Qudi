@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,8 @@ namespace Qudi.Generator.Helper;
 
 internal static class HelperCodeGenerator
 {
+    private const string IEnumerable = "global::System.Collections.IEnumerable";
+
     public static void GenerateHelpers(SourceProductionContext context, HelperGenerationInput input)
     {
         var interfaceTargets = input.InterfaceTargets;
@@ -18,47 +21,83 @@ internal static class HelperCodeGenerator
         {
             return;
         }
-
-        try
+        if (interfaceTargets.Count > 0)
         {
-            if (interfaceTargets.Count > 0)
+            var builder = new IndentedStringBuilder();
+            builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
+            foreach (var helper in interfaceTargets)
             {
-                var builder = new IndentedStringBuilder();
-                builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
-                foreach (var helper in interfaceTargets)
-                {
-                    GenerateHelperForInterface(builder, helper);
-                    builder.AppendLine("");
-                }
-
-                context.AddSource("Qudi.Helper.Abstracts.g.cs", builder.ToString());
+                GenerateInterfaceWithNamespace(builder, helper);
+                builder.AppendLine("");
             }
 
-            if (implementingTargets.Count > 0)
-            {
-                var builder = new IndentedStringBuilder();
-                builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
-                foreach (var target in implementingTargets)
-                {
-                    GeneratePartialConstructor(builder, target);
-                    builder.AppendLine("");
-                }
-
-                context.AddSource("Qudi.Helper.Constructor.g.cs", builder.ToString());
-            }
+            context.AddSource("Qudi.Helper.Interfaces.g.cs", builder.ToString());
         }
-        catch (System.Exception ex)
+
+        if (implementingTargets.Count > 0)
         {
-            context.AddSource(
-                "Qudi.Helper.GenerationError.g.cs",
-                $"""
-                /* {ex} */
-                """
-            );
+            var builder = new IndentedStringBuilder();
+            builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
+            foreach (var target in implementingTargets)
+            {
+                GeneratePartialClass(builder, target);
+                builder.AppendLine("");
+            }
+
+            context.AddSource("Qudi.Helper.Classes.g.cs", builder.ToString());
         }
     }
 
-    private static void GenerateHelperForInterface(
+    // generate partial class for implementing target
+    private static void GeneratePartialClass(
+        IndentedStringBuilder builder,
+        HelperImplementingTarget target
+    )
+    {
+        var helperName = BuildHelperInterfaceName(target.InterfaceHelperName);
+        var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
+            ? helperName
+            : $"global::{target.InterfaceNamespace}.{helperName}";
+        // namespace
+        var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
+        builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
+        // class declaration
+        using (builder.BeginScopeIf(useNamespace))
+        {
+            if (target.UseIntercept)
+            {
+                builder.AppendLine(
+                    $$"""
+                    partial {{target.ImplementingTypeKeyword}} {{target.ImplementingTypeName}} : {{helperTypeName}}
+                    {
+                        private {{helperTypeName}}.__BaseImpl Base => __baseCache ??= new({{target.BaseParameterName}}, this);
+
+                        {{CodeTemplateContents.EditorBrowsableAttribute}}
+                        private {{helperTypeName}}.__BaseImpl? __baseCache;
+
+                        {{CodeTemplateContents.EditorBrowsableAttribute}}
+                        {{helperTypeName}}.__BaseImpl {{helperTypeName}}.__Base => Base;
+                    }
+                    """
+                );
+            }
+            else
+            {
+                builder.AppendLine(
+                    $$"""
+                    partial {{target.ImplementingTypeKeyword}} {{target.ImplementingTypeName}} : {{helperTypeName}}
+                    {
+                        {{CodeTemplateContents.EditorBrowsableAttribute}}
+                        {{target.InterfaceName}} {{helperTypeName}}.__Inner => {{target.BaseParameterName}};
+                    }
+                    """
+                );
+            }
+        }
+    }
+
+    // generate interface with namespace
+    private static void GenerateInterfaceWithNamespace(
         IndentedStringBuilder builder,
         HelperInterfaceTarget helper
     )
@@ -68,11 +107,12 @@ internal static class HelperCodeGenerator
         builder.AppendLineIf(isUseNamespace, $"namespace {namespaceName}");
         using (builder.BeginScopeIf(isUseNamespace))
         {
-            GenerateDecoratorHelper(builder, helper);
+            GenerateInterfaceCore(builder, helper);
         }
     }
 
-    private static void GenerateDecoratorHelper(
+    // generate interface core
+    private static void GenerateInterfaceCore(
         IndentedStringBuilder builder,
         HelperInterfaceTarget helper
     )
@@ -83,66 +123,68 @@ internal static class HelperCodeGenerator
         var helperName = BuildHelperInterfaceName(interfaceHelperName);
         var useIntercept = helper.UseIntercept;
         var helperAccessor = useIntercept ? "__Base" : "__Inner";
-        builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-        builder.AppendLine($"public interface {helperName} : {interfaceName}");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-        if (useIntercept)
-        {
-            builder.AppendLine(
-                "global::System.Collections.Generic.IEnumerable<bool> Intercept(string methodName, object?[] args)"
-            );
-            builder.AppendLine("{");
-            builder.AppendLine("    yield return true;");
-            builder.AppendLine("}");
-            builder.AppendLine("");
-            builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-            builder.AppendLine("protected __BaseImpl __Base { get; }");
-            builder.AppendLine("");
-        }
-        else
-        {
-            builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-            builder.AppendLine($"{interfaceName} __Inner {{ get; }}");
-            builder.AppendLine("");
-        }
 
-        foreach (var member in members)
+        // Generate interface
+        builder.AppendLine(
+            $$"""
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            public interface {{helperName}} : {{interfaceName}}
+            """
+        );
+        using (builder.BeginScope())
         {
-            if (member.Kind == HelperMemberKind.Method)
-            {
-                AppendDecoratorMethod(builder, member, helperAccessor);
-            }
-            else if (member.Kind == HelperMemberKind.Property)
-            {
-                AppendDecoratorProperty(builder, member, helperAccessor);
-            }
-        }
-        if (useIntercept)
-        {
-            builder.AppendLine("");
-            builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-            builder.AppendLine(
-                $"protected class __BaseImpl({interfaceName} __Service, {helperName} __Root)"
-            );
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
+            // each property / method
             foreach (var member in members)
             {
                 if (member.Kind == HelperMemberKind.Method)
                 {
-                    AppendBaseImplMethod(builder, member);
+                    AppendDecoratorMethod(builder, member, helperAccessor);
                 }
                 else if (member.Kind == HelperMemberKind.Property)
                 {
-                    AppendBaseImplProperty(builder, member);
+                    AppendDecoratorProperty(builder, member, helperAccessor);
                 }
             }
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
+
+            // helper accessor
+            builder.AppendLine(
+                $$"""
+                {{interfaceName}} {{helperAccessor}} { get; }
+
+                """
+            );
+
+            // base impl class and intercept method
+            if (useIntercept)
+            {
+                builder.AppendLine(
+                    $$"""
+                    {{CodeTemplateContents.EditorBrowsableAttribute}}
+                    {{IEnumerable}}<bool> Intercept(string methodName, object?[] args)
+                    {
+                        yield return true;
+                    }
+
+                    {{CodeTemplateContents.EditorBrowsableAttribute}}
+                    protected class __BaseImpl({{interfaceName}} __Service, {{helperName}} __Root)
+                    """
+                );
+                using (builder.BeginScope())
+                {
+                    foreach (var member in members)
+                    {
+                        if (member.Kind == HelperMemberKind.Method)
+                        {
+                            AppendBaseImplMethod(builder, member);
+                        }
+                        else if (member.Kind == HelperMemberKind.Property)
+                        {
+                            AppendBaseImplProperty(builder, member);
+                        }
+                    }
+                }
+            }
         }
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
     }
 
     private static void AppendDecoratorMethod(
@@ -168,36 +210,23 @@ internal static class HelperCodeGenerator
     {
         var typeName = property.ReturnTypeName;
         var propertyName = property.IsIndexer ? "this" : property.Name;
-        var parameters = property.IsIndexer
-            ? BuildParameterList(property.Parameters)
-            : string.Empty;
-        var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : string.Empty;
-        var accessSuffix = property.IsIndexer
-            ? $"[{BuildArgumentList(property.Parameters)}]"
-            : string.Empty;
+        var parameters = property.IsIndexer ? BuildParameterList(property.Parameters) : "";
+        var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : "";
+        var accessSuffix = property.IsIndexer ? $"[{BuildArgumentList(property.Parameters)}]" : "";
+        var getterAccess = property.IsIndexer
+            ? $"{helperAccessor}{accessSuffix}"
+            : $"{helperAccessor}.{propertyName}{accessSuffix}";
+        var setterAccess = property.IsIndexer
+            ? $"{helperAccessor}{accessSuffix}"
+            : $"{helperAccessor}.{propertyName}{accessSuffix}";
         var interfaceName = property.DeclaringInterfaceName;
+
         builder.AppendLine($"{typeName} {interfaceName}.{propertyName}{indexerSuffix}");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-
-        if (property.HasGetter)
+        using (builder.BeginScope())
         {
-            var getterAccess = property.IsIndexer
-                ? $"{helperAccessor}{accessSuffix}"
-                : $"{helperAccessor}.{propertyName}{accessSuffix}";
-            builder.AppendLine($"get => {getterAccess};");
+            builder.AppendLineIf(property.HasGetter, $"get => {getterAccess};");
+            builder.AppendLineIf(property.HasSetter, $"set => {setterAccess} = value;");
         }
-
-        if (property.HasSetter)
-        {
-            var setterAccess = property.IsIndexer
-                ? $"{helperAccessor}{accessSuffix}"
-                : $"{helperAccessor}.{propertyName}{accessSuffix}";
-            builder.AppendLine($"set => {setterAccess} = value;");
-        }
-
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
     }
 
     private static void AppendBaseImplMethod(IndentedStringBuilder builder, HelperMember method)
@@ -209,48 +238,27 @@ internal static class HelperCodeGenerator
         var returnsVoid = returnType == "void";
         var isTaskLike = IsTaskLikeReturnType(returnType);
         var isTaskLikeNonGeneric = IsTaskLikeNonGenericReturnType(returnType);
-        var asyncModifier = isTaskLike ? "async " : string.Empty;
+        var useResult = !returnsVoid && !isTaskLikeNonGeneric;
+        var resultVarSyntax = useResult ? "var result = " : "";
+        var resultReturnSyntax = useResult ? "return result;" : "return;";
+        var asyncModifier = isTaskLike ? "async " : "";
+        var awaitModifier = isTaskLike ? "await " : "";
 
-        builder.AppendLine($"public {asyncModifier}{returnType} {method.Name}({parameters})");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
         builder.AppendLine(
-            $"using var enumerator = __Root.Intercept(\"{method.Name}\", new object?[] {{ {interceptArguments} }}).GetEnumerator();"
+            $$"""
+            {{asyncModifier}}{{returnType}} {{method.Name}}({{parameters}})
+            {
+                using var enumerator = __Root.Intercept("{{method.Name}}", new object?[] { {{interceptArguments}} }).GetEnumerator();
+                if (enumerator.MoveNext() && enumerator.Current)
+                {
+                    {{resultVarSyntax}}{{awaitModifier}}__Service.{{method.Name}}({{arguments}});
+                    enumerator.MoveNext();
+                    {{resultReturnSyntax}}
+                }
+                throw new global::System.InvalidOperationException("Execution of {{method.Name}} was cancelled by Intercept.");
+            }
+            """
         );
-        builder.AppendLine("if (enumerator.MoveNext() && enumerator.Current)");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-        if (returnsVoid)
-        {
-            builder.AppendLine($"__Service.{method.Name}({arguments});");
-            builder.AppendLine("enumerator.MoveNext();");
-            builder.AppendLine("return;");
-        }
-        else if (isTaskLikeNonGeneric)
-        {
-            builder.AppendLine($"await __Service.{method.Name}({arguments});");
-            builder.AppendLine("enumerator.MoveNext();");
-            builder.AppendLine("return;");
-        }
-        else if (isTaskLike)
-        {
-            builder.AppendLine($"var result = await __Service.{method.Name}({arguments});");
-            builder.AppendLine("enumerator.MoveNext();");
-            builder.AppendLine("return result;");
-        }
-        else
-        {
-            builder.AppendLine($"var result = __Service.{method.Name}({arguments});");
-            builder.AppendLine("enumerator.MoveNext();");
-            builder.AppendLine("return result;");
-        }
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-        builder.AppendLine(
-            $"throw new global::System.InvalidOperationException(\"Execution of {method.Name} was cancelled by Intercept.\");"
-        );
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
     }
 
     private static void AppendBaseImplProperty(IndentedStringBuilder builder, HelperMember property)
@@ -388,7 +396,7 @@ internal static class HelperCodeGenerator
 
         var parts = parameters
             .Select(parameter => parameter.RefKindPrefix == "out " ? "null" : parameter.Name)
-            .Concat(new[] { "value" });
+            .Concat(["value"]);
 
         return string.Join(", ", parts);
     }
@@ -409,47 +417,5 @@ internal static class HelperCodeGenerator
     {
         return returnType == "global::System.Threading.Tasks.Task"
             || returnType == "global::System.Threading.Tasks.ValueTask";
-    }
-
-    private static void GeneratePartialConstructor(
-        IndentedStringBuilder builder,
-        HelperImplementingTarget target
-    )
-    {
-        var helperName = BuildHelperInterfaceName(target.InterfaceHelperName);
-        var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
-            ? helperName
-            : $"global::{target.InterfaceNamespace}.{helperName}";
-        var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
-        builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
-        using (builder.BeginScopeIf(useNamespace))
-        {
-            builder.AppendLine(
-                $"partial {target.ImplementingTypeKeyword} {target.ImplementingTypeName} : {helperTypeName}"
-            );
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-
-            if (target.UseIntercept)
-            {
-                builder.AppendLine(
-                    $"private {helperTypeName}.__BaseImpl Base => __baseCache ??= new({target.BaseParameterName}, this);"
-                );
-                builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-                builder.AppendLine($"private {helperTypeName}.__BaseImpl? __baseCache;");
-                builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-                builder.AppendLine($"{helperTypeName}.__BaseImpl {helperTypeName}.__Base => Base;");
-            }
-            else
-            {
-                builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-                builder.AppendLine(
-                    $"{target.InterfaceName} {helperTypeName}.__Inner => {target.BaseParameterName};"
-                );
-            }
-
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-        }
     }
 }

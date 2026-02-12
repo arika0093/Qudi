@@ -27,6 +27,7 @@ internal static class HelperTargetCollector
         return decoratorTargets.Collect().Select(static (targets, _) => MergeTargets(targets));
     }
 
+    // Check if the syntax node is a partial class declaration
     private static bool IsPartialClass(SyntaxNode node)
     {
         var classDecl = node as ClassDeclarationSyntax;
@@ -38,24 +39,30 @@ internal static class HelperTargetCollector
         bool isDecorator
     )
     {
+        var blankInput = new HelperGenerationInput
+        {
+            InterfaceTargets = new EquatableArray<HelperInterfaceTarget>([]),
+            ImplementingTargets = new EquatableArray<HelperImplementingTarget>([]),
+        };
+
+        // Validate target symbol and attributes
         if (
             context.TargetSymbol is not INamedTypeSymbol typeSymbol
             || context.Attributes.Length == 0
         )
         {
-            return new HelperGenerationInput
-            {
-                InterfaceTargets = new EquatableArray<HelperInterfaceTarget>(
-                    ImmutableArray<HelperInterfaceTarget>.Empty
-                ),
-                ImplementingTargets = new EquatableArray<HelperImplementingTarget>(
-                    ImmutableArray<HelperImplementingTarget>.Empty
-                ),
-            };
+            return blankInput;
         }
 
         // TODO: There may be multiple attributes
-        var attribute = context.Attributes[0];
+        var attribute = context
+            .Attributes.Where(attr =>
+                SymbolEqualityComparer.Default.Equals(
+                    attr.AttributeClass,
+                    context.SemanticModel.Compilation.GetTypeByMetadataName(QudiDecoratorAttribute)
+                )
+            )
+            .FirstOrDefault();
         var asTypes = GetExplicitAsTypes(attribute);
         var useIntercept = SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false;
 
@@ -82,15 +89,7 @@ internal static class HelperTargetCollector
             .ToImmutableArray();
         if (interfaceList.IsDefaultOrEmpty)
         {
-            return new HelperGenerationInput
-            {
-                InterfaceTargets = new EquatableArray<HelperInterfaceTarget>(
-                    ImmutableArray<HelperInterfaceTarget>.Empty
-                ),
-                ImplementingTargets = new EquatableArray<HelperImplementingTarget>(
-                    ImmutableArray<HelperImplementingTarget>.Empty
-                ),
-            };
+            return blankInput;
         }
 
         if (useIntercept)
@@ -341,7 +340,7 @@ internal static class HelperTargetCollector
         var members = new List<HelperMember>();
         var visited = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
 
-        foreach (var iface in interfaceSymbol.AllInterfaces.Concat(new[] { interfaceSymbol }))
+        foreach (var iface in interfaceSymbol.AllInterfaces.Concat([interfaceSymbol]))
         {
             foreach (var member in iface.GetMembers())
             {
@@ -571,21 +570,6 @@ internal static class HelperTargetCollector
         return false;
     }
 
-    private sealed class NamedTypeSymbolComparer : IEqualityComparer<INamedTypeSymbol>
-    {
-        public static readonly NamedTypeSymbolComparer Instance = new();
-
-        public bool Equals(INamedTypeSymbol? x, INamedTypeSymbol? y)
-        {
-            return SymbolEqualityComparer.Default.Equals(x, y);
-        }
-
-        public int GetHashCode(INamedTypeSymbol obj)
-        {
-            return SymbolEqualityComparer.Default.GetHashCode(obj);
-        }
-    }
-
     private static string GetAccessibility(Accessibility accessibility)
     {
         return accessibility switch
@@ -598,5 +582,20 @@ internal static class HelperTargetCollector
             Accessibility.ProtectedAndInternal => "private protected",
             _ => "internal",
         };
+    }
+}
+
+internal sealed class NamedTypeSymbolComparer : IEqualityComparer<INamedTypeSymbol>
+{
+    public static readonly NamedTypeSymbolComparer Instance = new();
+
+    public bool Equals(INamedTypeSymbol? x, INamedTypeSymbol? y)
+    {
+        return SymbolEqualityComparer.Default.Equals(x, y);
+    }
+
+    public int GetHashCode(INamedTypeSymbol obj)
+    {
+        return SymbolEqualityComparer.Default.GetHashCode(obj);
     }
 }
