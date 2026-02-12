@@ -61,7 +61,7 @@ As you can see, just these two steps.
 When written like this, the following equivalent code is automatically generated and registered in the DI container:
 
 ```csharp
-public IServiceCollection AddQudiServices(this IServiceCollection services, Action<QudiConfiguration>? configuration = null)
+public IServiceCollection AddQudiServices(this IServiceCollection services, Action<QudiConfigurationRootBuilder>? configuration = null)
 {
     // Generated code similar to this:
     services.AddSingleton<Altaria>();
