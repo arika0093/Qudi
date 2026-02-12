@@ -100,6 +100,18 @@ Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of th
 * **Battery Included**: It has various built-in utility features (see Features section).
 
 ## Features
+
+* [Simple Usage](#simple-usage)
+* [In Multiple Projects](#in-multiple-projects)
+* [Control Registration Order](#control-registration-order)
+* [Keyed Registration](#keyed-registration)
+* [Conditional Registration](#conditional-registration)
+* [Generic Registration](#generic-registration)
+* [Decorator Pattern](#decorator-pattern)
+* [(TODO) Visualize Registration](#todo-visualize-registration)
+* [Filtering Registrations](#filtering-registrations)
+* [Use Collected Information Directly](#use-collected-information-directly)
+
 ### Simple Usage
 Just mark your classes with the following attributes:
 ```csharp
@@ -615,7 +627,7 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
-### (TODO) Visualize Missing Registrations
+### (TODO) Visualize Registration
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
 
 ```
@@ -836,4 +848,6 @@ dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win
 
 ## TODO
 - [ ] Support more DI containers (e.g. Autofac, DryIoc, etc.)
+- [ ] Add Analyzer(Codefix)
+    - [ ] Generate `Intercept` method automatically
 - [ ] Improve error messages and diagnostics
