@@ -2,7 +2,7 @@
 [![NuGet Version](https://img.shields.io/nuget/v/Qudi?style=flat-square&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Qudi/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Qudi/test.yaml?branch=main&label=Test&style=flat-square) 
 
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based **simple** dependency injection helper library.  
-Explicitly, No assembly scan, AOT friendly.
+Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 
 ## Quick Start
 ### Overview
@@ -108,8 +108,9 @@ Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of th
 * [Conditional Registration](#conditional-registration)
 * [Generic Registration](#generic-registration)
 * [Decorator Pattern](#decorator-pattern)
-* [(TODO) Visualize Registration](#todo-visualize-registration)
-* [Filtering Registrations](#filtering-registrations)
+* [Visualize Registration](#visualize-registration)
+* [Customize Registration](#customize-registration)
+* [Filtering Registration](#filtering-registration)
 * [Use Collected Information Directly](#use-collected-information-directly)
 
 ### Simple Usage
@@ -627,24 +628,42 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
-### (TODO) Visualize Registration
+### Visualize Registration
+#### Overview
+As described in the [Architecture](#architecture) section, Qudi collects registration information and generates code.
+Therefore, it is possible to visualize the registration status and dependencies based on the collected information.
+
+When visualization is needed, add the package reference as follows in your project file.
+
+```xml
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Qudi.Visualizer" Version="*" Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+</Project>
+```
+> [!TIP]
+> Since visualization is mainly needed during development, it is recommended to enable it only for DEBUG builds.
+
+> [!NOTE]
+> Visualize registrations are detected only for interface types included in project dependencies.
+> This is a limitation of Qudi's scanning approach, but it should be sufficient for most cases.
+
+#### (TODO) Report Missing Registrations
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
 
 ```
 TODO
 ```
 
-> [!NOTE]
-> Missing registrations are detected only for interface types included in project dependencies.
-> This is a limitation of Qudi's scanning approach, but it should be sufficient for most cases.
+#### (TODO) Generate Registration Diagram
+By adding the following call when calling `AddQudiServices`, a diagram showing the registration status will be generated.
 
-<details>
-<summary>Why is this not an analyzer error?</summary>
-
-Source Generators cannot directly reference code from dependent projects.
-Therefore, we cannot accurately identify missing registrations on the dependency side, so we notify them as runtime errors instead.
-
-</details>
+```csharp
+services.AddQudiServices(conf => {
+    conf.EnableVisualizationOutput("qudi-registrations.svg");
+});
+```
 
 ### Customize Registration
 Are you a customization nerd? You can customize various registration settings using the `[Qudi]` attribute.
@@ -677,7 +696,7 @@ public class YourClass : IYourService, IYourOtherService { /* ... */ }
 > [!TIP]
 > If you need to perform more complex tasks, it is recommended to register them manually.
 
-### Filtering Registrations
+### Filtering Registration
 You can filter which registrations to apply by specifying options in the `AddQudiServices` method.
 
 ```csharp
@@ -837,6 +856,8 @@ internal static partial class QudiAddServiceExtensions
 
 ## Development Guides
 ### Testing
+This project uses [TUnit](https://tunit.dev/) for testing. This ensures that the library works correctly even in AOT environments.
+
 To run tests, simply execute the following command in the root directory:
 
 ```bash
