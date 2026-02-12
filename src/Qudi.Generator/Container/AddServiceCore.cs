@@ -7,6 +7,7 @@ internal abstract class AddServiceCore
 {
     protected const string QudiNS = "global::Qudi";
     protected const string QudiGeneratedNS = "global::Qudi.Generated";
+    protected const string QudiExecuteAllMethod = $"{QudiNS}.Internal.QudiConfigurationExecutor.ExecuteAll";
     protected const string SystemAction = "global::System.Action";
     protected const string IReadOnlyList = "global::System.Collections.Generic.IReadOnlyList";
 
@@ -17,16 +18,10 @@ internal abstract class AddServiceCore
     public abstract string SupportCheckMetadataName { get; }
 
     /// <summary>
-    /// Return type name of generated AddQudiService method.
-    /// such as IServiceCollection (Fully qualified name)
+    /// Target type name to extend.
+    /// such as "IServiceCollection" (Fully qualified name)
     /// </summary>
-    public abstract string ReturnTypeName { get; }
-
-    /// <summary>
-    /// Type name which received by generated AddQudiService method.
-    /// such as IServiceCollection (Fully qualified name)
-    /// </summary>
-    public abstract string RecievedTypeName { get; }
+    public abstract string TargetTypeName { get; }
 
     /// <summary>
     /// Called method name inside generated AddQudiService method.
@@ -43,19 +38,44 @@ internal abstract class AddServiceCore
             /// <summary>
             /// Registers services in Qudi with optional configuration.
             /// </summary>
-            public static {{ReturnTypeName}} AddQudiServices(
-                this {{RecievedTypeName}} services,
-                {{SystemAction}}<{{QudiNS}}.QudiConfiguration>? configuration = null
+            public static {{TargetTypeName}} AddQudiServices(
+                this {{TargetTypeName}} services
             )
             {
-                var config = new {{QudiNS}}.QudiConfiguration();
-                configuration?.Invoke(config);
-                var types = {{QudiGeneratedNS}}.QudiInternalRegistrations.FetchAll(selfOnly: config.UseSelfImplementsOnlyEnabled);
-                foreach (var filter in config.Filters)
+                return AddQudiServices(services, (_mb, _b) => { });
+            }
+
+            /// <summary>
+            /// Registers services in Qudi with optional configuration.
+            /// </summary>
+            /// <param name="configuration">Configuration action for builder.</param>
+            public static {{TargetTypeName}} AddQudiServices(
+                this {{TargetTypeName}} services,
+                {{SystemAction}}<{{QudiNS}}.QudiConfigurationMultiBuilder>? configuration
+            )
+            {
+                return AddQudiServices(services, (multiBuilder, _) => configuration?.Invoke(multiBuilder));
+            }
+
+            /// <summary>
+            /// Registers services in Qudi with optional configuration.
+            /// </summary>
+            /// <param name="configuration">
+            /// Configuration action for builder. The first parameter is the multi-builder. the second is the builder for this dependency.
+            /// </param>
+            public static {{TargetTypeName}} AddQudiServices(
+                this {{TargetTypeName}} services,
+                {{SystemAction}}<{{QudiNS}}.QudiConfigurationMultiBuilder, {{QudiNS}}.QudiConfigurationBuilder>? configuration
+            )
+            {
+                var multiBuilder = new {{QudiNS}}.QudiConfigurationMultiBuilder();
+                var builderOfCurrent = new {{QudiNS}}.QudiConfigurationBuilder()
                 {
-                    types = types.Where(t => filter(t)).ToList();
-                }
-                {{CalledMethodName}}(services, types, config);
+                    ConfigurationAction = (config) => {{CalledMethodName}}(services, config)
+                };
+                multiBuilder.AddBuilder(builderOfCurrent);
+                configuration?.Invoke(multiBuilder, builderOfCurrent);
+                {{QudiExecuteAllMethod}}(multiBuilder, {{QudiGeneratedNS}}.QudiInternalRegistrations.FetchAll);
                 return services;
             }
             """;

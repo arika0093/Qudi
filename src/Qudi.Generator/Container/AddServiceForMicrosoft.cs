@@ -12,9 +12,7 @@ internal class AddServiceForMicrosoft : AddServiceCore
     public override string SupportCheckMetadataName =>
         "Qudi.Container.Microsoft.QudiAddServiceToContainer";
 
-    public override string ReturnTypeName => IServiceCollection;
-
-    public override string RecievedTypeName => IServiceCollection;
+    public override string TargetTypeName => IServiceCollection;
 
     public override string CalledMethodName =>
         $"global::{SupportCheckMetadataName}.AddQudiServices";

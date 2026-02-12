@@ -12,6 +12,7 @@ namespace Qudi.Container.Microsoft;
 /// </summary>
 public static class QudiAddServiceToContainer
 {
+    // caches for singleton and scoped instances
     private static readonly ConditionalWeakTable<
         IServiceScopeFactory,
         ConditionalWeakTable<ServiceDescriptor, object>
@@ -26,11 +27,9 @@ public static class QudiAddServiceToContainer
     /// Registers Qudi-collected service definitions into <paramref name="services" />.
     /// </summary>
     /// <param name="services">Service collection to register into.</param>
-    /// <param name="types">Collected registrations from source generation.</param>
     /// <param name="configuration">Runtime registration configuration.</param>
     public static IServiceCollection AddQudiServices(
         IServiceCollection services,
-        IReadOnlyList<TypeRegistrationInfo> types,
         QudiConfiguration configuration
     )
     {
@@ -39,18 +38,13 @@ public static class QudiAddServiceToContainer
             throw new ArgumentNullException(nameof(services));
         }
 
-        if (types is null)
-        {
-            throw new ArgumentNullException(nameof(types));
-        }
-
         if (configuration is null)
         {
             throw new ArgumentNullException(nameof(configuration));
         }
 
         // TODO: The logic here needs to be clearly refactored.
-        var applicable = types
+        var applicable = configuration.Registrations
             .Where(t => ShouldRegister(t, configuration.Conditions))
             .OrderBy(t => IsOpenGenericRegistration(t) ? 0 : 1)
             .ThenBy(t => t.Order)
