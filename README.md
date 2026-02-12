@@ -824,7 +824,8 @@ namespace Qudi.Generated__4e72f6940c99
 As shown, information about annotated classes is collected as `TypeRegistrationInfo`. If dependencies exist, those are included automatically. Because this information is DI-container-agnostic, it can be used to support multiple DI containers.
 
 ### Invoking registrations for each container
-Next, container-specific `AddQudiServices` extension methods are generated. For example, if Qudi is referenced, an extension for `Microsoft.Extensions.DependencyInjection` is generated:
+Next, container-specific `AddQudiServices` extension methods are generated.
+For example, if Qudi is referenced, an extension for `Microsoft.Extensions.DependencyInjection` is generated:
 
 <details>
 <summary>Generated Code (Qudi.AddServices.g.cs)</summary>
@@ -834,25 +835,27 @@ namespace Qudi;
 
 internal static partial class QudiAddServiceExtensions
 {
-    public static IServiceCollection AddQudiServices(
-        this IServiceCollection services,
-        Action<QudiConfiguration>? configuration = null
+    public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddQudiServices(
+        this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services,
+        global::System.Action<global::Qudi.QudiConfigurationMultiBuilder, global::Qudi.QudiConfigurationBuilder>? configuration
     )
     {
-        var config = new global::Qudi.QudiConfiguration();
-        configuration?.Invoke(config);
-        var types = global::Qudi.Generated.QudiInternalRegistrations.FetchAll(selfOnly: config.UseSelfImplementsOnlyEnabled);
-        foreach (var filter in config.Filters)
+        var multiBuilder = new global::Qudi.QudiConfigurationMultiBuilder();
+        var builderOfCurrent = new global::Qudi.QudiConfigurationBuilder()
         {
-            types = types.Where(t => filter(t)).ToList();
-        }
-        global::Qudi.Container.Microsoft.QudiAddServiceToContainer.AddQudiServices(services, types, config);
+            ConfigurationAction = (config) => global::Qudi.Container.Microsoft.QudiAddServiceToContainer.AddQudiServices(services, config)
+        };
+        multiBuilder.AddBuilder(builderOfCurrent);
+        configuration?.Invoke(multiBuilder, builderOfCurrent);
+        global::Qudi.Internal.QudiConfigurationExecutor.ExecuteAll(multiBuilder, global::Qudi.Generated.QudiInternalRegistrations.FetchAll);
         return services;
     }
 }
 ```
 
 </details>
+
+Here, we create a QudiConfigurationMultiBuilder, add the DI-container-specific builder (builderOfCurrent) at the end, and then call ExecuteAll for all registered QudiConfigurationBuilder instances together with the auto-generated definition data. This design allows users to apply various extensions using the definition data (for example, Visualize Registration) while ultimately performing the registrations into the DI container.
 
 ## Development Guides
 ### Testing
