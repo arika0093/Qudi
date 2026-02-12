@@ -1,22 +1,21 @@
 digraph Qudi {
   rankdir=LR;
   node [shape=box, fontname="Arial"];
-  "Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>" [label="Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>", shape=box, style=dashed, color=red];
+  "Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>" [label="Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>", shape=box];
   "Qudi.Example.Core.Altaria" [label="Qudi.Example.Core.Altaria", shape=box];
   "Qudi.Example.Core.Garchomp" [label="Qudi.Example.Core.Garchomp", shape=box];
   "Qudi.Example.Core.INotificationService" [label="Qudi.Example.Core.INotificationService", shape=ellipse];
-  "Qudi.Example.Core.IPokemon" [label="Qudi.Example.Core.IPokemon", shape=ellipse];
+  "Qudi.Example.Core.IPokemon" [label="Qudi.Example.Core.IPokemon", shape=box];
   "Qudi.Example.Core.NotifyPokemonInfoService" [label="Qudi.Example.Core.NotifyPokemonInfoService", shape=box];
-  "Qudi.Example.Worker.NotifyDecorator" [label="Qudi.Example.Worker.NotifyDecorator", shape=box];
+  "Qudi.Example.Worker.NotifyDecorator" [label="Qudi.Example.Worker.NotifyDecorator", shape=box, style=filled, fillcolor=lightblue];
   "Qudi.Example.Worker.NotifyToLogger" [label="Qudi.Example.Worker.NotifyToLogger", shape=box];
-  "System.Collections.Generic.IEnumerable<Qudi.Example.Core.IPokemon>" [label="System.Collections.Generic.IEnumerable<Qudi.Example.Core.IPokemon>", shape=box, style=dashed, color=red];
   "Qudi.Example.Core.INotificationService" -> "Qudi.Example.Worker.NotifyToLogger";
   "Qudi.Example.Worker.NotifyToLogger" -> "Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>";
   "Qudi.Example.Core.NotifyPokemonInfoService" -> "Qudi.Example.Core.NotifyPokemonInfoService";
-  "Qudi.Example.Core.NotifyPokemonInfoService" -> "System.Collections.Generic.IEnumerable<Qudi.Example.Core.IPokemon>";
+  "Qudi.Example.Core.NotifyPokemonInfoService" -> "Qudi.Example.Core.IPokemon" [label="*", style=dashed];
   "Qudi.Example.Core.NotifyPokemonInfoService" -> "Qudi.Example.Core.INotificationService";
   "Qudi.Example.Core.IPokemon" -> "Qudi.Example.Core.Altaria";
   "Qudi.Example.Core.IPokemon" -> "Qudi.Example.Core.Garchomp";
-  "Qudi.Example.Core.INotificationService" -> "Qudi.Example.Worker.NotifyDecorator";
-  "Qudi.Example.Worker.NotifyDecorator" -> "Qudi.Example.Core.INotificationService";
+  "Qudi.Example.Core.INotificationService" -> "Qudi.Example.Worker.NotifyDecorator" [color=blue];
+  "Qudi.Example.Worker.NotifyDecorator" -> "Qudi.Example.Core.INotificationService" [color=blue, style=dashed];
 }

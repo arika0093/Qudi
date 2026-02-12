@@ -31,7 +31,17 @@ internal static class QudiVisualizationGraphBuilder
         foreach (var registration in applicable)
         {
             var implLabel = QudiVisualizationAnalyzer.ToDisplayName(registration.Type);
-            AddNode(nodes, implLabel, "implementation");
+            var isDecorator = registration.MarkAsDecorator;
+
+            if (isDecorator)
+            {
+                // For decorators, mark them as "decorator" type
+                AddNode(nodes, implLabel, "decorator");
+            }
+            else
+            {
+                AddNode(nodes, implLabel, "implementation");
+            }
 
             var serviceTypes = registration.AsTypes.Count > 0
                 ? registration.AsTypes.Distinct()
@@ -41,15 +51,48 @@ internal static class QudiVisualizationGraphBuilder
             {
                 var serviceLabel = QudiVisualizationAnalyzer.ToDisplayName(serviceType);
                 AddNode(nodes, serviceLabel, "service");
-                edges.Add(new QudiVisualizationEdge(serviceLabel, implLabel, "registration"));
+                
+                if (isDecorator)
+                {
+                    // For decorators: Service -> Decorator
+                    edges.Add(new QudiVisualizationEdge(serviceLabel, implLabel, "decorator-provides"));
+                }
+                else
+                {
+                    edges.Add(new QudiVisualizationEdge(serviceLabel, implLabel, "registration"));
+                }
             }
 
             foreach (var required in registration.RequiredTypes.Distinct())
             {
-                var requiredLabel = QudiVisualizationAnalyzer.ToDisplayName(required);
-                var isMissing = !registeredTypes.Contains(required);
-                AddNode(nodes, requiredLabel, isMissing ? "missing" : "required");
-                edges.Add(new QudiVisualizationEdge(implLabel, requiredLabel, "dependency"));
+                // Check if this is a collection type (IEnumerable<T>, IList<T>, etc.)
+                var elementType = TryGetCollectionElementType(required);
+                if (elementType != null)
+                {
+                    // For collection types, create a 1:many relationship to the element type
+                    var elementLabel = QudiVisualizationAnalyzer.ToDisplayName(elementType);
+                    var isMissing = !registeredTypes.Contains(elementType) && !QudiVisualizationAnalyzer.IsExternalType(elementType);
+                    AddNode(nodes, elementLabel, isMissing ? "missing" : "required");
+                    edges.Add(new QudiVisualizationEdge(implLabel, elementLabel, "collection"));
+                }
+                else
+                {
+                    var requiredLabel = QudiVisualizationAnalyzer.ToDisplayName(required);
+                    var isMissing = !registeredTypes.Contains(required) && !QudiVisualizationAnalyzer.IsExternalType(required);
+                    
+                    // Check if this is a decorator requiring the decorated service
+                    if (isDecorator && serviceTypes.Any(s => s == required))
+                    {
+                        // Decorator -> Decorated Service
+                        AddNode(nodes, requiredLabel, "service");
+                        edges.Add(new QudiVisualizationEdge(implLabel, requiredLabel, "decorator-wraps"));
+                    }
+                    else
+                    {
+                        AddNode(nodes, requiredLabel, isMissing ? "missing" : "required");
+                        edges.Add(new QudiVisualizationEdge(implLabel, requiredLabel, "dependency"));
+                    }
+                }
             }
         }
 
@@ -76,5 +119,31 @@ internal static class QudiVisualizationGraphBuilder
         }
 
         nodes[label] = new QudiVisualizationNode(label, label, kind);
+    }
+
+    /// <summary>
+    /// Check if the type is a collection type and extract the element type.
+    /// Returns null if the type is not a collection type.
+    /// </summary>
+    private static Type? TryGetCollectionElementType(Type type)
+    {
+        if (!type.IsGenericType)
+        {
+            return null;
+        }
+
+        var genericTypeDef = type.GetGenericTypeDefinition();
+        
+        // Check for common collection interfaces
+        if (genericTypeDef == typeof(IEnumerable<>) ||
+            genericTypeDef == typeof(IList<>) ||
+            genericTypeDef == typeof(ICollection<>) ||
+            genericTypeDef == typeof(IReadOnlyList<>) ||
+            genericTypeDef == typeof(IReadOnlyCollection<>))
+        {
+            return type.GetGenericArguments()[0];
+        }
+
+        return null;
     }
 }

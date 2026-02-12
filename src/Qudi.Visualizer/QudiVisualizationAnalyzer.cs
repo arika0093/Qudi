@@ -131,6 +131,12 @@ internal static class QudiVisualizationAnalyzer
                     continue;
                 }
 
+                // Skip external types (e.g., Microsoft.Extensions.*, System.*)
+                if (IsExternalType(required))
+                {
+                    continue;
+                }
+
                 result.Add(
                     new QudiMissingRegistration(
                         ToDisplayName(required),
@@ -420,5 +426,41 @@ internal static class QudiVisualizationAnalyzer
         var args = type.GetGenericArguments().Select(ToDisplayName);
         var prefix = type.Namespace is null ? string.Empty : type.Namespace + ".";
         return prefix + genericName + "<" + string.Join(", ", args) + ">";
+    }
+
+    /// <summary>
+    /// Determines if a type is from an external library (e.g., System.*, Microsoft.Extensions.*).
+    /// External types are typically framework or third-party types that should not be flagged as missing.
+    /// </summary>
+    internal static bool IsExternalType(Type type)
+    {
+        if (type.Namespace == null)
+        {
+            return false;
+        }
+
+        // Common framework and library namespaces
+        var externalNamespaces = new[]
+        {
+            "System",
+            "Microsoft.Extensions",
+            "Microsoft.AspNetCore",
+            "Microsoft.EntityFrameworkCore",
+            "Newtonsoft.Json",
+            "Serilog",
+            "NLog",
+            "log4net"
+        };
+
+        foreach (var ns in externalNamespaces)
+        {
+            if (type.Namespace.Equals(ns, StringComparison.Ordinal) ||
+                type.Namespace.StartsWith(ns + ".", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

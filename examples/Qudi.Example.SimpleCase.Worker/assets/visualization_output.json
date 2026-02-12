@@ -2,7 +2,7 @@
   "Report": {
     "Summary": {
       "RegistrationCount": 5,
-      "MissingCount": 2,
+      "MissingCount": 0,
       "CycleCount": 0,
       "MultipleRegistrationCount": 1,
       "LifetimeWarningCount": 0
@@ -54,16 +54,7 @@
         "Decorator": false
       }
     ],
-    "MissingRegistrations": [
-      {
-        "RequiredType": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
-        "RequestedBy": "Qudi.Example.Worker.NotifyToLogger"
-      },
-      {
-        "RequiredType": "System.Collections.Generic.IEnumerable\u003CQudi.Example.Core.IPokemon\u003E",
-        "RequestedBy": "Qudi.Example.Core.NotifyPokemonInfoService"
-      }
-    ],
+    "MissingRegistrations": [],
     "Cycles": [],
     "MultipleRegistrations": [
       {
@@ -90,7 +81,7 @@
       {
         "Id": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
         "Label": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
-        "Kind": "missing"
+        "Kind": "required"
       },
       {
         "Id": "Qudi.Example.Core.NotifyPokemonInfoService",
@@ -98,19 +89,14 @@
         "Kind": "implementation"
       },
       {
-        "Id": "System.Collections.Generic.IEnumerable\u003CQudi.Example.Core.IPokemon\u003E",
-        "Label": "System.Collections.Generic.IEnumerable\u003CQudi.Example.Core.IPokemon\u003E",
-        "Kind": "missing"
+        "Id": "Qudi.Example.Core.IPokemon",
+        "Label": "Qudi.Example.Core.IPokemon",
+        "Kind": "required"
       },
       {
         "Id": "Qudi.Example.Core.Altaria",
         "Label": "Qudi.Example.Core.Altaria",
         "Kind": "implementation"
-      },
-      {
-        "Id": "Qudi.Example.Core.IPokemon",
-        "Label": "Qudi.Example.Core.IPokemon",
-        "Kind": "service"
       },
       {
         "Id": "Qudi.Example.Core.Garchomp",
@@ -120,7 +106,7 @@
       {
         "Id": "Qudi.Example.Worker.NotifyDecorator",
         "Label": "Qudi.Example.Worker.NotifyDecorator",
-        "Kind": "implementation"
+        "Kind": "decorator"
       }
     ],
     "Edges": [
@@ -141,8 +127,8 @@
       },
       {
         "From": "Qudi.Example.Core.NotifyPokemonInfoService",
-        "To": "System.Collections.Generic.IEnumerable\u003CQudi.Example.Core.IPokemon\u003E",
-        "Kind": "dependency"
+        "To": "Qudi.Example.Core.IPokemon",
+        "Kind": "collection"
       },
       {
         "From": "Qudi.Example.Core.NotifyPokemonInfoService",
@@ -162,12 +148,12 @@
       {
         "From": "Qudi.Example.Core.INotificationService",
         "To": "Qudi.Example.Worker.NotifyDecorator",
-        "Kind": "registration"
+        "Kind": "decorator-provides"
       },
       {
         "From": "Qudi.Example.Worker.NotifyDecorator",
         "To": "Qudi.Example.Core.INotificationService",
-        "Kind": "dependency"
+        "Kind": "decorator-wraps"
       }
     ]
   }

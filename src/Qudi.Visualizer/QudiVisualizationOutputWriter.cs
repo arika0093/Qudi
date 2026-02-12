@@ -81,7 +81,11 @@ internal static class QudiVisualizationOutputWriter
         foreach (var node in graph.Nodes.OrderBy(n => n.Label, StringComparer.Ordinal))
         {
             var shape = node.Kind == "service" ? "ellipse" : "box";
-            var style = node.Kind == "missing" ? ", style=dashed, color=red" : string.Empty;
+            var style = node.Kind == "missing" 
+                ? ", style=dashed, color=red" 
+                : node.Kind == "decorator" 
+                    ? ", style=filled, fillcolor=lightblue" 
+                    : string.Empty;
             sb.AppendLine(
                 $"  \"{EscapeDot(node.Id)}\" [label=\"{EscapeDot(node.Label)}\", shape={shape}{style}];"
             );
@@ -89,8 +93,15 @@ internal static class QudiVisualizationOutputWriter
 
         foreach (var edge in graph.Edges)
         {
+            var edgeStyle = edge.Kind == "collection" 
+                ? " [label=\"*\", style=dashed]"
+                : edge.Kind == "decorator-provides"
+                    ? " [color=blue]"
+                    : edge.Kind == "decorator-wraps"
+                        ? " [color=blue, style=dashed]"
+                        : "";
             sb.AppendLine(
-                $"  \"{EscapeDot(edge.From)}\" -> \"{EscapeDot(edge.To)}\";"
+                $"  \"{EscapeDot(edge.From)}\" -> \"{EscapeDot(edge.To)}\"{edgeStyle};"
             );
         }
 
@@ -127,9 +138,20 @@ internal static class QudiVisualizationOutputWriter
             {
                 continue;
             }
-            sb.AppendLine($"    {fromId} --> {toId}");
+            
+            // Use different arrow styles for different edge types
+            var arrow = edge.Kind switch
+            {
+                "collection" => "-.->|\"*\"|",  // Dashed arrow with multiplicity label
+                "decorator-provides" => "==>",  // Thick arrow for decorator provision
+                "decorator-wraps" => "-.->",    // Dashed arrow for decorator wrapping
+                _ => "-->"                       // Normal arrow
+            };
+            
+            sb.AppendLine($"    {fromId} {arrow} {toId}");
         }
 
+        // Add styles for missing nodes
         var missingNodes = graph.Nodes.Where(n => n.Kind == "missing").ToList();
         if (missingNodes.Count > 0)
         {
@@ -139,6 +161,20 @@ internal static class QudiVisualizationOutputWriter
                 if (ids.TryGetValue(node.Id, out var id))
                 {
                     sb.AppendLine($"    class {id} missing;");
+                }
+            }
+        }
+
+        // Add styles for decorator nodes
+        var decoratorNodes = graph.Nodes.Where(n => n.Kind == "decorator").ToList();
+        if (decoratorNodes.Count > 0)
+        {
+            sb.AppendLine("    classDef decorator fill:#add8e6,stroke:#4682b4,stroke-width:2px;");
+            foreach (var node in decoratorNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} decorator;");
                 }
             }
         }
