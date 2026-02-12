@@ -133,16 +133,17 @@ internal static class DependsCollector
 
     private static bool IsProjectReferencePath(string? filePath)
     {
+        // TODO: The project determination needs to be more precise. The current implementation is path-dependent and thus unreliable.
         if (string.IsNullOrWhiteSpace(filePath))
         {
             return false;
         }
-        var path = filePath!.ToLowerInvariant();
-        if (ExcludePath.Any(exclude => path.Contains(exclude)))
+        var path = filePath!.Replace('\\', '/');
+        if (ExcludePath.Any(exclude => path.Contains(exclude, StringComparison.OrdinalIgnoreCase)))
         {
             return false;
         }
-        if (IncludePath.Any(include => path.Contains(include)))
+        if (IncludePath.Any(include => path.Contains(include, StringComparison.OrdinalIgnoreCase)))
         {
             return true;
         }
@@ -151,10 +152,10 @@ internal static class DependsCollector
 
     private static readonly IReadOnlyCollection<string> ExcludePath =
     [
-        "\\.nuget\\",
-        "\\packages\\",
-        "\\packs\\",
+        "/.nuget/",
+        "/packages/",
+        "/packs/",
     ];
 
-    private static readonly IReadOnlyCollection<string> IncludePath = ["\\bin\\", "\\obj\\"];
+    private static readonly IReadOnlyCollection<string> IncludePath = ["/bin/", "/obj/"];
 }
