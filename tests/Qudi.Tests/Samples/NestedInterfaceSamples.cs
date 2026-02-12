@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Qudi;
 
 namespace Qudi.Tests;
@@ -55,4 +56,16 @@ public sealed partial class NestedInterfaceDecorator(NestedInterfaceService inne
         IBuz
 {
     public string Foo() => $"decorated {innerService.Foo()}";
+}
+
+[QudiDecorator(UseIntercept = true)]
+public sealed partial class NestedInterfaceIntercept(NestedInterfaceService innerService) : IFoo
+{
+    public List<string> Calls { get; } = [];
+
+    public IEnumerable<bool> Intercept(string methodName, object?[] parameters)
+    {
+        Calls.Add(methodName);
+        yield return true; // proceed
+    }
 }

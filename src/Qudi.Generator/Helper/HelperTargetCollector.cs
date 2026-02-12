@@ -93,6 +93,22 @@ internal static class HelperTargetCollector
             };
         }
 
+        if (useIntercept)
+        {
+            // TODO: If multiple interfaces are specified, it is desirable to issue a warning with the analyzer.
+            if (asTypes.Length > 0)
+            {
+                interfaceList = ImmutableArray.Create(asTypes[0]);
+            }
+            else
+            {
+                var first = interfaces.FirstOrDefault();
+                interfaceList = first is null
+                    ? ImmutableArray<INamedTypeSymbol>.Empty
+                    : ImmutableArray.Create(first);
+            }
+        }
+
         var prunedInterfaces = FilterDerivedInterfaces(interfaceList);
         var interfaceTargets = new List<HelperInterfaceTarget>();
         var implementingTargets = new List<HelperImplementingTarget>();
