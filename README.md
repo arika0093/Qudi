@@ -240,7 +240,7 @@ Then, when resolving the service, specify the key as follows:
 
 ```csharp
 // from service provider
-var serviceA = provider.GetRequiredServiceByKey<IService>("A");
+var serviceA = provider.GetRequiredKeyedService<IService>("A");
 // from constructor injection
 public class MyComponent([FromKeyedServices("A")] IService service);
 ```
