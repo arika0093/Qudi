@@ -317,7 +317,8 @@ public class SpecificGenericService<T> : ISpecificService<T> where T : ISpecific
 }
 ```
 
-and you can also register specialized implementations for specific types.
+and you can also register specialized implementations for specific types.  
+This allows you to provide a default generic implementation while also providing specialized implementations for specific types.
 
 ```csharp
 // components
@@ -332,6 +333,7 @@ public interface IComponentValidator<T> where T : IComponent
     bool Validate(T component);
 }
 
+// -----------
 // default(fallback) implementation
 [DITransient]
 public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
@@ -351,6 +353,45 @@ public class BatteryValidator : IComponentValidator<Battery>
 public class ScreenValidator : IComponentValidator<Screen>
 {
     public bool Validate(Screen component) { /* specific validation logic */ }
+}
+
+// -----------
+// usage
+public class ComponentValidator<T>(IComponentValidator<T> validator) where T : IComponent
+{
+    public bool Check(T component) => validator.Validate(component);
+}
+```
+
+If multiple registrations are made for the same type, you can resolve them all by using `IEnumerable<IComponentValidator<T>>` on the usage side.
+
+```csharp
+[DITransient]
+public class BatteryValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* specific validation logic */ }
+}
+
+[DITransient]
+public class BatteryAnotherValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* another validation logic */ }
+}
+
+// -----------
+// usage
+public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
+    where T : IComponent
+{
+    public bool Check(T component)
+    {
+        foreach (var validator in validators)
+        {
+            if (!validator.Validate(component))
+                return false;
+        }
+        return true;
+    }
 }
 ```
 
