@@ -4,6 +4,7 @@ using Qudi.Example.Worker;
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddQudiServices(conf =>
 {
+    conf.EnableVisualizationOutput();
     conf.SetCondition(builder.Environment.EnvironmentName);
 });
 builder.Services.AddHostedService<Worker>();

@@ -9,6 +9,21 @@ namespace Qudi.Tests;
 public sealed class QudiVisualizationTests
 {
     [Test]
+    public void WriteConsoleVisualizationOutput()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices(conf =>
+        {
+            conf.EnableVisualizationOutput(options => options.EnableConsoleOutput = true);
+        });
+
+        var provider = services.BuildServiceProvider();
+        var first = provider.GetRequiredService<IQudiAttributeSample>();
+        first.Value.ShouldBe("by-qudi-attribute");
+    }
+
+
+    [Test]
     public void WritesVisualizationJson()
     {
         var tempPath = Path.Combine(

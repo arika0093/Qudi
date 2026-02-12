@@ -4,7 +4,9 @@ using Qudi;
 var services = new ServiceCollection();
 
 // ✅️ register services marked with Qudi attributes (see below)
-services.AddQudiServices();
+services.AddQudiServices(conf => {
+    conf.EnableVisualizationOutput();
+});
 
 var provider = services.BuildServiceProvider();
 var pokemons = provider.GetServices<IPokemon>();

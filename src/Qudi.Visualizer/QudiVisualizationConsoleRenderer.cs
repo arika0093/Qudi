@@ -4,9 +4,9 @@ using Spectre.Console;
 
 namespace Qudi.Visualizer;
 
-internal static class QudiVisualizationConsoleRenderer
+internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 {
-    public static void Render(QudiVisualizationReport report, IReadOnlyList<string> warnings)
+    public void Render(QudiVisualizationReport report, IReadOnlyList<string> warnings)
     {
         AnsiConsole.MarkupLine("[bold]Qudi Visualization[/]");
 
@@ -20,7 +20,7 @@ internal static class QudiVisualizationConsoleRenderer
         RenderWarnings(warnings);
     }
 
-    private static void RenderSummary(QudiVisualizationSummary summary)
+    private void RenderSummary(QudiVisualizationSummary summary)
     {
         var table = new Table().AddColumn("Metric").AddColumn("Count");
         table.AddRow("Registrations", summary.RegistrationCount.ToString());
@@ -31,7 +31,7 @@ internal static class QudiVisualizationConsoleRenderer
         AnsiConsole.Write(table);
     }
 
-    private static void RenderRegistrations(IReadOnlyList<QudiRegistrationTableRow> rows)
+    private void RenderRegistrations(IReadOnlyList<QudiRegistrationTableRow> rows)
     {
         var table = new Table().AddColumn("Service").AddColumn("Impl").AddColumn("Lifetime")
             .AddColumn("Key").AddColumn("When").AddColumn("Order").AddColumn("Decorator");
@@ -52,7 +52,7 @@ internal static class QudiVisualizationConsoleRenderer
         AnsiConsole.Write(table);
     }
 
-    private static void RenderMissing(IReadOnlyList<QudiMissingRegistration> missing)
+    private void RenderMissing(IReadOnlyList<QudiMissingRegistration> missing)
     {
         if (missing.Count == 0)
         {
@@ -68,7 +68,7 @@ internal static class QudiVisualizationConsoleRenderer
         AnsiConsole.Write(table);
     }
 
-    private static void RenderCycles(IReadOnlyList<QudiCycle> cycles)
+    private void RenderCycles(IReadOnlyList<QudiCycle> cycles)
     {
         if (cycles.Count == 0)
         {
@@ -84,7 +84,7 @@ internal static class QudiVisualizationConsoleRenderer
         AnsiConsole.Write(table);
     }
 
-    private static void RenderMultiples(IReadOnlyList<QudiMultipleRegistration> multiples)
+    private void RenderMultiples(IReadOnlyList<QudiMultipleRegistration> multiples)
     {
         if (multiples.Count == 0)
         {
@@ -104,7 +104,7 @@ internal static class QudiVisualizationConsoleRenderer
         AnsiConsole.Write(table);
     }
 
-    private static void RenderLifetimeWarnings(IReadOnlyList<QudiLifetimeWarning> warnings)
+    private void RenderLifetimeWarnings(IReadOnlyList<QudiLifetimeWarning> warnings)
     {
         if (warnings.Count == 0)
         {
@@ -125,7 +125,7 @@ internal static class QudiVisualizationConsoleRenderer
         AnsiConsole.Write(table);
     }
 
-    private static void RenderTraces(IReadOnlyList<QudiTraceResult> traces)
+    private void RenderTraces(IReadOnlyList<QudiTraceResult> traces)
     {
         if (traces.Count == 0)
         {
@@ -144,7 +144,7 @@ internal static class QudiVisualizationConsoleRenderer
         }
     }
 
-    private static void AddTraceNode(IHasTreeNodes parent, QudiTraceNode node)
+    private void AddTraceNode(IHasTreeNodes parent, QudiTraceNode node)
     {
         var label = node.Label;
         if (node.IsMissing)
@@ -167,7 +167,7 @@ internal static class QudiVisualizationConsoleRenderer
         }
     }
 
-    private static void RenderWarnings(IReadOnlyList<string> warnings)
+    private void RenderWarnings(IReadOnlyList<string> warnings)
     {
         if (warnings.Count == 0)
         {
