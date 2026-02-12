@@ -57,6 +57,7 @@ internal static class HelperTargetCollector
         // TODO: There may be multiple attributes
         var attribute = context.Attributes[0];
         var asTypes = GetExplicitAsTypes(attribute);
+        var useIntercept = SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false;
 
         // typename is only class name without namespace, such as "MyService"
         // TODO: Support nested classes (classes within classes)
@@ -104,11 +105,13 @@ internal static class HelperTargetCollector
             typeName,
             typeNamespace,
             typeKeyword,
+            interfaceName,
             interfaceNamespace,
             interfaceHelperName,
             typeSymbol,
             iface,
-            isDecorator
+            isDecorator,
+            useIntercept
         );
         if (constructorTarget is not null)
         {
@@ -128,6 +131,7 @@ internal static class HelperTargetCollector
             DecoratorParameterName = decoratorParameterName,
             Members = new EquatableArray<HelperMember>(members),
             IsDecorator = isDecorator,
+            UseIntercept = useIntercept,
         };
         interfaceTargets.Add(target);
 
@@ -148,7 +152,7 @@ internal static class HelperTargetCollector
         var implementingTargets = targets.SelectMany(t => t.ImplementingTargets).ToImmutableArray();
 
         var mergedInterfaces = MergeInterfaceTargets(interfaceTargets);
-        var mergedImplementing = MergeImplementingTargets(implementingTargets);
+        var mergedImplementing = MergeImplementingTargets(implementingTargets, mergedInterfaces);
 
         return new HelperGenerationInput
         {
@@ -182,6 +186,7 @@ internal static class HelperTargetCollector
                     existing.DecoratorParameterName,
                     target.DecoratorParameterName
                 ),
+                UseIntercept = existing.UseIntercept || target.UseIntercept,
             };
         }
         return map.Values.ToImmutableArray();
@@ -207,7 +212,8 @@ internal static class HelperTargetCollector
     }
 
     private static ImmutableArray<HelperImplementingTarget> MergeImplementingTargets(
-        ImmutableArray<HelperImplementingTarget> targets
+        ImmutableArray<HelperImplementingTarget> targets,
+        ImmutableArray<HelperInterfaceTarget> interfaceTargets
     )
     {
         if (targets.IsDefaultOrEmpty)
@@ -215,20 +221,45 @@ internal static class HelperTargetCollector
             return ImmutableArray<HelperImplementingTarget>.Empty;
         }
 
+        var useInterceptByInterface = interfaceTargets.ToDictionary(
+            target => target.InterfaceName,
+            target => target.UseIntercept,
+            StringComparer.Ordinal
+        );
         var map = new Dictionary<string, HelperImplementingTarget>(StringComparer.Ordinal);
         foreach (var target in targets)
         {
+            var useIntercept = useInterceptByInterface.TryGetValue(target.InterfaceName, out var use)
+                ? use
+                : target.UseIntercept;
             var key = target.ImplementingTypeNamespace + "." + target.ImplementingTypeName;
             if (!map.TryGetValue(key, out var existing))
             {
-                map[key] = target;
+                map[key] = target with { UseIntercept = useIntercept };
                 continue;
             }
 
-            map[key] = existing with { IsDecorator = existing.IsDecorator || target.IsDecorator };
+            map[key] = existing with
+            {
+                IsDecorator = existing.IsDecorator || target.IsDecorator,
+                UseIntercept = existing.UseIntercept || useIntercept,
+            };
         }
 
         return map.Values.ToImmutableArray();
+    }
+
+    private static bool GetUseIntercept(AttributeData attribute)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key == "UseIntercept" && argument.Value.Value is bool flag)
+            {
+                return flag;
+            }
+        }
+
+        return false;
     }
 
     private static ImmutableArray<INamedTypeSymbol> GetExplicitAsTypes(AttributeData attribute)
@@ -374,11 +405,13 @@ internal static class HelperTargetCollector
         string typeName,
         string typeNamespace,
         string typeKeyword,
+        string interfaceName,
         string interfaceNamespace,
         string interfaceHelperName,
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol interfaceSymbol,
-        bool isDecorator
+        bool isDecorator,
+        bool useIntercept
     )
     {
         if (context.TargetNode is not ClassDeclarationSyntax)
@@ -432,11 +465,13 @@ internal static class HelperTargetCollector
             ImplementingTypeNamespace = typeNamespace,
             ImplementingTypeKeyword = typeKeyword,
             ConstructorAccessibility = accessibility,
+            InterfaceName = interfaceName,
             InterfaceNamespace = interfaceNamespace,
             InterfaceHelperName = interfaceHelperName,
             ConstructorParameters = new EquatableArray<HelperParameter>(constructorParameters),
             BaseParameterName = baseParameter.Name,
             IsDecorator = isDecorator,
+            UseIntercept = useIntercept,
         };
     }
 

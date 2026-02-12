@@ -12,6 +12,7 @@ internal sealed record HelperInterfaceTarget
     public required string DecoratorParameterName { get; init; }
     public required EquatableArray<HelperMember> Members { get; init; }
     public required bool IsDecorator { get; init; }
+    public required bool UseIntercept { get; init; }
 }
 
 internal sealed record HelperImplementingTarget
@@ -22,11 +23,13 @@ internal sealed record HelperImplementingTarget
     // such as class, struct, record,
     public required string ImplementingTypeKeyword { get; init; }
     public required string ConstructorAccessibility { get; init; }
+    public required string InterfaceName { get; init; }
     public required string InterfaceNamespace { get; init; }
     public required string InterfaceHelperName { get; init; }
     public required EquatableArray<HelperParameter> ConstructorParameters { get; init; }
     public required string BaseParameterName { get; init; }
     public required bool IsDecorator { get; init; }
+    public required bool UseIntercept { get; init; }
 }
 
 internal sealed record HelperGenerationInput

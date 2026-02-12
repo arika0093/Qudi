@@ -26,7 +26,7 @@ public sealed partial class HelperOnlyDecorator(
     HelperLogger logger
 ) : IHelperOnlyService
 {
-    public string Echo(string value) => $"{logger.Prefix}:{Base.Echo(value)}";
+    public string Echo(string value) => $"{logger.Prefix}:{innerService.Echo(value)}";
 }
 
 public interface IInterceptService
@@ -48,7 +48,7 @@ public sealed class InterceptState
     public void Add(string value) => Entries.Add(value);
 }
 
-[QudiDecorator]
+[QudiDecorator(UseIntercept = true)]
 public sealed partial class InterceptDecorator(IInterceptService innerService, InterceptState state)
     : IInterceptService
 {
