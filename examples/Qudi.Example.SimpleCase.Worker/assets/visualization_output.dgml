@@ -1,0 +1,24 @@
+<DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml">
+  <Nodes>
+    <Node Id="Microsoft.Extensions.Logging.ILogger&lt;Qudi.Example.Worker.NotifyToLogger&gt;" Label="Microsoft.Extensions.Logging.ILogger&lt;Qudi.Example.Worker.NotifyToLogger&gt;" Category="missing" />
+    <Node Id="Qudi.Example.Core.Altaria" Label="Qudi.Example.Core.Altaria" Category="implementation" />
+    <Node Id="Qudi.Example.Core.Garchomp" Label="Qudi.Example.Core.Garchomp" Category="implementation" />
+    <Node Id="Qudi.Example.Core.INotificationService" Label="Qudi.Example.Core.INotificationService" Category="service" />
+    <Node Id="Qudi.Example.Core.IPokemon" Label="Qudi.Example.Core.IPokemon" Category="service" />
+    <Node Id="Qudi.Example.Core.NotifyPokemonInfoService" Label="Qudi.Example.Core.NotifyPokemonInfoService" Category="implementation" />
+    <Node Id="Qudi.Example.Worker.NotifyDecorator" Label="Qudi.Example.Worker.NotifyDecorator" Category="implementation" />
+    <Node Id="Qudi.Example.Worker.NotifyToLogger" Label="Qudi.Example.Worker.NotifyToLogger" Category="implementation" />
+    <Node Id="System.Collections.Generic.IEnumerable&lt;Qudi.Example.Core.IPokemon&gt;" Label="System.Collections.Generic.IEnumerable&lt;Qudi.Example.Core.IPokemon&gt;" Category="missing" />
+  </Nodes>
+  <Links>
+    <Link Source="Qudi.Example.Core.INotificationService" Target="Qudi.Example.Worker.NotifyToLogger" Category="registration" />
+    <Link Source="Qudi.Example.Worker.NotifyToLogger" Target="Microsoft.Extensions.Logging.ILogger&lt;Qudi.Example.Worker.NotifyToLogger&gt;" Category="dependency" />
+    <Link Source="Qudi.Example.Core.NotifyPokemonInfoService" Target="Qudi.Example.Core.NotifyPokemonInfoService" Category="registration" />
+    <Link Source="Qudi.Example.Core.NotifyPokemonInfoService" Target="System.Collections.Generic.IEnumerable&lt;Qudi.Example.Core.IPokemon&gt;" Category="dependency" />
+    <Link Source="Qudi.Example.Core.NotifyPokemonInfoService" Target="Qudi.Example.Core.INotificationService" Category="dependency" />
+    <Link Source="Qudi.Example.Core.IPokemon" Target="Qudi.Example.Core.Altaria" Category="registration" />
+    <Link Source="Qudi.Example.Core.IPokemon" Target="Qudi.Example.Core.Garchomp" Category="registration" />
+    <Link Source="Qudi.Example.Core.INotificationService" Target="Qudi.Example.Worker.NotifyDecorator" Category="registration" />
+    <Link Source="Qudi.Example.Worker.NotifyDecorator" Target="Qudi.Example.Core.INotificationService" Category="dependency" />
+  </Links>
+</DirectedGraph>
