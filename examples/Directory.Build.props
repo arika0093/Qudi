@@ -13,5 +13,6 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\src\Qudi\Qudi.csproj" />
+    <ProjectReference Include="..\..\src\Qudi.Visualizer\Qudi.Visualizer.csproj" />
   </ItemGroup>
 </Project>

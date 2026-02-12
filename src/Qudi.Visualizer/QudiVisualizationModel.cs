@@ -61,6 +61,15 @@ public sealed record QudiVisualizationReport(
     IReadOnlyList<QudiTraceResult> Traces
 );
 
+public sealed record QudiVisualizationNode(string Id, string Label, string Kind);
+
+public sealed record QudiVisualizationEdge(string From, string To, string Kind);
+
+public sealed record QudiVisualizationGraph(
+    IReadOnlyList<QudiVisualizationNode> Nodes,
+    IReadOnlyList<QudiVisualizationEdge> Edges
+);
+
 internal sealed record VisualizationContext(
     QudiConfiguration Configuration,
     IReadOnlyList<RegistrationView> Applicable,

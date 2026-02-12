@@ -226,7 +226,8 @@ internal static class QudiVisualizationAnalyzer
 
             foreach (var required in registration.Registration.RequiredTypes.Distinct())
             {
-                foreach (var target in ResolveImplementationCandidates(context, required))
+                var candidates = ResolveImplementationCandidates(context, required);
+                foreach (var target in candidates)
                 {
                     targets.Add(target.Registration.Type);
                 }
@@ -387,7 +388,7 @@ internal static class QudiVisualizationAnalyzer
         return [];
     }
 
-    private static bool IsApplicable(TypeRegistrationInfo registration, IReadOnlyCollection<string> conditions)
+    internal static bool IsApplicable(TypeRegistrationInfo registration, IReadOnlyCollection<string> conditions)
     {
         if (registration.When.Count == 0)
         {
