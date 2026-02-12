@@ -14,8 +14,8 @@ public sealed class GenericRegistrationTests
 
         var provider = services.BuildServiceProvider();
 
-        var repo = provider.GetRequiredService<IGenericRepository<int>>();
-        repo.ValueType.ShouldBe(typeof(int));
+        var repo = provider.GetRequiredService<IGenericRepository<string>>();
+        repo.ValueType.ShouldBe(typeof(string));
 
         var concrete = provider.GetRequiredService<GenericRepository<string>>();
         concrete.ValueType.ShouldBe(typeof(string));

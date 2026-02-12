@@ -49,9 +49,11 @@ public static class QudiAddServiceToContainer
             throw new ArgumentNullException(nameof(configuration));
         }
 
+        // TODO: The logic here needs to be clearly refactored.
         var applicable = types
             .Where(t => ShouldRegister(t, configuration.Conditions))
-            .OrderBy(t => t.Order)
+            .OrderBy(t => IsOpenGenericRegistration(t) ? 0 : 1)
+            .ThenBy(t => t.Order)
             .ToList();
 
         var registrations = applicable.Where(t => !t.MarkAsDecorator).ToList();
@@ -81,6 +83,16 @@ public static class QudiAddServiceToContainer
         }
 
         return registration.When.Any(r => conditions.Contains(r, StringComparer.OrdinalIgnoreCase));
+    }
+
+    private static bool IsOpenGenericRegistration(TypeRegistrationInfo registration)
+    {
+        if (registration.Type.IsGenericTypeDefinition)
+        {
+            return true;
+        }
+
+        return registration.AsTypes.Any(t => t.IsGenericTypeDefinition);
     }
 
     private static void RegisterService(

@@ -100,7 +100,7 @@ internal static class RegistrationAttrParser
                 .Select(p => p.Type)
                 .Distinct(SymbolEqualityComparer.Default)
                 .Cast<ITypeSymbol>()
-                .Where(t => t is INamedTypeSymbol || !t.ContainsTypeParameters)
+                .Where(t => !ContainsTypeParameters(t))
                 .Select(t => CodeGenerationUtility.ToTypeOfLiteral(t))
         );
         // default AsTypes to all implemented interfaces if not specified
@@ -144,5 +144,25 @@ internal static class RegistrationAttrParser
             typeSymbol.ContainingNamespace == null
             || typeSymbol.ContainingNamespace.IsGlobalNamespace;
         return (!isGlobal && ns != null) ? ns : string.Empty;
+    }
+
+    private static bool ContainsTypeParameters(ITypeSymbol symbol)
+    {
+        if (symbol is ITypeParameterSymbol)
+        {
+            return true;
+        }
+
+        if (symbol is IArrayTypeSymbol arrayType)
+        {
+            return ContainsTypeParameters(arrayType.ElementType);
+        }
+
+        if (symbol is INamedTypeSymbol namedType && namedType.IsGenericType)
+        {
+            return namedType.TypeArguments.Any(ContainsTypeParameters);
+        }
+
+        return false;
     }
 }
