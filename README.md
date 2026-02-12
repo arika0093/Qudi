@@ -715,7 +715,7 @@ You can add processing that uses the collected registration information by using
 ```csharp
 services.AddQudiServices(conf => {
     conf
-        // customize action for all registrations
+        // customize action for registrations
         .AddService(config => {
             var registrations = config.Registrations;
             foreach (var reg in registrations)
@@ -725,6 +725,7 @@ services.AddQudiServices(conf => {
             }
         })
         // customize action only work on specific namespace
+        // It is pre-filtered before execution and applies root-side filters as well.
         .AddFilter(reg => {
             return reg.Namespace.Contains("MyApp.Services");
         })
@@ -733,7 +734,7 @@ services.AddQudiServices(conf => {
 });
 ```
 
-You can also refer to the collected information only and register it manually to the DI container.
+You can also refer to the collected information only.
 
 ```csharp
 using Qudi.Generated;
