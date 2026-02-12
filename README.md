@@ -630,7 +630,7 @@ The generated code creates a helper interface and a base implementation class th
 
 ### Visualize Registration
 #### Overview
-As described in the [Architecture](#architecture) section, Qudi collects registration information and generates code.
+Qudi collects registration information and generates code.
 Therefore, it is possible to visualize the registration status and dependencies based on the collected information.
 
 When visualization is needed, add the package reference as follows in your project file.
