@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Spectre.Console;
 
 namespace Qudi.Visualizer;
@@ -8,186 +9,405 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 {
     public void Render(QudiVisualizationReport report, IReadOnlyList<string> warnings)
     {
-        AnsiConsole.MarkupLine("[bold]Qudi Visualization[/]");
+        // Header with logo
+        var rule = new Rule("[bold cyan]🎯 Qudi Dependency Injection Visualization[/]")
+        {
+            Justification = Justify.Center
+        };
+        AnsiConsole.Write(rule);
+        AnsiConsole.WriteLine();
 
-        RenderSummary(report.Summary);
-        RenderRegistrations(report.Registrations);
-        RenderMissing(report.MissingRegistrations);
-        RenderCycles(report.Cycles);
-        RenderMultiples(report.MultipleRegistrations);
-        RenderLifetimeWarnings(report.LifetimeWarnings);
-        RenderTraces(report.Traces);
-        RenderWarnings(warnings);
+        // Summary metrics
+        AnsiConsole.Write(CreateSummaryPanel(report.Summary));
+        AnsiConsole.WriteLine();
+
+        // Registrations table
+        AnsiConsole.Write(CreateRegistrationsPanel(report.Registrations));
+        AnsiConsole.WriteLine();
+
+        // Create bottom layout for Issues and Multiples side-by-side
+        var bottomLayout = new Layout("Bottom")
+            .SplitColumns(
+                new Layout("Issues"),
+                new Layout("Multiples")
+            );
+        
+        bottomLayout["Issues"].Update(CreateIssuesPanel(
+            report.MissingRegistrations, 
+            report.Cycles, 
+            report.LifetimeWarnings
+        ));
+        
+        bottomLayout["Multiples"].Update(CreateMultiplesPanel(report.MultipleRegistrations));
+        
+        AnsiConsole.Write(bottomLayout);
+        AnsiConsole.WriteLine();
+
+        // Footer: Traces and Warnings
+        if (report.Traces.Count > 0 || warnings.Count > 0)
+        {
+            var footerLayout = new Layout("Footer")
+                .SplitColumns(
+                    new Layout("Traces").Ratio(2),
+                    new Layout("Warnings").Ratio(1)
+                );
+            
+            footerLayout["Traces"].Update(CreateTracesPanel(report.Traces));
+            footerLayout["Warnings"].Update(CreateWarningsPanel(warnings));
+            
+            AnsiConsole.Write(footerLayout);
+        }
     }
 
-    private void RenderSummary(QudiVisualizationSummary summary)
+    private Panel CreateSummaryPanel(QudiVisualizationSummary summary)
     {
-        var table = new Table().AddColumn("Metric").AddColumn("Count");
-        table.AddRow("Registrations", summary.RegistrationCount.ToString());
-        table.AddRow("Missing", summary.MissingCount.ToString());
-        table.AddRow("Cycles", summary.CycleCount.ToString());
-        table.AddRow("Multiple", summary.MultipleRegistrationCount.ToString());
-        table.AddRow("Lifetime warnings", summary.LifetimeWarningCount.ToString());
-        AnsiConsole.Write(table);
+        var grid = new Grid()
+            .AddColumn(new GridColumn().PadRight(4))
+            .AddColumn(new GridColumn().PadRight(4))
+            .AddColumn(new GridColumn().PadRight(4))
+            .AddColumn(new GridColumn().PadRight(4))
+            .AddColumn(new GridColumn().PadRight(4));
+
+        // Row 1: Labels
+        grid.AddRow(
+            new Markup("[bold yellow]📊 Registrations[/]"),
+            new Markup("[bold red]❌ Missing[/]"),
+            new Markup("[bold magenta]🔄 Cycles[/]"),
+            new Markup("[bold cyan]⚡ Multiple[/]"),
+            new Markup("[bold orange1]⚠️  Lifetime[/]")
+        );
+
+        // Row 2: Values with color coding
+        grid.AddRow(
+            new Markup($"[bold green]{summary.RegistrationCount}[/]"),
+            new Markup(summary.MissingCount > 0 
+                ? $"[bold red]{summary.MissingCount}[/]" 
+                : $"[dim]{summary.MissingCount}[/]"),
+            new Markup(summary.CycleCount > 0 
+                ? $"[bold red]{summary.CycleCount}[/]" 
+                : $"[dim]{summary.CycleCount}[/]"),
+            new Markup(summary.MultipleRegistrationCount > 0 
+                ? $"[bold cyan]{summary.MultipleRegistrationCount}[/]" 
+                : $"[dim]{summary.MultipleRegistrationCount}[/]"),
+            new Markup(summary.LifetimeWarningCount > 0 
+                ? $"[bold orange1]{summary.LifetimeWarningCount}[/]" 
+                : $"[dim]{summary.LifetimeWarningCount}[/]")
+        );
+
+        return new Panel(grid)
+        {
+            Header = new PanelHeader("[bold]📈 Summary Metrics[/]", Justify.Center),
+            Border = BoxBorder.Double,
+            BorderStyle = new Style(Color.Cyan1),
+            Expand = true
+        };
     }
 
-    private void RenderRegistrations(IReadOnlyList<QudiRegistrationTableRow> rows)
+    private Panel CreateRegistrationsPanel(IReadOnlyList<QudiRegistrationTableRow> rows)
     {
         var table = new Table()
-            .AddColumn("Service")
-            .AddColumn("Impl")
-            .AddColumn("Lifetime")
-            .AddColumn("Key")
-            .AddColumn("When")
-            .AddColumn("Order")
-            .AddColumn("Decorator");
+            .Border(TableBorder.Rounded)
+            .BorderColor(Color.Green)
+            .Expand()
+            .AddColumn(new TableColumn("[bold cyan]Service[/]"))
+            .AddColumn(new TableColumn("[bold green]Implementation[/]"))
+            .AddColumn(new TableColumn("[bold yellow]Life[/]").Centered())
+            .AddColumn(new TableColumn("[bold blue]Condition[/]"))
+            .AddColumn(new TableColumn("[bold red]Dec[/]").Centered());
 
         foreach (var row in rows)
         {
+            var lifetimeColor = row.Lifetime switch
+            {
+                "Singleton" => "green",
+                "Scoped" => "yellow",
+                "Transient" => "cyan",
+                _ => "white"
+            };
+
+            var lifetimeIcon = row.Lifetime switch
+            {
+                "Singleton" => "🔒",
+                "Scoped" => "📦",
+                "Transient" => "⚡",
+                _ => "?"
+            };
+
+            // Combine condition info - keep it concise
+            var condition = "";
+            if (row.When == "*")
+            {
+                condition = "[dim]*[/]";
+            }
+            else
+            {
+                // Shorten condition names
+                var whenText = row.When.Replace("Development", "Dev").Replace("Production", "Prod");
+                condition = $"[blue]{whenText}[/]";
+            }
+            
+            if (!string.IsNullOrEmpty(row.Key) && row.Key != "-")
+            {
+                condition += $" [magenta]{row.Key}[/]";
+            }
+            
+            if (row.Order != 0)
+            {
+                condition += $" [orange1]#{row.Order}[/]";
+            }
+
             table.AddRow(
-                Markup.Escape(row.Service),
-                Markup.Escape(row.Implementation),
-                Markup.Escape(row.Lifetime),
-                Markup.Escape(row.Key),
-                Markup.Escape(row.When),
-                row.Order.ToString(),
-                row.Decorator ? "Yes" : "No"
+                $"[cyan]{Markup.Escape(row.Service)}[/]",
+                $"[green]{Markup.Escape(row.Implementation)}[/]",
+                $"[{lifetimeColor}]{lifetimeIcon}[/]",
+                condition,
+                row.Decorator ? "[bold red]✓[/]" : "[dim]✗[/]"
             );
         }
 
-        AnsiConsole.Write(table);
+        return new Panel(table)
+        {
+            Header = new PanelHeader($"[bold]🔧 Service Registrations ({rows.Count})[/]", Justify.Left),
+            Border = BoxBorder.Rounded,
+            BorderStyle = new Style(Color.Green),
+            Expand = true
+        };
     }
 
-    private void RenderMissing(IReadOnlyList<QudiMissingRegistration> missing)
+    private Panel CreateIssuesPanel(
+        IReadOnlyList<QudiMissingRegistration> missing,
+        IReadOnlyList<QudiCycle> cycles,
+        IReadOnlyList<QudiLifetimeWarning> lifetimeWarnings)
     {
-        if (missing.Count == 0)
+        var totalIssues = missing.Count + cycles.Count + lifetimeWarnings.Count;
+        
+        if (totalIssues == 0)
         {
-            return;
+            return new Panel(new Markup("[bold green]✅ No issues detected![/]"))
+            {
+                Header = new PanelHeader("[bold]🛡️  Issues[/]", Justify.Left),
+                Border = BoxBorder.Rounded,
+                BorderStyle = new Style(Color.Green),
+                Expand = true
+            };
         }
 
-        AnsiConsole.MarkupLine("[bold]Missing registrations[/]");
-        var table = new Table().AddColumn("Required").AddColumn("Requested by");
-        foreach (var item in missing)
+        var grid = new Grid().AddColumn();
+
+        if (missing.Count > 0)
         {
-            table.AddRow(Markup.Escape(item.RequiredType), Markup.Escape(item.RequestedBy));
+            var missingTable = new Table()
+                .Border(TableBorder.Simple)
+                .BorderColor(Color.Red)
+                .AddColumn(new TableColumn("[bold red]Required[/]"))
+                .AddColumn(new TableColumn("[bold red]Requested by[/]"));
+            
+            foreach (var item in missing)
+            {
+                missingTable.AddRow(
+                    $"[red]{Markup.Escape(item.RequiredType)}[/]",
+                    $"[red]{Markup.Escape(item.RequestedBy)}[/]"
+                );
+            }
+            grid.AddRow(new Panel(missingTable)
+            {
+                Header = new PanelHeader($"[bold red]❌ Missing ({missing.Count})[/]"),
+                Border = BoxBorder.None
+            });
         }
-        AnsiConsole.Write(table);
+
+        if (cycles.Count > 0)
+        {
+            var cycleTable = new Table()
+                .Border(TableBorder.Simple)
+                .BorderColor(Color.Magenta1)
+                .AddColumn(new TableColumn("[bold magenta]Cycle Path[/]"));
+            
+            foreach (var cycle in cycles)
+            {
+                cycleTable.AddRow($"[magenta]{Markup.Escape(string.Join(" → ", cycle.Path))}[/]");
+            }
+            grid.AddRow(new Panel(cycleTable)
+            {
+                Header = new PanelHeader($"[bold magenta]🔄 Cycles ({cycles.Count})[/]"),
+                Border = BoxBorder.None
+            });
+        }
+
+        if (lifetimeWarnings.Count > 0)
+        {
+            var warningTable = new Table()
+                .Border(TableBorder.Simple)
+                .BorderColor(Color.Orange1)
+                .AddColumn(new TableColumn("[bold orange1]Service[/]"))
+                .AddColumn(new TableColumn("[bold orange1]From → To[/]"))
+                .AddColumn(new TableColumn("[bold orange1]Message[/]"));
+            
+            foreach (var item in lifetimeWarnings)
+            {
+                warningTable.AddRow(
+                    $"[orange1]{Markup.Escape(item.Service)}[/]",
+                    $"[orange1]{Markup.Escape(item.From)} → {Markup.Escape(item.To)}[/]",
+                    $"[orange1]{Markup.Escape(item.Message)}[/]"
+                );
+            }
+            grid.AddRow(new Panel(warningTable)
+            {
+                Header = new PanelHeader($"[bold orange1]⚠️  Lifetime Warnings ({lifetimeWarnings.Count})[/]"),
+                Border = BoxBorder.None
+            });
+        }
+
+        var borderColor = missing.Count > 0 || cycles.Count > 0 ? Color.Red : Color.Orange1;
+        return new Panel(grid)
+        {
+            Header = new PanelHeader($"[bold]🛡️  Issues ({totalIssues})[/]", Justify.Left),
+            Border = BoxBorder.Rounded,
+            BorderStyle = new Style(borderColor),
+            Expand = true
+        };
     }
 
-    private void RenderCycles(IReadOnlyList<QudiCycle> cycles)
-    {
-        if (cycles.Count == 0)
-        {
-            return;
-        }
-
-        AnsiConsole.MarkupLine("[bold]Cycles[/]");
-        var table = new Table().AddColumn("Path");
-        foreach (var cycle in cycles)
-        {
-            table.AddRow(Markup.Escape(string.Join(" -> ", cycle.Path)));
-        }
-        AnsiConsole.Write(table);
-    }
-
-    private void RenderMultiples(IReadOnlyList<QudiMultipleRegistration> multiples)
+    private Panel CreateMultiplesPanel(IReadOnlyList<QudiMultipleRegistration> multiples)
     {
         if (multiples.Count == 0)
         {
-            return;
+            return new Panel(new Markup("[dim]No multiple registrations[/]"))
+            {
+                Header = new PanelHeader("[bold]⚡ Multiple Registrations[/]", Justify.Left),
+                Border = BoxBorder.Rounded,
+                BorderStyle = new Style(Color.Grey),
+                Expand = true
+            };
         }
 
-        AnsiConsole.MarkupLine("[bold]Multiple registrations[/]");
-        var table = new Table().AddColumn("Service").AddColumn("Key").AddColumn("Count");
+        var table = new Table()
+            .Border(TableBorder.Rounded)
+            .BorderColor(Color.Cyan1)
+            .AddColumn(new TableColumn("[bold cyan]Service[/]"))
+            .AddColumn(new TableColumn("[bold magenta]Key[/]").Centered())
+            .AddColumn(new TableColumn("[bold yellow]Count[/]").RightAligned());
+        
         foreach (var item in multiples)
         {
             table.AddRow(
-                Markup.Escape(item.Service),
-                Markup.Escape(item.Key),
-                item.Count.ToString()
+                $"[cyan]{Markup.Escape(item.Service)}[/]",
+                string.IsNullOrEmpty(item.Key) ? "[dim]-[/]" : $"[magenta]{Markup.Escape(item.Key)}[/]",
+                $"[bold yellow]{item.Count}[/]"
             );
         }
-        AnsiConsole.Write(table);
+
+        return new Panel(table)
+        {
+            Header = new PanelHeader($"[bold]⚡ Multiple Registrations ({multiples.Count})[/]", Justify.Left),
+            Border = BoxBorder.Rounded,
+            BorderStyle = new Style(Color.Cyan1),
+            Expand = true
+        };
     }
 
-    private void RenderLifetimeWarnings(IReadOnlyList<QudiLifetimeWarning> warnings)
-    {
-        if (warnings.Count == 0)
-        {
-            return;
-        }
-
-        AnsiConsole.MarkupLine("[bold]Lifetime warnings[/]");
-        var table = new Table()
-            .AddColumn("Service")
-            .AddColumn("From")
-            .AddColumn("To")
-            .AddColumn("Message");
-        foreach (var item in warnings)
-        {
-            table.AddRow(
-                Markup.Escape(item.Service),
-                Markup.Escape(item.From),
-                Markup.Escape(item.To),
-                Markup.Escape(item.Message)
-            );
-        }
-        AnsiConsole.Write(table);
-    }
-
-    private void RenderTraces(IReadOnlyList<QudiTraceResult> traces)
+    private Panel CreateTracesPanel(IReadOnlyList<QudiTraceResult> traces)
     {
         if (traces.Count == 0)
         {
-            return;
+            return new Panel(new Markup("[dim]No traces[/]"))
+            {
+                Header = new PanelHeader("[bold]🔍 Resolution Traces[/]", Justify.Left),
+                Border = BoxBorder.Rounded,
+                BorderStyle = new Style(Color.Grey),
+                Expand = true
+            };
         }
 
-        AnsiConsole.MarkupLine("[bold]Resolution traces[/]");
+        var grid = new Grid().AddColumn();
         foreach (var trace in traces)
         {
-            var root = new Tree(Markup.Escape(trace.Service));
+            var root = new Tree($"[bold green]{Markup.Escape(trace.Service)}[/]")
+            {
+                Style = new Style(Color.Green)
+            };
+            
             foreach (var node in trace.Roots)
             {
                 AddTraceNode(root, node);
             }
-            AnsiConsole.Write(root);
+            grid.AddRow(root);
         }
+
+        return new Panel(grid)
+        {
+            Header = new PanelHeader($"[bold]🔍 Resolution Traces ({traces.Count})[/]", Justify.Left),
+            Border = BoxBorder.Rounded,
+            BorderStyle = new Style(Color.Blue),
+            Expand = true
+        };
     }
 
     private void AddTraceNode(IHasTreeNodes parent, QudiTraceNode node)
     {
-        var label = node.Label;
+        var label = Markup.Escape(node.Label);
+        string color;
+        var suffix = "";
+
         if (node.IsMissing)
         {
-            label += " (missing)";
+            color = "red";
+            suffix = " ❌";
         }
-        if (node.IsCycle)
+        else if (node.IsCycle)
         {
-            label += " (cycle)";
+            color = "magenta";
+            suffix = " 🔄";
         }
-        if (!string.IsNullOrWhiteSpace(node.Detail))
+        else
         {
-            label += " - " + node.Detail;
+            color = "green";
         }
 
-        var child = parent.AddNode(Markup.Escape(label));
+        if (!string.IsNullOrWhiteSpace(node.Detail))
+        {
+            label += $" [dim]({Markup.Escape(node.Detail!)})[/]";
+        }
+
+        var child = parent.AddNode($"[{color}]{label}{suffix}[/]");
         foreach (var nested in node.Children)
         {
             AddTraceNode(child, nested);
         }
     }
 
-    private void RenderWarnings(IReadOnlyList<string> warnings)
+    private Panel CreateWarningsPanel(IReadOnlyList<string> warnings)
     {
         if (warnings.Count == 0)
         {
-            return;
+            return new Panel(new Markup("[dim]No warnings[/]"))
+            {
+                Header = new PanelHeader("[bold]⚠️  Visualizer Warnings[/]", Justify.Left),
+                Border = BoxBorder.Rounded,
+                BorderStyle = new Style(Color.Grey),
+                Expand = true
+            };
         }
 
-        AnsiConsole.MarkupLine("[bold]Visualizer warnings[/]");
+        var list = new List<Markup>();
         foreach (var warning in warnings)
         {
-            AnsiConsole.MarkupLine("- " + Markup.Escape(warning));
+            list.Add(new Markup($"[orange1]• {Markup.Escape(warning)}[/]"));
         }
+
+        var grid = new Grid().AddColumn();
+        foreach (var item in list)
+        {
+            grid.AddRow(item);
+        }
+
+        return new Panel(grid)
+        {
+            Header = new PanelHeader($"[bold]⚠️  Visualizer Warnings ({warnings.Count})[/]", Justify.Left),
+            Border = BoxBorder.Rounded,
+            BorderStyle = new Style(Color.Orange1),
+            Expand = true
+        };
     }
 }
+
