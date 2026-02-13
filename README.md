@@ -630,8 +630,8 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
-### Visualize Registration
-#### Overview
+## Visualize Registration
+### Overview
 Qudi collects registration information and generates code.
 Therefore, it is possible to visualize the registration status and dependencies based on the collected information.
 
@@ -644,27 +644,58 @@ When visualization is needed, add the package reference as follows in your proje
   </ItemGroup>
 </Project>
 ```
+
+Then, call `EnableVisualizationOutput`.
+
+```csharp
+services.AddQudiServices(conf => {
+#if DEBUG
+    conf.EnableVisualizationOutput();
+#endif
+});
+```
+
 > [!TIP]
 > Since visualization is mainly needed during development, it is recommended to enable it only for DEBUG builds.
 
-> [!NOTE]
-> Visualize registrations are detected only for interface types included in project dependencies.
-> This is a limitation of Qudi's scanning approach, but it should be sufficient for most cases.
-
-#### (TODO) Report Missing Registrations
+### Report Missing Registrations
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
 
 ```
 TODO
 ```
 
-#### (TODO) Generate Registration Diagram
+> [!NOTE]
+> Visualize registrations are detected only for interface types included in project dependencies.
+> This is a limitation of Qudi's scanning approach, but it should be sufficient for most cases.
+
+### Export Registration Diagram
 By adding the following call when calling `AddQudiServices`, a diagram showing the registration status will be generated.
 
 ```csharp
 services.AddQudiServices(conf => {
-    conf.EnableVisualizationOutput("qudi-registrations.svg");
+    conf.EnableVisualizationOutput(option => {
+        // Output the registration status of the entire project
+        option.AddOutput("assets/output.json");
+        option.AddOutput("assets/output.dot");
+        option.AddOutput("assets/output.mermaid");
+        // or output with `Export=true` to a specific folder
+        option.SetOutputDirectory("assets/exported", QudiVisualizationFormat.Mermaid);
+    });
 });
+```
+
+Currently, the following outputs are supported.
+* JSON: Contains detailed information about registrations and dependencies. Useful for debugging and custom visualization.
+* DOT: Can be visualized using Graphviz or similar tools. Useful for complex dependency graphs.
+* Mermaid: Can be visualized using Mermaid.js. Useful for quick visualization in Markdown or web pages.
+
+By default, the graph of all dependencies of the project is output. For projects other than small ones, it is obviously hard to see, so you can also output starting from a specific class.
+
+```csharp
+// specify on attribute side
+[DISingleton(Export = true)]
+public class YourClass : IYourService { /* ... */ }
 ```
 
 ## Customization
@@ -688,7 +719,9 @@ Are you a customization nerd? You can customize various registration settings us
     // Are you concerned about the order of registration? (default is 0, high value means later registration)
     Order = 0,
     // Set true if you want to register as a decorator
-    MarkAsDecorator = false
+    MarkAsDecorator = false,
+    // Export visualization data to a specific folder when visualization is enabled. (see Visualize Registration section)
+    Export = false
 )]
 public class YourClass : IYourService, IYourOtherService { /* ... */ }
 

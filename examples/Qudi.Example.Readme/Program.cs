@@ -1,40 +1,68 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Qudi;
+using Qudi.Examples;
+using Spectre.Console;
 
 var services = new ServiceCollection();
+
+// Add logging
+services.AddLogging(builder =>
+{
+    builder.AddConsole();
+    builder.SetMinimumLevel(LogLevel.Information);
+});
 
 // ✅️ register services marked with Qudi attributes (see below)
 services.AddQudiServices(conf =>
 {
-    conf.EnableVisualizationOutput();
+    conf.EnableVisualizationOutput(option => {
+        option.SetOutputDirectory("exported/", Qudi.Visualizer.QudiVisualizationFormat.Mermaid);
+    });
 });
 
 var provider = services.BuildServiceProvider();
-var pokemons = provider.GetServices<IPokemon>();
-foreach (var pokemon in pokemons)
+
+// Get all sample executors
+var executors = provider.GetServices<ISampleExecutor>().ToList();
+
+if (!executors.Any())
 {
-    pokemon.DisplayInfo();
+    AnsiConsole.MarkupLine("[red]No sample executors found![/]");
+    return;
 }
 
-// ------ Declare services ------
-public interface IPokemon
+// Display header
+AnsiConsole.Write(
+    new FigletText("Qudi Examples")
+        .Centered()
+        .Color(Color.Blue));
+
+// Create selection prompt
+var selection = AnsiConsole.Prompt(
+    new SelectionPrompt<ISampleExecutor>()
+        .Title("[green]Select a sample to run:[/]")
+        .PageSize(10)
+        .MoreChoicesText("[grey](Move up and down to reveal more samples)[/]")
+        .AddChoices(executors)
+        .UseConverter(executor => Markup.Escape($"{executor.Name} - {executor.Description}")));
+
+// Display separator
+AnsiConsole.WriteLine();
+AnsiConsole.Write(new Rule($"[yellow]{selection.Name}[/]").RuleStyle("grey").LeftJustified());
+AnsiConsole.WriteLine();
+
+// Execute the selected sample
+try
 {
-    string Name { get; }
-    IEnumerable<string> Types { get; }
-    public void DisplayInfo() =>
-        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+    selection.Execute();
+}
+catch (Exception ex)
+{
+    AnsiConsole.MarkupLine($"[red]Error executing sample: {ex.Message}[/]");
+    AnsiConsole.WriteException(ex);
 }
 
-[DISingleton] // ✅️ mark as singleton
-public class Altaria : IPokemon
-{
-    public string Name => "Altaria";
-    public IEnumerable<string> Types => ["Dragon", "Flying"];
-}
-
-[DITransient] // ✅️ mark as transient, too
-public class Abomasnow : IPokemon
-{
-    public string Name => "Abomasnow";
-    public IEnumerable<string> Types => ["Grass", "Ice"];
-}
+// Display footer
+AnsiConsole.WriteLine();
+AnsiConsole.Write(new Rule("[grey]End of sample[/]").RuleStyle("grey").LeftJustified());
