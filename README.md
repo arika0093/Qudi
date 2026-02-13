@@ -628,6 +628,9 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
+> [!IMPORTANT]
+> Due to implementation constraints (access to the common class via the `Base` property), this feature is only available for decorator classes that implement a single interface.
+
 ### Visualize Registration
 #### Overview
 Qudi collects registration information and generates code.
