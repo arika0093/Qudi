@@ -71,7 +71,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for interface nodes (薄い緑色背景)
+        // Add styles for interface nodes
         var interfaceNodes = graph
             .Nodes.Where(n => n.Kind == "interface" && n.IsConditionMatched && !n.IsExternal)
             .ToList();
@@ -89,7 +89,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for class nodes (薄い青色背景)
+        // Add styles for class nodes
         var classNodes = graph
             .Nodes.Where(n => n.Kind == "class" && n.IsConditionMatched && !n.IsExternal)
             .ToList();
@@ -107,7 +107,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for decorator nodes (紫系、文字色は黒)
+        // Add styles for decorator nodes
         var decoratorNodes = graph
             .Nodes.Where(n => n.Kind == "decorator" && n.IsConditionMatched && !n.IsExternal)
             .ToList();
@@ -125,7 +125,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for condition-unmatched interface nodes (線だけ緑、背景は淡いグレー)
+        // Add styles for condition-unmatched interface nodes
         var unmatchedInterfaceNodes = graph
             .Nodes.Where(n => n.Kind == "interface" && !n.IsConditionMatched)
             .ToList();
@@ -143,7 +143,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for condition-unmatched class nodes (線だけ青、背景は淡いグレー)
+        // Add styles for condition-unmatched class nodes 
         var unmatchedClassNodes = graph
             .Nodes.Where(n => n.Kind == "class" && !n.IsConditionMatched)
             .ToList();
@@ -161,7 +161,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for condition-unmatched decorator nodes (線だけ紫、背景は淡いグレー)
+        // Add styles for condition-unmatched decorator nodes 
         var unmatchedDecoratorNodes = graph
             .Nodes.Where(n => n.Kind == "decorator" && !n.IsConditionMatched)
             .ToList();
@@ -179,7 +179,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for external nodes (淡いオレンジベース)
+        // Add styles for external nodes 
         var externalNodes = graph.Nodes.Where(n => n.IsExternal).ToList();
         if (externalNodes.Count > 0)
         {

@@ -1,3 +1,4 @@
+```mermaid
 flowchart LR
     System_IServiceProvider["IServiceProvider"]
     Qudi_Examples_DecoratorPattern_DecoratorPatternExecutor["DecoratorPatternExecutor"]
@@ -6,3 +7,5 @@ flowchart LR
     class Qudi_Examples_DecoratorPattern_DecoratorPatternExecutor cls;
     classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;
     class System_IServiceProvider external;
+
+```

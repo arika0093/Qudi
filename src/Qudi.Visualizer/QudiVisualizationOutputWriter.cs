@@ -35,6 +35,16 @@ internal static class QudiVisualizationOutputWriter
                         MermaidOutputWriter.Generate(graph, options.GroupByNamespace)
                     );
                     break;
+                case QudiVisualizationFormat.Markdown:
+                    var mermaid = MermaidOutputWriter.Generate(
+                        graph,
+                        options.GroupByNamespace
+                    );
+                    File.WriteAllText(
+                        output.FilePath,
+                        $"```mermaid{Environment.NewLine}{mermaid}{Environment.NewLine}```"
+                    );
+                    break;
                 case QudiVisualizationFormat.Svg:
                     var warning = SvgOutputWriter.TryWrite(output.FilePath, graph);
                     if (!string.IsNullOrWhiteSpace(warning))

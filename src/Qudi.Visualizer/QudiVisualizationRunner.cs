@@ -122,6 +122,7 @@ internal static class QudiVisualizationRunner
             QudiVisualizationFormat.Json => "json",
             QudiVisualizationFormat.Dot => "dot",
             QudiVisualizationFormat.Mermaid => "mermaid",
+            QudiVisualizationFormat.Markdown => "md",
             QudiVisualizationFormat.Dgml => "dgml",
             QudiVisualizationFormat.Svg => "svg",
             _ => "txt",

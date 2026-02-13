@@ -10,6 +10,7 @@ public enum QudiVisualizationFormat
     Json,
     Dot,
     Mermaid,
+    Markdown,
     Dgml,
     Svg,
 }
@@ -130,10 +131,11 @@ public sealed class QudiVisualizationOptions
             ".json" => QudiVisualizationFormat.Json,
             ".dot" or ".gv" => QudiVisualizationFormat.Dot,
             ".mmd" or ".mermaid" => QudiVisualizationFormat.Mermaid,
+            ".md" => QudiVisualizationFormat.Markdown,
             ".dgml" => QudiVisualizationFormat.Dgml,
             ".svg" => QudiVisualizationFormat.Svg,
             _ => throw new InvalidOperationException(
-                "Unable to infer format from extension. Use .json/.dot/.mmd/.dgml/.svg or specify format explicitly."
+                "Unable to infer format from extension. Use .json/.dot/.mmd/.md/.dgml/.svg or specify format explicitly."
             ),
         };
     }

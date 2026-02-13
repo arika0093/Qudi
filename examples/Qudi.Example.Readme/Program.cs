@@ -17,7 +17,7 @@ services.AddLogging(builder =>
 services.AddQudiServices(conf =>
 {
     conf.EnableVisualizationOutput(option => {
-        option.SetOutputDirectory("exported/", Qudi.Visualizer.QudiVisualizationFormat.Mermaid);
+        option.SetOutputDirectory("exported/", Qudi.Visualizer.QudiVisualizationFormat.Markdown);
     });
 });
 

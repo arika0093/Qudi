@@ -36,7 +36,6 @@ internal static class DotOutputWriter
     {
         if (!node.IsConditionMatched)
         {
-            // 無効化時: 線部分だけ色反映、背景は淡いグレー
             return node.Kind switch
             {
                 "interface" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#4caf50\"",
