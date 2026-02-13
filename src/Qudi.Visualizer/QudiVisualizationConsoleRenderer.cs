@@ -103,7 +103,9 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             .AddColumn(new TableColumn("[bold cyan]Service[/]"))
             .AddColumn(new TableColumn("[bold green]Implementation[/]"))
             .AddColumn(new TableColumn("[bold yellow]Life[/]").Centered())
-            .AddColumn(new TableColumn("[bold blue]Condition[/]"));
+            .AddColumn(new TableColumn("[bold blue]Condition|Key[/]"))
+            .AddColumn(new TableColumn("[bold orange1]Order[/]"))
+            ;
 
         foreach (var row in rows)
         {
@@ -133,10 +135,12 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 condition += $" [magenta]{row.Key}[/]";
             }
             
-            if (row.Order != 0)
+            var orderText = row.Order switch
             {
-                condition += $" [orange1]#{row.Order}[/]";
-            }
+                < 0 => $"[red]{row.Order}[/]",
+                0 => $"[dim]*[/]",
+                > 0 => $"[yellow]{row.Order}[/]",
+            };
 
             var serviceColor = row.Service == row.Implementation ? "green" : "cyan";
             var implColor = row.Decorator ? "red" : "green";
@@ -145,7 +149,8 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",
                 $"[{implColor}]{Markup.Escape(row.Implementation)}[/]",
                 $"[yellow]{lifetimeIcon}[/]",
-                condition
+                condition,
+                orderText
             );
         }
 

@@ -61,7 +61,10 @@ public class ScreenValidator : IComponentValidator<Screen>
 }
 
 [DISingleton(Export = true)]
-public class GenericRegistrationExecutor(IServiceProvider serviceProvider) : ISampleExecutor
+public class GenericRegistrationExecutor(
+    IEnumerable<IComponentValidator<Battery>> batteryValidators,
+    IEnumerable<IComponentValidator<Screen>> screenValidators,
+    IEnumerable<IComponentValidator<Keyboard>> keyboardValidators) : ISampleExecutor
 {
     public string Name => "Generic Registration";
     public string Description => "Open generic types with specialized implementations";
@@ -72,15 +75,15 @@ public class GenericRegistrationExecutor(IServiceProvider serviceProvider) : ISa
         Console.WriteLine("Validating components:");
 
         // Get specialized validator for Battery
-        var batteryValidator = serviceProvider.GetServices<IComponentValidator<Battery>>().Last();
+        var batteryValidator = batteryValidators.Last();
         batteryValidator.Validate(new Battery { Capacity = 5000 });
 
         // Get specialized validator for Screen
-        var screenValidator = serviceProvider.GetServices<IComponentValidator<Screen>>().Last();
+        var screenValidator = screenValidators.Last();
         screenValidator.Validate(new Screen { Size = 6 });
 
         // Get default validator for Keyboard (no specialized implementation)
-        var keyboardValidator = serviceProvider.GetServices<IComponentValidator<Keyboard>>().Last();
+        var keyboardValidator = keyboardValidators.Last();
         keyboardValidator.Validate(new Keyboard { Keys = 104 });
     }
 }

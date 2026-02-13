@@ -46,7 +46,7 @@ public class CensorshipMessageServiceDecorator(IMessageService innerService) : I
 }
 
 [DISingleton(Export = true)]
-public class DecoratorPatternExecutor(IServiceProvider serviceProvider) : ISampleExecutor
+public class DecoratorPatternExecutor(IMessageService messageService) : ISampleExecutor
 {
     public string Name => "Decorator Pattern";
     public string Description => "Add functionality with decorators using [QudiDecorator]";
@@ -54,8 +54,6 @@ public class DecoratorPatternExecutor(IServiceProvider serviceProvider) : ISampl
 
     public void Execute()
     {
-        var messageService = serviceProvider.GetRequiredService<IMessageService>();
-
         Console.WriteLine("Sending a normal message:");
         messageService.SendMessage("Hello, World!");
 

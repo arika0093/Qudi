@@ -27,7 +27,7 @@ public class ThirdService : IService
 }
 
 [DISingleton(Export = true)]
-public class RegistrationOrderExecutor(IServiceProvider serviceProvider) : ISampleExecutor
+public class RegistrationOrderExecutor(IEnumerable<IService> services) : ISampleExecutor
 {
     public string Name => "Registration Order";
     public string Description => "Control registration order with Order property";
@@ -35,7 +35,6 @@ public class RegistrationOrderExecutor(IServiceProvider serviceProvider) : ISamp
 
     public void Execute()
     {
-        var services = serviceProvider.GetServices<IService>();
         Console.WriteLine("Services are registered in the specified order:");
         foreach (var service in services)
         {

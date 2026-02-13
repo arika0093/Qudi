@@ -28,7 +28,7 @@ public class RealPaymentService : IPaymentService
 }
 
 [DISingleton(Export = true)]
-public class ConditionalRegistrationExecutor(IServiceProvider serviceProvider) : ISampleExecutor
+public class ConditionalRegistrationExecutor(IPaymentService? paymentService) : ISampleExecutor
 {
     public string Name => "Conditional Registration";
     public string Description => "Register services conditionally based on environment";
@@ -40,7 +40,6 @@ public class ConditionalRegistrationExecutor(IServiceProvider serviceProvider) :
         Console.WriteLine("Set ASPNETCORE_ENVIRONMENT to 'Development' or 'Production' to see different implementations.");
         Console.WriteLine();
 
-        var paymentService = serviceProvider.GetService<IPaymentService>();
         if (paymentService != null)
         {
             paymentService.ProcessPayment(99.99m);

@@ -36,7 +36,10 @@ public class PushNotificationService : INotificationService
 }
 
 [DISingleton(Export = true)]
-public class KeyedRegistrationExecutor(IServiceProvider serviceProvider) : ISampleExecutor
+public class KeyedRegistrationExecutor(
+    [FromKeyedServices("email")] INotificationService emailService,
+    [FromKeyedServices("sms")] INotificationService smsService,
+    [FromKeyedServices("push")] INotificationService pushService) : ISampleExecutor
 {
     public string Name => "Keyed Registration";
     public string Description => "Register services with keys and resolve them by key";
@@ -44,10 +47,6 @@ public class KeyedRegistrationExecutor(IServiceProvider serviceProvider) : ISamp
 
     public void Execute()
     {
-        var emailService = serviceProvider.GetRequiredKeyedService<INotificationService>("email");
-        var smsService = serviceProvider.GetRequiredKeyedService<INotificationService>("sms");
-        var pushService = serviceProvider.GetRequiredKeyedService<INotificationService>("push");
-
         emailService.Notify("You have a new message!");
         smsService.Notify("Your verification code is 123456");
         pushService.Notify("App update available");

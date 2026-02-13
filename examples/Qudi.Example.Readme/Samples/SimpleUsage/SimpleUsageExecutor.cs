@@ -27,7 +27,7 @@ public class Abomasnow : IPokemon
 }
 
 [DISingleton(Export = true)]
-public class SimpleUsageExecutor(IServiceProvider serviceProvider) : ISampleExecutor
+public class SimpleUsageExecutor(IEnumerable<IPokemon> pokemons) : ISampleExecutor
 {
     public string Name => "Simple Usage";
     public string Description => "Basic DI registration with [DISingleton] and [DITransient]";
@@ -35,7 +35,6 @@ public class SimpleUsageExecutor(IServiceProvider serviceProvider) : ISampleExec
 
     public void Execute()
     {
-        var pokemons = serviceProvider.GetServices<IPokemon>();
         foreach (var pokemon in pokemons)
         {
             pokemon.DisplayInfo();
