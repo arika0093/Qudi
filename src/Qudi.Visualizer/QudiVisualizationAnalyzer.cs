@@ -12,7 +12,15 @@ internal static class QudiVisualizationAnalyzer
     )
     {
         var context = BuildContext(configuration);
-        var missing = DetectMissing(context);
+        
+        // Build internal assemblies set from registrations
+        var internalAssemblies = context.Applicable
+            .Select(r => r.Registration.AssemblyName)
+            .Where(name => !string.IsNullOrEmpty(name))
+            .Distinct()
+            .ToHashSet(StringComparer.Ordinal);
+        
+        var missing = DetectMissing(context, internalAssemblies);
         var cycles = DetectCycles(context);
         var multiples = DetectMultipleRegistrations(context);
         var lifetimeWarnings = DetectLifetimeWarnings(context);
@@ -73,12 +81,41 @@ internal static class QudiVisualizationAnalyzer
                     registration.Key?.ToString() ?? "-",
                     registration.When.Count == 0 ? "*" : string.Join(", ", registration.When),
                     registration.Order,
-                    registration.MarkAsDecorator
+                    registration.MarkAsDecorator,
+                    IsConditionMatched: true
                 );
             })
             .OrderBy(r => r.Order)
             .ThenBy(r => r.ImplementationDisplay, StringComparer.Ordinal)
             .ToList();
+
+        // Also include non-applicable registrations for visualization purposes (marked as unmatched)
+        var nonApplicable = configuration
+            .Registrations.Where(r => !IsApplicable(r, configuration.Conditions))
+            .Select(registration =>
+            {
+                var serviceTypes = registration.AsTypes.Count > 0
+                    ? registration.AsTypes.Distinct().ToList()
+                    : [registration.Type];
+
+                return new RegistrationView(
+                    registration,
+                    serviceTypes,
+                    string.Join(", ", serviceTypes.Select(ToDisplayName)),
+                    ToDisplayName(registration.Type),
+                    registration.Lifetime,
+                    registration.Key?.ToString() ?? "-",
+                    registration.When.Count == 0 ? "*" : string.Join(", ", registration.When),
+                    registration.Order,
+                    registration.MarkAsDecorator,
+                    IsConditionMatched: false
+                );
+            })
+            .OrderBy(r => r.Order)
+            .ThenBy(r => r.ImplementationDisplay, StringComparer.Ordinal)
+            .ToList();
+
+        var allRegistrations = applicable.Concat(nonApplicable).ToList();
 
         var serviceMap = new Dictionary<Type, List<RegistrationView>>();
         var implementationMap = new Dictionary<Type, List<RegistrationView>>();
@@ -105,10 +142,10 @@ internal static class QudiVisualizationAnalyzer
             implList.Add(registration);
         }
 
-        return new VisualizationContext(configuration, applicable, serviceMap, implementationMap);
+        return new VisualizationContext(configuration, allRegistrations, serviceMap, implementationMap);
     }
 
-    private static List<QudiMissingRegistration> DetectMissing(VisualizationContext context)
+    private static List<QudiMissingRegistration> DetectMissing(VisualizationContext context, IReadOnlySet<string> internalAssemblies)
     {
         var result = new List<QudiMissingRegistration>();
         var serviceAndSelf = new HashSet<Type>();
@@ -132,7 +169,7 @@ internal static class QudiVisualizationAnalyzer
                 }
 
                 // Skip external types (e.g., Microsoft.Extensions.*, System.*)
-                if (IsExternalType(required))
+                if (IsExternalType(required, internalAssemblies))
                 {
                     continue;
                 }
@@ -429,38 +466,25 @@ internal static class QudiVisualizationAnalyzer
     }
 
     /// <summary>
-    /// Determines if a type is from an external library (e.g., System.*, Microsoft.Extensions.*).
-    /// External types are typically framework or third-party types that should not be flagged as missing.
+    /// Determines if a type is from an external library.
+    /// A type is considered external if its assembly is not in the internal assemblies set.
     /// </summary>
-    internal static bool IsExternalType(Type type)
+    internal static bool IsExternalType(Type type, IReadOnlySet<string> internalAssemblies)
     {
         if (type.Namespace == null)
         {
             return false;
         }
 
-        // Common framework and library namespaces
-        var externalNamespaces = new[]
+        var assembly = type.Assembly;
+        var assemblyName = assembly.GetName().Name;
+        
+        if (string.IsNullOrEmpty(assemblyName))
         {
-            "System",
-            "Microsoft.Extensions",
-            "Microsoft.AspNetCore",
-            "Microsoft.EntityFrameworkCore",
-            "Newtonsoft.Json",
-            "Serilog",
-            "NLog",
-            "log4net"
-        };
-
-        foreach (var ns in externalNamespaces)
-        {
-            if (type.Namespace.Equals(ns, StringComparison.Ordinal) ||
-                type.Namespace.StartsWith(ns + ".", StringComparison.Ordinal))
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        // Check if the assembly is in the internal assemblies set
+        return !internalAssemblies.Contains(assemblyName);
     }
 }

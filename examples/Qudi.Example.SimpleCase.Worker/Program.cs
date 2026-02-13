@@ -9,7 +9,6 @@ builder.Services.AddQudiServices(conf =>
         option.AddOutput("assets/visualization_output.json");
         option.AddOutput("assets/visualization_output.dot");
         option.AddOutput("assets/visualization_output.mermaid");
-        option.AddOutput("assets/visualization_output.dgml");
         option.EnableConsoleOutput = true;
     });
     conf.SetCondition(builder.Environment.EnvironmentName);

@@ -1,0 +1,67 @@
+using System;
+using System.Linq;
+using System.Text;
+
+namespace Qudi.Visualizer.OutputWriter;
+
+internal static class DotOutputWriter
+{
+    public static string Generate(QudiVisualizationGraph graph)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("digraph Qudi {");
+        sb.AppendLine("  rankdir=LR;");
+        sb.AppendLine("  node [shape=box, fontname=\"Arial\"];");
+
+        foreach (var node in graph.Nodes.OrderBy(n => n.Label, StringComparer.Ordinal))
+        {
+            var shape = node.Kind == "service" ? "ellipse" : "box";
+            var style = BuildNodeStyle(node);
+            sb.AppendLine(
+                $"  \"{EscapeDot(node.Id)}\" [label=\"{EscapeDot(node.Label)}\", shape={shape}{style}];"
+            );
+        }
+
+        foreach (var edge in graph.Edges)
+        {
+            var edgeStyle = BuildEdgeStyle(edge);
+            sb.AppendLine(
+                $"  \"{EscapeDot(edge.From)}\" -> \"{EscapeDot(edge.To)}\"{edgeStyle};"
+            );
+        }
+
+        sb.AppendLine("}");
+        return sb.ToString();
+    }
+
+    private static string BuildNodeStyle(QudiVisualizationNode node)
+    {
+        if (!node.IsConditionMatched)
+        {
+            return ", style=\"filled,dashed\", fillcolor=lightgray, color=gray";
+        }
+
+        return node.Kind switch
+        {
+            "missing" => ", style=dashed, color=red",
+            "decorator" => ", style=filled, fillcolor=lightblue",
+            _ => string.Empty
+        };
+    }
+
+    private static string BuildEdgeStyle(QudiVisualizationEdge edge)
+    {
+        return edge.Kind switch
+        {
+            "collection" => " [label=\"*\", style=dashed]",
+            "decorator-provides" => " [color=blue]",
+            "decorator-wraps" => " [color=blue, style=dashed]",
+            _ => ""
+        };
+    }
+
+    private static string EscapeDot(string value)
+    {
+        return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    }
+}

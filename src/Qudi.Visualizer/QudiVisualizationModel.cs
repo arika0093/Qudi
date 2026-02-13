@@ -12,7 +12,8 @@ internal sealed record RegistrationView(
     string Key,
     string Conditions,
     int Order,
-    bool IsDecorator
+    bool IsDecorator,
+    bool IsConditionMatched
 );
 
 public sealed record QudiTraceNode(
@@ -61,9 +62,9 @@ public sealed record QudiVisualizationReport(
     IReadOnlyList<QudiTraceResult> Traces
 );
 
-public sealed record QudiVisualizationNode(string Id, string Label, string Kind);
+public sealed record QudiVisualizationNode(string Id, string Label, string Kind, bool IsConditionMatched = true, bool IsExternal = false);
 
-public sealed record QudiVisualizationEdge(string From, string To, string Kind);
+public sealed record QudiVisualizationEdge(string From, string To, string Kind, string? Condition = null);
 
 public sealed record QudiVisualizationGraph(
     IReadOnlyList<QudiVisualizationNode> Nodes,

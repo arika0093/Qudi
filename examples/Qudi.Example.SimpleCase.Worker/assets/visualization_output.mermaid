@@ -1,4 +1,4 @@
-graph LR
+flowchart LR
     Qudi_Example_Worker_NotifyToLogger["Qudi.Example.Worker.NotifyToLogger"]
     Qudi_Example_Core_INotificationService["Qudi.Example.Core.INotificationService"]
     Microsoft_Extensions_Logging_ILogger_Qudi_Example_Worker_NotifyToLogger_["Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>"]
@@ -6,15 +6,18 @@ graph LR
     Qudi_Example_Core_IPokemon["Qudi.Example.Core.IPokemon"]
     Qudi_Example_Core_Altaria["Qudi.Example.Core.Altaria"]
     Qudi_Example_Core_Garchomp["Qudi.Example.Core.Garchomp"]
+    Qudi_Example_Core_Lucario["Qudi.Example.Core.Lucario"]
     Qudi_Example_Worker_NotifyDecorator["Qudi.Example.Worker.NotifyDecorator"]
     Qudi_Example_Core_INotificationService --> Qudi_Example_Worker_NotifyToLogger
     Qudi_Example_Worker_NotifyToLogger --> Microsoft_Extensions_Logging_ILogger_Qudi_Example_Worker_NotifyToLogger_
-    Qudi_Example_Core_NotifyPokemonInfoService --> Qudi_Example_Core_NotifyPokemonInfoService
     Qudi_Example_Core_NotifyPokemonInfoService -.->|"*"| Qudi_Example_Core_IPokemon
     Qudi_Example_Core_NotifyPokemonInfoService --> Qudi_Example_Core_INotificationService
     Qudi_Example_Core_IPokemon --> Qudi_Example_Core_Altaria
     Qudi_Example_Core_IPokemon --> Qudi_Example_Core_Garchomp
+    Qudi_Example_Core_IPokemon --> Qudi_Example_Core_Lucario
     Qudi_Example_Core_INotificationService ==> Qudi_Example_Worker_NotifyDecorator
-    Qudi_Example_Worker_NotifyDecorator -.-> Qudi_Example_Core_INotificationService
+    Qudi_Example_Worker_NotifyDecorator -.-> Qudi_Example_Worker_NotifyToLogger
     classDef decorator fill:#add8e6,stroke:#4682b4,stroke-width:2px;
     class Qudi_Example_Worker_NotifyDecorator decorator;
+    classDef unmatched fill:#e0e0e0,stroke:#999,stroke-width:1px,color:#666;
+    class Qudi_Example_Core_Lucario unmatched;

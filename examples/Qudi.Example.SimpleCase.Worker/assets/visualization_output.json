@@ -1,7 +1,7 @@
 {
   "Report": {
     "Summary": {
-      "RegistrationCount": 5,
+      "RegistrationCount": 6,
       "MissingCount": 0,
       "CycleCount": 0,
       "MultipleRegistrationCount": 1,
@@ -45,6 +45,15 @@
         "Decorator": false
       },
       {
+        "Service": "Qudi.Example.Core.IPokemon",
+        "Implementation": "Qudi.Example.Core.Lucario",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "Production",
+        "Order": 0,
+        "Decorator": false
+      },
+      {
         "Service": "Qudi.Example.Core.NotifyPokemonInfoService",
         "Implementation": "Qudi.Example.Core.NotifyPokemonInfoService",
         "Lifetime": "Singleton",
@@ -60,7 +69,7 @@
       {
         "Service": "Qudi.Example.Core.IPokemon",
         "Key": "-",
-        "Count": 2
+        "Count": 3
       }
     ],
     "LifetimeWarnings": [],
@@ -71,42 +80,56 @@
       {
         "Id": "Qudi.Example.Worker.NotifyToLogger",
         "Label": "Qudi.Example.Worker.NotifyToLogger",
-        "Kind": "implementation"
+        "Kind": "implementation",
+        "IsConditionMatched": true
       },
       {
         "Id": "Qudi.Example.Core.INotificationService",
         "Label": "Qudi.Example.Core.INotificationService",
-        "Kind": "service"
+        "Kind": "service",
+        "IsConditionMatched": true
       },
       {
         "Id": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
         "Label": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
-        "Kind": "required"
+        "Kind": "service",
+        "IsConditionMatched": true
       },
       {
         "Id": "Qudi.Example.Core.NotifyPokemonInfoService",
         "Label": "Qudi.Example.Core.NotifyPokemonInfoService",
-        "Kind": "implementation"
+        "Kind": "service",
+        "IsConditionMatched": true
       },
       {
         "Id": "Qudi.Example.Core.IPokemon",
         "Label": "Qudi.Example.Core.IPokemon",
-        "Kind": "required"
+        "Kind": "service",
+        "IsConditionMatched": true
       },
       {
         "Id": "Qudi.Example.Core.Altaria",
         "Label": "Qudi.Example.Core.Altaria",
-        "Kind": "implementation"
+        "Kind": "implementation",
+        "IsConditionMatched": true
       },
       {
         "Id": "Qudi.Example.Core.Garchomp",
         "Label": "Qudi.Example.Core.Garchomp",
-        "Kind": "implementation"
+        "Kind": "implementation",
+        "IsConditionMatched": true
+      },
+      {
+        "Id": "Qudi.Example.Core.Lucario",
+        "Label": "Qudi.Example.Core.Lucario",
+        "Kind": "implementation",
+        "IsConditionMatched": false
       },
       {
         "Id": "Qudi.Example.Worker.NotifyDecorator",
         "Label": "Qudi.Example.Worker.NotifyDecorator",
-        "Kind": "decorator"
+        "Kind": "decorator",
+        "IsConditionMatched": true
       }
     ],
     "Edges": [
@@ -119,11 +142,6 @@
         "From": "Qudi.Example.Worker.NotifyToLogger",
         "To": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
         "Kind": "dependency"
-      },
-      {
-        "From": "Qudi.Example.Core.NotifyPokemonInfoService",
-        "To": "Qudi.Example.Core.NotifyPokemonInfoService",
-        "Kind": "registration"
       },
       {
         "From": "Qudi.Example.Core.NotifyPokemonInfoService",
@@ -146,13 +164,18 @@
         "Kind": "registration"
       },
       {
+        "From": "Qudi.Example.Core.IPokemon",
+        "To": "Qudi.Example.Core.Lucario",
+        "Kind": "registration"
+      },
+      {
         "From": "Qudi.Example.Core.INotificationService",
         "To": "Qudi.Example.Worker.NotifyDecorator",
         "Kind": "decorator-provides"
       },
       {
         "From": "Qudi.Example.Worker.NotifyDecorator",
-        "To": "Qudi.Example.Core.INotificationService",
+        "To": "Qudi.Example.Worker.NotifyToLogger",
         "Kind": "decorator-wraps"
       }
     ]
