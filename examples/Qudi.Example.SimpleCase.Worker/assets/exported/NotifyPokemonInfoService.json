@@ -1,0 +1,195 @@
+{
+  "Report": {
+    "Summary": {
+      "RegistrationCount": 6,
+      "MissingCount": 0,
+      "CycleCount": 0,
+      "MultipleRegistrationCount": 1,
+      "LifetimeWarningCount": 0
+    },
+    "Registrations": [
+      {
+        "Service": "INotificationService",
+        "Implementation": "NotifyDecorator",
+        "Lifetime": "Singleton",
+        "Key": "-",
+        "When": "*",
+        "Order": 0,
+        "Decorator": true
+      },
+      {
+        "Service": "INotificationService",
+        "Implementation": "NotifyToLogger",
+        "Lifetime": "Singleton",
+        "Key": "-",
+        "When": "*",
+        "Order": 0,
+        "Decorator": false
+      },
+      {
+        "Service": "IPokemon",
+        "Implementation": "Altaria",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "*",
+        "Order": 0,
+        "Decorator": false
+      },
+      {
+        "Service": "IPokemon",
+        "Implementation": "Garchomp",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "Development",
+        "Order": 0,
+        "Decorator": false
+      },
+      {
+        "Service": "IPokemon",
+        "Implementation": "Lucario",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "Production",
+        "Order": 0,
+        "Decorator": false
+      },
+      {
+        "Service": "NotifyPokemonInfoService",
+        "Implementation": "NotifyPokemonInfoService",
+        "Lifetime": "Singleton",
+        "Key": "-",
+        "When": "*",
+        "Order": 0,
+        "Decorator": false
+      }
+    ],
+    "MissingRegistrations": [],
+    "Cycles": [],
+    "MultipleRegistrations": [
+      {
+        "Service": "IPokemon",
+        "Key": "-",
+        "Count": 3
+      }
+    ],
+    "LifetimeWarnings": [],
+    "Traces": []
+  },
+  "Graph": {
+    "Nodes": [
+      {
+        "Id": "Qudi.Example.Worker.NotifyToLogger",
+        "Label": "NotifyToLogger",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
+      },
+      {
+        "Id": "Qudi.Example.Core.INotificationService",
+        "Label": "INotificationService",
+        "Kind": "interface",
+        "IsConditionMatched": true,
+        "IsExternal": false
+      },
+      {
+        "Id": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
+        "Label": "ILogger\u003CNotifyToLogger\u003E",
+        "Kind": "interface",
+        "IsConditionMatched": true,
+        "IsExternal": true
+      },
+      {
+        "Id": "Qudi.Example.Core.NotifyPokemonInfoService",
+        "Label": "NotifyPokemonInfoService",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
+      },
+      {
+        "Id": "Qudi.Example.Core.IPokemon",
+        "Label": "IPokemon",
+        "Kind": "interface",
+        "IsConditionMatched": true,
+        "IsExternal": false
+      },
+      {
+        "Id": "Qudi.Example.Core.Altaria",
+        "Label": "Altaria",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
+      },
+      {
+        "Id": "Qudi.Example.Core.Garchomp",
+        "Label": "Garchomp",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
+      },
+      {
+        "Id": "Qudi.Example.Core.Lucario",
+        "Label": "Lucario",
+        "Kind": "class",
+        "IsConditionMatched": false,
+        "IsExternal": false
+      },
+      {
+        "Id": "Qudi.Example.Worker.NotifyDecorator",
+        "Label": "NotifyDecorator",
+        "Kind": "decorator",
+        "IsConditionMatched": true,
+        "IsExternal": false
+      }
+    ],
+    "Edges": [
+      {
+        "From": "Qudi.Example.Worker.NotifyToLogger",
+        "To": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
+        "Kind": "dependency",
+        "Condition": null
+      },
+      {
+        "From": "Qudi.Example.Core.NotifyPokemonInfoService",
+        "To": "Qudi.Example.Core.IPokemon",
+        "Kind": "collection",
+        "Condition": null
+      },
+      {
+        "From": "Qudi.Example.Core.NotifyPokemonInfoService",
+        "To": "Qudi.Example.Core.INotificationService",
+        "Kind": "dependency",
+        "Condition": null
+      },
+      {
+        "From": "Qudi.Example.Core.IPokemon",
+        "To": "Qudi.Example.Core.Altaria",
+        "Kind": "registration",
+        "Condition": null
+      },
+      {
+        "From": "Qudi.Example.Core.IPokemon",
+        "To": "Qudi.Example.Core.Garchomp",
+        "Kind": "registration",
+        "Condition": "Development"
+      },
+      {
+        "From": "Qudi.Example.Core.IPokemon",
+        "To": "Qudi.Example.Core.Lucario",
+        "Kind": "registration",
+        "Condition": "Production"
+      },
+      {
+        "From": "Qudi.Example.Core.INotificationService",
+        "To": "Qudi.Example.Worker.NotifyDecorator",
+        "Kind": "registration",
+        "Condition": null
+      },
+      {
+        "From": "Qudi.Example.Worker.NotifyDecorator",
+        "To": "Qudi.Example.Worker.NotifyToLogger",
+        "Kind": "registration",
+        "Condition": null
+      }
+    ]
+  }
+}

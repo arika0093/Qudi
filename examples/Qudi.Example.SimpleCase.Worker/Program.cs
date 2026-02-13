@@ -1,5 +1,6 @@
 using Qudi;
 using Qudi.Example.Worker;
+using Qudi.Visualizer;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddQudiServices(conf =>
@@ -9,6 +10,7 @@ builder.Services.AddQudiServices(conf =>
         option.AddOutput("assets/visualization_output.json");
         option.AddOutput("assets/visualization_output.dot");
         option.AddOutput("assets/visualization_output.mermaid");
+        option.SetOutputDirectory("assets/exported", QudiVisualizationFormat.Mermaid, QudiVisualizationFormat.Json);
         option.EnableConsoleOutput = true;
     });
     conf.SetCondition(builder.Environment.EnvironmentName);

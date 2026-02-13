@@ -257,4 +257,57 @@ internal static class QudiVisualizationGraphBuilder
 
         return null;
     }
+
+    /// <summary>
+    /// Build a subgraph starting from a specific root type.
+    /// Only includes nodes reachable from the root.
+    /// </summary>
+    public static QudiVisualizationGraph BuildFromRoot(QudiConfiguration configuration, Type rootType)
+    {
+        var fullGraph = Build(configuration);
+        
+        // Find all reachable nodes from the root
+        var rootId = QudiVisualizationAnalyzer.ToFullDisplayName(rootType);
+        var reachableNodeIds = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<string>();
+        
+        // Start from root
+        if (fullGraph.Nodes.Any(n => n.Id == rootId))
+        {
+            queue.Enqueue(rootId);
+            reachableNodeIds.Add(rootId);
+        }
+        else
+        {
+            // Root not found, return empty graph
+            return new QudiVisualizationGraph([], []);
+        }
+        
+        // BFS to find all reachable nodes
+        while (queue.Count > 0)
+        {
+            var currentId = queue.Dequeue();
+            
+            // Find all outgoing edges from current node
+            foreach (var edge in fullGraph.Edges.Where(e => e.From == currentId))
+            {
+                if (!reachableNodeIds.Contains(edge.To))
+                {
+                    reachableNodeIds.Add(edge.To);
+                    queue.Enqueue(edge.To);
+                }
+            }
+        }
+        
+        // Filter nodes and edges
+        var filteredNodes = fullGraph.Nodes
+            .Where(n => reachableNodeIds.Contains(n.Id))
+            .ToList();
+            
+        var filteredEdges = fullGraph.Edges
+            .Where(e => reachableNodeIds.Contains(e.From) && reachableNodeIds.Contains(e.To))
+            .ToList();
+        
+        return new QudiVisualizationGraph(filteredNodes, filteredEdges);
+    }
 }

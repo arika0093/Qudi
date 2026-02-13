@@ -20,6 +20,7 @@ public sealed class QudiVisualizationOptions
 {
     private readonly List<QudiVisualizationFileOutput> _outputs = [];
     private readonly List<Type> _traceServices = [];
+    private readonly List<QudiVisualizationFormat> _outputFormats = [];
 
     public bool EnableConsoleOutput { get; set; } = true;
 
@@ -28,6 +29,17 @@ public sealed class QudiVisualizationOptions
     /// Default is false.
     /// </summary>
     public bool GroupByNamespace { get; set; } = false;
+
+    /// <summary>
+    /// Output directory for exported individual graphs.
+    /// Used when Export attribute is present on types.
+    /// </summary>
+    public string? OutputDirectory { get; set; }
+
+    /// <summary>
+    /// Output formats for exported individual graphs.
+    /// </summary>
+    public IReadOnlyCollection<QudiVisualizationFormat> OutputFormats => _outputFormats;
 
     public IReadOnlyCollection<QudiVisualizationFileOutput> Outputs => _outputs;
 
@@ -69,13 +81,36 @@ public sealed class QudiVisualizationOptions
         return this;
     }
 
+    public QudiVisualizationOptions SetOutputDirectory(string directoryPath, params QudiVisualizationFormat[] formats)
+    {
+        if (string.IsNullOrWhiteSpace(directoryPath))
+        {
+            throw new ArgumentException("Directory path is required.", nameof(directoryPath));
+        }
+
+        OutputDirectory = Path.GetFullPath(directoryPath);
+        _outputFormats.Clear();
+        if (formats.Length > 0)
+        {
+            _outputFormats.AddRange(formats);
+        }
+        else
+        {
+            // Default to all formats if none specified
+            _outputFormats.Add(QudiVisualizationFormat.Mermaid);
+        }
+        return this;
+    }
+
     internal QudiVisualizationRuntimeOptions BuildRuntimeOptions()
     {
         return new QudiVisualizationRuntimeOptions(
             EnableConsoleOutput,
             [.. _outputs],
             [.. _traceServices],
-            GroupByNamespace
+            GroupByNamespace,
+            OutputDirectory,
+            [.. _outputFormats]
         );
     }
 
@@ -100,5 +135,7 @@ internal sealed record QudiVisualizationRuntimeOptions(
     bool EnableConsoleOutput,
     IReadOnlyCollection<QudiVisualizationFileOutput> Outputs,
     IReadOnlyCollection<Type> TraceServices,
-    bool GroupByNamespace
+    bool GroupByNamespace,
+    string? OutputDirectory,
+    IReadOnlyCollection<QudiVisualizationFormat> OutputFormats
 );

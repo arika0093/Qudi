@@ -51,6 +51,12 @@ internal static class QudiVisualizationAnalyzer
             lifetimeWarnings.Count
         );
 
+        var exportedTypes = configuration.Registrations
+            .Where(r => r.Export && IsApplicable(r, configuration.Conditions))
+            .Select(r => r.Type)
+            .Distinct()
+            .ToList();
+
         return new QudiVisualizationReport(
             summary,
             rows,
@@ -58,7 +64,8 @@ internal static class QudiVisualizationAnalyzer
             cycles,
             multiples,
             lifetimeWarnings,
-            traces
+            traces,
+            exportedTypes
         );
     }
 

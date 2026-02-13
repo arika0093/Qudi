@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Qudi.Visualizer;
 
@@ -59,7 +60,8 @@ public sealed record QudiVisualizationReport(
     IReadOnlyList<QudiCycle> Cycles,
     IReadOnlyList<QudiMultipleRegistration> MultipleRegistrations,
     IReadOnlyList<QudiLifetimeWarning> LifetimeWarnings,
-    IReadOnlyList<QudiTraceResult> Traces
+    IReadOnlyList<QudiTraceResult> Traces,
+    [property: JsonIgnore] IReadOnlyList<Type> ExportedTypes
 );
 
 public sealed record QudiVisualizationNode(string Id, string Label, string Kind, bool IsConditionMatched = true, bool IsExternal = false);
