@@ -64,9 +64,20 @@ public sealed record QudiVisualizationReport(
     [property: JsonIgnore] IReadOnlyList<Type> ExportedTypes
 );
 
-public sealed record QudiVisualizationNode(string Id, string Label, string Kind, bool IsConditionMatched = true, bool IsExternal = false);
+public sealed record QudiVisualizationNode(
+    string Id,
+    string Label,
+    string Kind,
+    bool IsConditionMatched = true,
+    bool IsExternal = false
+);
 
-public sealed record QudiVisualizationEdge(string From, string To, string Kind, string? Condition = null);
+public sealed record QudiVisualizationEdge(
+    string From,
+    string To,
+    string Kind,
+    string? Condition = null
+);
 
 public sealed record QudiVisualizationGraph(
     IReadOnlyList<QudiVisualizationNode> Nodes,

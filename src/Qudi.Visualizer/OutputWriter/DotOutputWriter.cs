@@ -25,9 +25,7 @@ internal static class DotOutputWriter
         foreach (var edge in graph.Edges)
         {
             var edgeStyle = BuildEdgeStyle(edge);
-            sb.AppendLine(
-                $"  \"{EscapeDot(edge.From)}\" -> \"{EscapeDot(edge.To)}\"{edgeStyle};"
-            );
+            sb.AppendLine($"  \"{EscapeDot(edge.From)}\" -> \"{EscapeDot(edge.To)}\"{edgeStyle};");
         }
 
         sb.AppendLine("}");
@@ -44,7 +42,7 @@ internal static class DotOutputWriter
                 "interface" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#4caf50\"",
                 "class" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#2196f3\"",
                 "decorator" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#9c27b0\"",
-                _ => ", style=\"filled,dashed\", fillcolor=lightgray, color=gray"
+                _ => ", style=\"filled,dashed\", fillcolor=lightgray, color=gray",
             };
         }
 
@@ -59,7 +57,7 @@ internal static class DotOutputWriter
             "interface" => ", style=filled, fillcolor=\"#c8e6c9\"",
             "class" => ", style=filled, fillcolor=\"#bbdefb\"",
             "decorator" => ", style=filled, fillcolor=\"#e1bee7\"",
-            _ => string.Empty
+            _ => string.Empty,
         };
     }
 
@@ -72,7 +70,7 @@ internal static class DotOutputWriter
         return edge.Kind switch
         {
             "collection" => " [label=\"*\", style=dashed]",
-            _ => string.IsNullOrWhiteSpace(label) ? "" : $" [{label.TrimStart(',', ' ')}]"
+            _ => string.IsNullOrWhiteSpace(label) ? "" : $" [{label.TrimStart(',', ' ')}]",
         };
     }
 

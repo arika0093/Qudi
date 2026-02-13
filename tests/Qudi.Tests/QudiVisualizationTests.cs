@@ -20,7 +20,6 @@ public sealed class QudiVisualizationTests
         first.Value.ShouldBe("by-qudi-attribute");
     }
 
-
     [Test]
     public void WritesVisualizationJson()
     {
@@ -33,7 +32,10 @@ public sealed class QudiVisualizationTests
         {
             var services = new ServiceCollection();
             services.AddQudiServices(conf =>
-                conf.EnableVisualizationOutput(tempPath, options => options.EnableConsoleOutput = false)
+                conf.EnableVisualizationOutput(
+                    tempPath,
+                    options => options.EnableConsoleOutput = false
+                )
             );
 
             File.Exists(tempPath).ShouldBeTrue();

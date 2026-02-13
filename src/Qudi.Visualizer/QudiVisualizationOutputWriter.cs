@@ -30,7 +30,10 @@ internal static class QudiVisualizationOutputWriter
                     File.WriteAllText(output.FilePath, DotOutputWriter.Generate(graph));
                     break;
                 case QudiVisualizationFormat.Mermaid:
-                    File.WriteAllText(output.FilePath, MermaidOutputWriter.Generate(graph, options.GroupByNamespace));
+                    File.WriteAllText(
+                        output.FilePath,
+                        MermaidOutputWriter.Generate(graph, options.GroupByNamespace)
+                    );
                     break;
                 case QudiVisualizationFormat.Svg:
                     var warning = SvgOutputWriter.TryWrite(output.FilePath, graph);

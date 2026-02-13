@@ -33,8 +33,14 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
     private void RenderRegistrations(IReadOnlyList<QudiRegistrationTableRow> rows)
     {
-        var table = new Table().AddColumn("Service").AddColumn("Impl").AddColumn("Lifetime")
-            .AddColumn("Key").AddColumn("When").AddColumn("Order").AddColumn("Decorator");
+        var table = new Table()
+            .AddColumn("Service")
+            .AddColumn("Impl")
+            .AddColumn("Lifetime")
+            .AddColumn("Key")
+            .AddColumn("When")
+            .AddColumn("Order")
+            .AddColumn("Decorator");
 
         foreach (var row in rows)
         {
@@ -112,7 +118,11 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         }
 
         AnsiConsole.MarkupLine("[bold]Lifetime warnings[/]");
-        var table = new Table().AddColumn("Service").AddColumn("From").AddColumn("To").AddColumn("Message");
+        var table = new Table()
+            .AddColumn("Service")
+            .AddColumn("From")
+            .AddColumn("To")
+            .AddColumn("Message");
         foreach (var item in warnings)
         {
             table.AddRow(

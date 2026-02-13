@@ -4,7 +4,8 @@ using Qudi;
 var services = new ServiceCollection();
 
 // ✅️ register services marked with Qudi attributes (see below)
-services.AddQudiServices(conf => {
+services.AddQudiServices(conf =>
+{
     conf.EnableVisualizationOutput();
 });
 

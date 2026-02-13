@@ -77,7 +77,8 @@ internal static class HelperTargetCollector
                 _ => "class",
             };
             var containingIsRecord = currentType.IsRecord;
-            var containingTypeKeyword = $"{(containingIsRecord ? "record " : "")}{containingTypeKind}";
+            var containingTypeKeyword =
+                $"{(containingIsRecord ? "record " : "")}{containingTypeKind}";
             var accessibility = GetAccessibility(currentType.DeclaredAccessibility);
 
             containingTypesList.Add(
@@ -548,7 +549,9 @@ internal static class HelperTargetCollector
             ImplementingTypeName = typeName,
             ImplementingTypeNamespace = typeNamespace,
             ImplementingTypeKeyword = typeKeyword,
-            ContainingTypes = new EquatableArray<ContainingTypeInfo>(containingTypes.ToImmutableArray()),
+            ContainingTypes = new EquatableArray<ContainingTypeInfo>(
+                containingTypes.ToImmutableArray()
+            ),
             ConstructorAccessibility = accessibility,
             InterfaceName = interfaceName,
             InterfaceNamespace = interfaceNamespace,

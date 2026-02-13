@@ -6,9 +6,16 @@ namespace Qudi.Visualizer;
 
 internal static class QudiVisualizationRunner
 {
-    public static void Execute(QudiConfiguration configuration, QudiVisualizationRuntimeOptions options)
+    public static void Execute(
+        QudiConfiguration configuration,
+        QudiVisualizationRuntimeOptions options
+    )
     {
-        if (!options.EnableConsoleOutput && options.Outputs.Count == 0 && string.IsNullOrEmpty(options.OutputDirectory))
+        if (
+            !options.EnableConsoleOutput
+            && options.Outputs.Count == 0
+            && string.IsNullOrEmpty(options.OutputDirectory)
+        )
         {
             return;
         }
@@ -37,9 +44,10 @@ internal static class QudiVisualizationRunner
     }
 
     private static List<string> ExportIndividualGraphs(
-        QudiConfiguration configuration, 
-        QudiVisualizationReport report, 
-        QudiVisualizationRuntimeOptions options)
+        QudiConfiguration configuration,
+        QudiVisualizationReport report,
+        QudiVisualizationRuntimeOptions options
+    )
     {
         var warnings = new List<string>();
 
@@ -55,7 +63,9 @@ internal static class QudiVisualizationRunner
         }
         catch (Exception ex)
         {
-            warnings.Add($"Failed to create output directory '{options.OutputDirectory}': {ex.Message}");
+            warnings.Add(
+                $"Failed to create output directory '{options.OutputDirectory}': {ex.Message}"
+            );
             return warnings;
         }
 
@@ -69,7 +79,7 @@ internal static class QudiVisualizationRunner
             {
                 var fileName = $"{sanitizedTypeName}.{GetFileExtension(format)}";
                 var filePath = System.IO.Path.Combine(options.OutputDirectory!, fileName);
-                
+
                 var fakeOutput = new QudiVisualizationFileOutput(filePath, format);
                 var fakeOptions = new QudiVisualizationRuntimeOptions(
                     false,
@@ -82,7 +92,11 @@ internal static class QudiVisualizationRunner
 
                 try
                 {
-                    var outputWarnings = QudiVisualizationOutputWriter.WriteAll(report, subGraph, fakeOptions);
+                    var outputWarnings = QudiVisualizationOutputWriter.WriteAll(
+                        report,
+                        subGraph,
+                        fakeOptions
+                    );
                     warnings.AddRange(outputWarnings);
                 }
                 catch (Exception ex)
@@ -110,7 +124,7 @@ internal static class QudiVisualizationRunner
             QudiVisualizationFormat.Mermaid => "mermaid",
             QudiVisualizationFormat.Dgml => "dgml",
             QudiVisualizationFormat.Svg => "svg",
-            _ => "txt"
+            _ => "txt",
         };
     }
 }

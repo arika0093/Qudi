@@ -45,7 +45,10 @@ public sealed class QudiVisualizationOptions
 
     public IReadOnlyCollection<Type> TraceServices => _traceServices;
 
-    public QudiVisualizationOptions AddOutput(string filePath, QudiVisualizationFormat? format = null)
+    public QudiVisualizationOptions AddOutput(
+        string filePath,
+        QudiVisualizationFormat? format = null
+    )
     {
         if (string.IsNullOrWhiteSpace(filePath))
         {
@@ -53,7 +56,9 @@ public sealed class QudiVisualizationOptions
         }
 
         var normalized = Path.GetFullPath(filePath);
-        _outputs.Add(new QudiVisualizationFileOutput(normalized, format ?? InferFormatFromPath(normalized)));
+        _outputs.Add(
+            new QudiVisualizationFileOutput(normalized, format ?? InferFormatFromPath(normalized))
+        );
         return this;
     }
 
@@ -81,7 +86,10 @@ public sealed class QudiVisualizationOptions
         return this;
     }
 
-    public QudiVisualizationOptions SetOutputDirectory(string directoryPath, params QudiVisualizationFormat[] formats)
+    public QudiVisualizationOptions SetOutputDirectory(
+        string directoryPath,
+        params QudiVisualizationFormat[] formats
+    )
     {
         if (string.IsNullOrWhiteSpace(directoryPath))
         {

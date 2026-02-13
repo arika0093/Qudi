@@ -10,7 +10,7 @@ builder.Services.AddQudiServices(conf =>
         option.AddOutput("assets/visualization_output.json");
         option.AddOutput("assets/visualization_output.dot");
         option.AddOutput("assets/visualization_output.mermaid");
-        option.SetOutputDirectory("assets/exported", QudiVisualizationFormat.Mermaid, QudiVisualizationFormat.Json);
+        option.SetOutputDirectory("assets/exported", QudiVisualizationFormat.Mermaid);
         option.EnableConsoleOutput = true;
     });
     conf.SetCondition(builder.Environment.EnvironmentName);

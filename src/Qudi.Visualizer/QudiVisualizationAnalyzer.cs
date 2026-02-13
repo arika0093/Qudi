@@ -12,14 +12,14 @@ internal static class QudiVisualizationAnalyzer
     )
     {
         var context = BuildContext(configuration);
-        
+
         // Build internal assemblies set from registrations
-        var internalAssemblies = context.Applicable
-            .Select(r => r.Registration.AssemblyName)
+        var internalAssemblies = context
+            .Applicable.Select(r => r.Registration.AssemblyName)
             .Where(name => !string.IsNullOrEmpty(name))
             .Distinct()
             .ToHashSet(StringComparer.Ordinal);
-        
+
         var missing = DetectMissing(context, internalAssemblies);
         var cycles = DetectCycles(context);
         var multiples = DetectMultipleRegistrations(context);
@@ -51,8 +51,8 @@ internal static class QudiVisualizationAnalyzer
             lifetimeWarnings.Count
         );
 
-        var exportedTypes = configuration.Registrations
-            .Where(r => r.Export && IsApplicable(r, configuration.Conditions))
+        var exportedTypes = configuration
+            .Registrations.Where(r => r.Export && IsApplicable(r, configuration.Conditions))
             .Select(r => r.Type)
             .Distinct()
             .ToList();
@@ -75,9 +75,10 @@ internal static class QudiVisualizationAnalyzer
             .Registrations.Where(r => IsApplicable(r, configuration.Conditions))
             .Select(registration =>
             {
-                var serviceTypes = registration.AsTypes.Count > 0
-                    ? registration.AsTypes.Distinct().ToList()
-                    : [registration.Type];
+                var serviceTypes =
+                    registration.AsTypes.Count > 0
+                        ? registration.AsTypes.Distinct().ToList()
+                        : [registration.Type];
 
                 return new RegistrationView(
                     registration,
@@ -101,9 +102,10 @@ internal static class QudiVisualizationAnalyzer
             .Registrations.Where(r => !IsApplicable(r, configuration.Conditions))
             .Select(registration =>
             {
-                var serviceTypes = registration.AsTypes.Count > 0
-                    ? registration.AsTypes.Distinct().ToList()
-                    : [registration.Type];
+                var serviceTypes =
+                    registration.AsTypes.Count > 0
+                        ? registration.AsTypes.Distinct().ToList()
+                        : [registration.Type];
 
                 return new RegistrationView(
                     registration,
@@ -149,10 +151,18 @@ internal static class QudiVisualizationAnalyzer
             implList.Add(registration);
         }
 
-        return new VisualizationContext(configuration, allRegistrations, serviceMap, implementationMap);
+        return new VisualizationContext(
+            configuration,
+            allRegistrations,
+            serviceMap,
+            implementationMap
+        );
     }
 
-    private static List<QudiMissingRegistration> DetectMissing(VisualizationContext context, HashSet<string> internalAssemblies)
+    private static List<QudiMissingRegistration> DetectMissing(
+        VisualizationContext context,
+        HashSet<string> internalAssemblies
+    )
     {
         var result = new List<QudiMissingRegistration>();
         var serviceAndSelf = new HashSet<Type>();
@@ -261,7 +271,9 @@ internal static class QudiVisualizationAnalyzer
         }
     }
 
-    private static Dictionary<Type, HashSet<Type>> BuildImplementationEdges(VisualizationContext context)
+    private static Dictionary<Type, HashSet<Type>> BuildImplementationEdges(
+        VisualizationContext context
+    )
     {
         var edges = new Dictionary<Type, HashSet<Type>>();
 
@@ -287,20 +299,20 @@ internal static class QudiVisualizationAnalyzer
         return edges;
     }
 
-    private static List<QudiMultipleRegistration> DetectMultipleRegistrations(VisualizationContext context)
+    private static List<QudiMultipleRegistration> DetectMultipleRegistrations(
+        VisualizationContext context
+    )
     {
         return context
             .Applicable.Where(r => !r.IsDecorator)
             .SelectMany(r => r.ServiceTypes.Select(service => (Service: service, Key: r.Key)))
             .GroupBy(x => (x.Service, x.Key), x => x)
             .Where(g => g.Count() > 1)
-            .Select(g =>
-                new QudiMultipleRegistration(
-                    ToDisplayName(g.Key.Service),
-                    string.IsNullOrWhiteSpace(g.Key.Key) ? "-" : g.Key.Key,
-                    g.Count()
-                )
-            )
+            .Select(g => new QudiMultipleRegistration(
+                ToDisplayName(g.Key.Service),
+                string.IsNullOrWhiteSpace(g.Key.Key) ? "-" : g.Key.Key,
+                g.Count()
+            ))
             .OrderBy(x => x.Service, StringComparer.Ordinal)
             .ToList();
     }
@@ -368,9 +380,15 @@ internal static class QudiVisualizationAnalyzer
             return [new QudiTraceNode("...", "Max depth reached", false, false, [])];
         }
 
-        if (!context.ServiceMap.TryGetValue(serviceType, out var candidates) || candidates.Count == 0)
+        if (
+            !context.ServiceMap.TryGetValue(serviceType, out var candidates)
+            || candidates.Count == 0
+        )
         {
-            return [new QudiTraceNode(ToDisplayName(serviceType), "No registration", true, false, [])];
+            return
+            [
+                new QudiTraceNode(ToDisplayName(serviceType), "No registration", true, false, []),
+            ];
         }
 
         var results = new List<QudiTraceNode>();
@@ -401,7 +419,15 @@ internal static class QudiVisualizationAnalyzer
                     depth + 1,
                     maxDepth
                 );
-                children.Add(new QudiTraceNode(ToDisplayName(required), null, false, false, dependencyChildren));
+                children.Add(
+                    new QudiTraceNode(
+                        ToDisplayName(required),
+                        null,
+                        false,
+                        false,
+                        dependencyChildren
+                    )
+                );
             }
 
             stack.Remove(implType);
@@ -438,7 +464,10 @@ internal static class QudiVisualizationAnalyzer
         return [];
     }
 
-    internal static bool IsApplicable(TypeRegistrationInfo registration, IReadOnlyCollection<string> conditions)
+    internal static bool IsApplicable(
+        TypeRegistrationInfo registration,
+        IReadOnlyCollection<string> conditions
+    )
     {
         if (registration.When.Count == 0)
         {
@@ -503,7 +532,7 @@ internal static class QudiVisualizationAnalyzer
 
         var assembly = type.Assembly;
         var assemblyName = assembly.GetName().Name;
-        
+
         if (string.IsNullOrEmpty(assemblyName))
         {
             return false;

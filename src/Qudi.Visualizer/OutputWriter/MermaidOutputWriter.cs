@@ -43,7 +43,10 @@ internal static class MermaidOutputWriter
         // Generate edges with condition labels
         foreach (var edge in graph.Edges)
         {
-            if (!ids.TryGetValue(edge.From, out var fromId) || !ids.TryGetValue(edge.To, out var toId))
+            if (
+                !ids.TryGetValue(edge.From, out var fromId)
+                || !ids.TryGetValue(edge.To, out var toId)
+            )
             {
                 continue;
             }
@@ -56,7 +59,9 @@ internal static class MermaidOutputWriter
         var missingNodes = graph.Nodes.Where(n => n.Kind == "missing").ToList();
         if (missingNodes.Count > 0)
         {
-            sb.AppendLine("    classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;");
+            sb.AppendLine(
+                "    classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;"
+            );
             foreach (var node in missingNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -67,10 +72,14 @@ internal static class MermaidOutputWriter
         }
 
         // Add styles for interface nodes (薄い緑色背景)
-        var interfaceNodes = graph.Nodes.Where(n => n.Kind == "interface" && n.IsConditionMatched && !n.IsExternal).ToList();
+        var interfaceNodes = graph
+            .Nodes.Where(n => n.Kind == "interface" && n.IsConditionMatched && !n.IsExternal)
+            .ToList();
         if (interfaceNodes.Count > 0)
         {
-            sb.AppendLine("    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;");
+            sb.AppendLine(
+                "    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;"
+            );
             foreach (var node in interfaceNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -81,10 +90,14 @@ internal static class MermaidOutputWriter
         }
 
         // Add styles for class nodes (薄い青色背景)
-        var classNodes = graph.Nodes.Where(n => n.Kind == "class" && n.IsConditionMatched && !n.IsExternal).ToList();
+        var classNodes = graph
+            .Nodes.Where(n => n.Kind == "class" && n.IsConditionMatched && !n.IsExternal)
+            .ToList();
         if (classNodes.Count > 0)
         {
-            sb.AppendLine("    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;");
+            sb.AppendLine(
+                "    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;"
+            );
             foreach (var node in classNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -95,10 +108,14 @@ internal static class MermaidOutputWriter
         }
 
         // Add styles for decorator nodes (紫系、文字色は黒)
-        var decoratorNodes = graph.Nodes.Where(n => n.Kind == "decorator" && n.IsConditionMatched && !n.IsExternal).ToList();
+        var decoratorNodes = graph
+            .Nodes.Where(n => n.Kind == "decorator" && n.IsConditionMatched && !n.IsExternal)
+            .ToList();
         if (decoratorNodes.Count > 0)
         {
-            sb.AppendLine("    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;");
+            sb.AppendLine(
+                "    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;"
+            );
             foreach (var node in decoratorNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -109,10 +126,14 @@ internal static class MermaidOutputWriter
         }
 
         // Add styles for condition-unmatched interface nodes (線だけ緑、背景は淡いグレー)
-        var unmatchedInterfaceNodes = graph.Nodes.Where(n => n.Kind == "interface" && !n.IsConditionMatched).ToList();
+        var unmatchedInterfaceNodes = graph
+            .Nodes.Where(n => n.Kind == "interface" && !n.IsConditionMatched)
+            .ToList();
         if (unmatchedInterfaceNodes.Count > 0)
         {
-            sb.AppendLine("    classDef unmatchedInterface fill:#f5f5f5,stroke:#4caf50,stroke-width:1px,stroke-dasharray:3 3,color:#999;");
+            sb.AppendLine(
+                "    classDef unmatchedInterface fill:#f5f5f5,stroke:#4caf50,stroke-width:1px,stroke-dasharray:3 3,color:#999;"
+            );
             foreach (var node in unmatchedInterfaceNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -123,10 +144,14 @@ internal static class MermaidOutputWriter
         }
 
         // Add styles for condition-unmatched class nodes (線だけ青、背景は淡いグレー)
-        var unmatchedClassNodes = graph.Nodes.Where(n => n.Kind == "class" && !n.IsConditionMatched).ToList();
+        var unmatchedClassNodes = graph
+            .Nodes.Where(n => n.Kind == "class" && !n.IsConditionMatched)
+            .ToList();
         if (unmatchedClassNodes.Count > 0)
         {
-            sb.AppendLine("    classDef unmatchedCls fill:#f5f5f5,stroke:#2196f3,stroke-width:1px,stroke-dasharray:3 3,color:#999;");
+            sb.AppendLine(
+                "    classDef unmatchedCls fill:#f5f5f5,stroke:#2196f3,stroke-width:1px,stroke-dasharray:3 3,color:#999;"
+            );
             foreach (var node in unmatchedClassNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -137,10 +162,14 @@ internal static class MermaidOutputWriter
         }
 
         // Add styles for condition-unmatched decorator nodes (線だけ紫、背景は淡いグレー)
-        var unmatchedDecoratorNodes = graph.Nodes.Where(n => n.Kind == "decorator" && !n.IsConditionMatched).ToList();
+        var unmatchedDecoratorNodes = graph
+            .Nodes.Where(n => n.Kind == "decorator" && !n.IsConditionMatched)
+            .ToList();
         if (unmatchedDecoratorNodes.Count > 0)
         {
-            sb.AppendLine("    classDef unmatchedDecorator fill:#f5f5f5,stroke:#9c27b0,stroke-width:1px,stroke-dasharray:3 3,color:#999;");
+            sb.AppendLine(
+                "    classDef unmatchedDecorator fill:#f5f5f5,stroke:#9c27b0,stroke-width:1px,stroke-dasharray:3 3,color:#999;"
+            );
             foreach (var node in unmatchedDecoratorNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -154,7 +183,9 @@ internal static class MermaidOutputWriter
         var externalNodes = graph.Nodes.Where(n => n.IsExternal).ToList();
         if (externalNodes.Count > 0)
         {
-            sb.AppendLine("    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;");
+            sb.AppendLine(
+                "    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;"
+            );
             foreach (var node in externalNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -169,24 +200,21 @@ internal static class MermaidOutputWriter
 
     private static string BuildArrowStyle(QudiVisualizationEdge edge)
     {
-        var label = string.IsNullOrWhiteSpace(edge.Condition) 
-            ? string.Empty 
+        var label = string.IsNullOrWhiteSpace(edge.Condition)
+            ? string.Empty
             : $"|{EscapeMermaidLabel(edge.Condition!)}|";
 
         return edge.Kind switch
         {
             "collection" => $"-.->|\"*\"|",
 
-            _ => string.IsNullOrWhiteSpace(label) ? "-->" : $"-->{label}"
+            _ => string.IsNullOrWhiteSpace(label) ? "-->" : $"-->{label}",
         };
     }
 
     private static string EscapeMermaidLabel(string value)
     {
-        return value
-            .Replace("\"", "\\\"")
-            .Replace("<", "#lt;")
-            .Replace(">", "#gt;");
+        return value.Replace("\"", "\\\"").Replace("<", "#lt;").Replace(">", "#gt;");
     }
 
     private static string SanitizeMermaidId(string value)
@@ -206,7 +234,11 @@ internal static class MermaidOutputWriter
         return sb.Length == 0 ? "node" : sb.ToString();
     }
 
-    private static void GenerateNodesFlat(StringBuilder sb, QudiVisualizationGraph graph, Dictionary<string, string> ids)
+    private static void GenerateNodesFlat(
+        StringBuilder sb,
+        QudiVisualizationGraph graph,
+        Dictionary<string, string> ids
+    )
     {
         foreach (var node in graph.Nodes)
         {
@@ -218,11 +250,17 @@ internal static class MermaidOutputWriter
         }
     }
 
-    private static void GenerateNodesWithSubgraphs(StringBuilder sb, QudiVisualizationGraph graph, Dictionary<string, string> ids)
+    private static void GenerateNodesWithSubgraphs(
+        StringBuilder sb,
+        QudiVisualizationGraph graph,
+        Dictionary<string, string> ids
+    )
     {
         // Group nodes by namespace
         var externalNodes = new List<QudiVisualizationNode>();
-        var namespaceGroups = new Dictionary<string, List<QudiVisualizationNode>>(StringComparer.Ordinal);
+        var namespaceGroups = new Dictionary<string, List<QudiVisualizationNode>>(
+            StringComparer.Ordinal
+        );
 
         foreach (var node in graph.Nodes)
         {
@@ -263,7 +301,7 @@ internal static class MermaidOutputWriter
             var ns = kvp.Key;
             var nodes = kvp.Value;
             var subgraphId = SanitizeMermaidId(ns);
-            
+
             sb.AppendLine($"    subgraph {subgraphId} [\"{ns}\"]");
             foreach (var node in nodes)
             {

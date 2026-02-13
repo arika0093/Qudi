@@ -198,9 +198,11 @@ internal static class HelperCodeGenerator
             }
             else
             {
-                builder.AppendLine($$"""
+                builder.AppendLine(
+                    $$"""
                     {{interfaceName}} {{helperAccessor}} { get; }
-                    """);
+                    """
+                );
             }
         }
     }
@@ -298,10 +300,14 @@ internal static class HelperCodeGenerator
         builder.AppendLine("{");
         builder.IncreaseIndent();
 
-        builder.AppendLineIf(property.HasGetter, $$"""
+        builder.AppendLineIf(
+            property.HasGetter,
+            $$"""
             get
             {
-                using var enumerator = __Root.Intercept("get_{{propertyName}}", new object?[] { {{BuildInterceptArgumentList(property.Parameters)}} }).GetEnumerator();
+                using var enumerator = __Root.Intercept("get_{{propertyName}}", new object?[] { {{BuildInterceptArgumentList(
+                property.Parameters
+            )}} }).GetEnumerator();
                 if (enumerator.MoveNext() && enumerator.Current)
                 {
                     var result = {{accessor}};
@@ -310,11 +316,16 @@ internal static class HelperCodeGenerator
                 }
                 throw new global::System.InvalidOperationException("Execution of get_{{propertyName}} was cancelled by Intercept.");
             }
-            """);
-        builder.AppendLineIf(property.HasSetter, $$"""
+            """
+        );
+        builder.AppendLineIf(
+            property.HasSetter,
+            $$"""
             set
             {
-                using var enumerator = __Root.Intercept("set_{{propertyName}}", new object?[] { {{BuildInterceptArgumentListWithValue(property.Parameters)}} }).GetEnumerator();
+                using var enumerator = __Root.Intercept("set_{{propertyName}}", new object?[] { {{BuildInterceptArgumentListWithValue(
+                property.Parameters
+            )}} }).GetEnumerator();
                 if (enumerator.MoveNext() && enumerator.Current)
                 {
                     {{accessor}} = value;
@@ -323,7 +334,8 @@ internal static class HelperCodeGenerator
                 }
                 throw new global::System.InvalidOperationException("Execution of set_{{propertyName}} was cancelled by Intercept.");
             }
-            """);
+            """
+        );
         builder.DecreaseIndent();
         builder.AppendLine("}");
     }
