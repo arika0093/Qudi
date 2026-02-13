@@ -29,10 +29,12 @@ internal static class MermaidOutputWriter
             }
             ids[node.Id] = id;
 
-            sb.AppendLine($"    {id}[\"{EscapeMermaidLabel(node.Label)}\"]");
+            // Escape generics in label
+            var escapedLabel = EscapeMermaidLabel(node.Label);
+            sb.AppendLine($"    {id}[\"{escapedLabel}\"]");
         }
 
-        // Generate edges
+        // Generate edges with condition labels
         foreach (var edge in graph.Edges)
         {
             if (!ids.TryGetValue(edge.From, out var fromId) || !ids.TryGetValue(edge.To, out var toId))
@@ -58,11 +60,39 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for decorator nodes
-        var decoratorNodes = graph.Nodes.Where(n => n.Kind == "decorator").ToList();
+        // Add styles for interface nodes (薄い緑色背景)
+        var interfaceNodes = graph.Nodes.Where(n => n.Kind == "interface" && n.IsConditionMatched && !n.IsExternal).ToList();
+        if (interfaceNodes.Count > 0)
+        {
+            sb.AppendLine("    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;");
+            foreach (var node in interfaceNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} interface;");
+                }
+            }
+        }
+
+        // Add styles for class nodes (薄い青色背景)
+        var classNodes = graph.Nodes.Where(n => n.Kind == "class" && n.IsConditionMatched && !n.IsExternal).ToList();
+        if (classNodes.Count > 0)
+        {
+            sb.AppendLine("    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;");
+            foreach (var node in classNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} cls;");
+                }
+            }
+        }
+
+        // Add styles for decorator nodes (紫系、文字色は黒)
+        var decoratorNodes = graph.Nodes.Where(n => n.Kind == "decorator" && n.IsConditionMatched && !n.IsExternal).ToList();
         if (decoratorNodes.Count > 0)
         {
-            sb.AppendLine("    classDef decorator fill:#add8e6,stroke:#4682b4,stroke-width:2px;");
+            sb.AppendLine("    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;");
             foreach (var node in decoratorNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
@@ -72,16 +102,58 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for condition-unmatched nodes (grayed out)
-        var unmatchedNodes = graph.Nodes.Where(n => !n.IsConditionMatched).ToList();
-        if (unmatchedNodes.Count > 0)
+        // Add styles for condition-unmatched interface nodes (線だけ緑、背景は淡いグレー)
+        var unmatchedInterfaceNodes = graph.Nodes.Where(n => n.Kind == "interface" && !n.IsConditionMatched).ToList();
+        if (unmatchedInterfaceNodes.Count > 0)
         {
-            sb.AppendLine("    classDef unmatched fill:#e0e0e0,stroke:#999,stroke-width:1px,color:#666;");
-            foreach (var node in unmatchedNodes)
+            sb.AppendLine("    classDef unmatchedInterface fill:#f5f5f5,stroke:#4caf50,stroke-width:1px,stroke-dasharray:3 3,color:#999;");
+            foreach (var node in unmatchedInterfaceNodes)
             {
                 if (ids.TryGetValue(node.Id, out var id))
                 {
-                    sb.AppendLine($"    class {id} unmatched;");
+                    sb.AppendLine($"    class {id} unmatchedInterface;");
+                }
+            }
+        }
+
+        // Add styles for condition-unmatched class nodes (線だけ青、背景は淡いグレー)
+        var unmatchedClassNodes = graph.Nodes.Where(n => n.Kind == "class" && !n.IsConditionMatched).ToList();
+        if (unmatchedClassNodes.Count > 0)
+        {
+            sb.AppendLine("    classDef unmatchedCls fill:#f5f5f5,stroke:#2196f3,stroke-width:1px,stroke-dasharray:3 3,color:#999;");
+            foreach (var node in unmatchedClassNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} unmatchedCls;");
+                }
+            }
+        }
+
+        // Add styles for condition-unmatched decorator nodes (線だけ紫、背景は淡いグレー)
+        var unmatchedDecoratorNodes = graph.Nodes.Where(n => n.Kind == "decorator" && !n.IsConditionMatched).ToList();
+        if (unmatchedDecoratorNodes.Count > 0)
+        {
+            sb.AppendLine("    classDef unmatchedDecorator fill:#f5f5f5,stroke:#9c27b0,stroke-width:1px,stroke-dasharray:3 3,color:#999;");
+            foreach (var node in unmatchedDecoratorNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} unmatchedDecorator;");
+                }
+            }
+        }
+
+        // Add styles for external nodes (淡いオレンジベース)
+        var externalNodes = graph.Nodes.Where(n => n.IsExternal).ToList();
+        if (externalNodes.Count > 0)
+        {
+            sb.AppendLine("    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;");
+            foreach (var node in externalNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} external;");
                 }
             }
         }
@@ -91,18 +163,24 @@ internal static class MermaidOutputWriter
 
     private static string BuildArrowStyle(QudiVisualizationEdge edge)
     {
+        var label = string.IsNullOrWhiteSpace(edge.Condition) 
+            ? string.Empty 
+            : $"|{EscapeMermaidLabel(edge.Condition!)}|";
+
         return edge.Kind switch
         {
-            "collection" => "-.->|\"*\"|",
-            "decorator-provides" => "==>",
-            "decorator-wraps" => "-.->",
-            _ => "-->"
+            "collection" => $"-.->|\"*\"|",
+
+            _ => string.IsNullOrWhiteSpace(label) ? "-->" : $"-->{label}"
         };
     }
 
     private static string EscapeMermaidLabel(string value)
     {
-        return value.Replace("\"", "\\\"");
+        return value
+            .Replace("\"", "\\\"")
+            .Replace("<", "#lt;")
+            .Replace(">", "#gt;");
     }
 
     private static string SanitizeMermaidId(string value)

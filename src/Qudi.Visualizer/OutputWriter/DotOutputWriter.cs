@@ -38,25 +38,41 @@ internal static class DotOutputWriter
     {
         if (!node.IsConditionMatched)
         {
-            return ", style=\"filled,dashed\", fillcolor=lightgray, color=gray";
+            // 無効化時: 線部分だけ色反映、背景は淡いグレー
+            return node.Kind switch
+            {
+                "interface" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#4caf50\"",
+                "class" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#2196f3\"",
+                "decorator" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#9c27b0\"",
+                _ => ", style=\"filled,dashed\", fillcolor=lightgray, color=gray"
+            };
+        }
+
+        if (node.IsExternal)
+        {
+            return ", style=dashed, fillcolor=\"#ffe0b2\", color=\"#ff9800\"";
         }
 
         return node.Kind switch
         {
             "missing" => ", style=dashed, color=red",
-            "decorator" => ", style=filled, fillcolor=lightblue",
+            "interface" => ", style=filled, fillcolor=\"#c8e6c9\"",
+            "class" => ", style=filled, fillcolor=\"#bbdefb\"",
+            "decorator" => ", style=filled, fillcolor=\"#e1bee7\"",
             _ => string.Empty
         };
     }
 
     private static string BuildEdgeStyle(QudiVisualizationEdge edge)
     {
+        var label = string.IsNullOrWhiteSpace(edge.Condition)
+            ? string.Empty
+            : $", label=\"{EscapeDot(edge.Condition!)}\"";
+
         return edge.Kind switch
         {
             "collection" => " [label=\"*\", style=dashed]",
-            "decorator-provides" => " [color=blue]",
-            "decorator-wraps" => " [color=blue, style=dashed]",
-            _ => ""
+            _ => string.IsNullOrWhiteSpace(label) ? "" : $" [{label.TrimStart(',', ' ')}]"
         };
     }
 

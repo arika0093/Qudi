@@ -1,22 +1,21 @@
 digraph Qudi {
   rankdir=LR;
   node [shape=box, fontname="Arial"];
-  "Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>" [label="Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>", shape=ellipse];
-  "Qudi.Example.Core.Altaria" [label="Qudi.Example.Core.Altaria", shape=box];
-  "Qudi.Example.Core.Garchomp" [label="Qudi.Example.Core.Garchomp", shape=box];
-  "Qudi.Example.Core.INotificationService" [label="Qudi.Example.Core.INotificationService", shape=ellipse];
-  "Qudi.Example.Core.IPokemon" [label="Qudi.Example.Core.IPokemon", shape=ellipse];
-  "Qudi.Example.Core.Lucario" [label="Qudi.Example.Core.Lucario", shape=box, style="filled,dashed", fillcolor=lightgray, color=gray];
-  "Qudi.Example.Core.NotifyPokemonInfoService" [label="Qudi.Example.Core.NotifyPokemonInfoService", shape=ellipse];
-  "Qudi.Example.Worker.NotifyDecorator" [label="Qudi.Example.Worker.NotifyDecorator", shape=box, style=filled, fillcolor=lightblue];
-  "Qudi.Example.Worker.NotifyToLogger" [label="Qudi.Example.Worker.NotifyToLogger", shape=box];
-  "Qudi.Example.Core.INotificationService" -> "Qudi.Example.Worker.NotifyToLogger";
+  "Qudi.Example.Core.Altaria" [label="Altaria", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Example.Core.Garchomp" [label="Garchomp", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>" [label="ILogger<NotifyToLogger>", shape=box, style=dashed, fillcolor="#ffe0b2", color="#ff9800"];
+  "Qudi.Example.Core.INotificationService" [label="INotificationService", shape=box, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Example.Core.IPokemon" [label="IPokemon", shape=box, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Example.Core.Lucario" [label="Lucario", shape=box, style=dashed, fillcolor="#f5f5f5", color="#2196f3"];
+  "Qudi.Example.Worker.NotifyDecorator" [label="NotifyDecorator", shape=box, style=filled, fillcolor="#e1bee7"];
+  "Qudi.Example.Core.NotifyPokemonInfoService" [label="NotifyPokemonInfoService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Example.Worker.NotifyToLogger" [label="NotifyToLogger", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Example.Worker.NotifyToLogger" -> "Microsoft.Extensions.Logging.ILogger<Qudi.Example.Worker.NotifyToLogger>";
   "Qudi.Example.Core.NotifyPokemonInfoService" -> "Qudi.Example.Core.IPokemon" [label="*", style=dashed];
   "Qudi.Example.Core.NotifyPokemonInfoService" -> "Qudi.Example.Core.INotificationService";
   "Qudi.Example.Core.IPokemon" -> "Qudi.Example.Core.Altaria";
-  "Qudi.Example.Core.IPokemon" -> "Qudi.Example.Core.Garchomp";
-  "Qudi.Example.Core.IPokemon" -> "Qudi.Example.Core.Lucario";
-  "Qudi.Example.Core.INotificationService" -> "Qudi.Example.Worker.NotifyDecorator" [color=blue];
-  "Qudi.Example.Worker.NotifyDecorator" -> "Qudi.Example.Worker.NotifyToLogger" [color=blue, style=dashed];
+  "Qudi.Example.Core.IPokemon" -> "Qudi.Example.Core.Garchomp" [label="Development"];
+  "Qudi.Example.Core.IPokemon" -> "Qudi.Example.Core.Lucario" [label="Production"];
+  "Qudi.Example.Core.INotificationService" -> "Qudi.Example.Worker.NotifyDecorator";
+  "Qudi.Example.Worker.NotifyDecorator" -> "Qudi.Example.Worker.NotifyToLogger";
 }

@@ -145,7 +145,7 @@ internal static class QudiVisualizationAnalyzer
         return new VisualizationContext(configuration, allRegistrations, serviceMap, implementationMap);
     }
 
-    private static List<QudiMissingRegistration> DetectMissing(VisualizationContext context, IReadOnlySet<string> internalAssemblies)
+    private static List<QudiMissingRegistration> DetectMissing(VisualizationContext context, HashSet<string> internalAssemblies)
     {
         var result = new List<QudiMissingRegistration>();
         var serviceAndSelf = new HashSet<Type>();
@@ -450,7 +450,7 @@ internal static class QudiVisualizationAnalyzer
     {
         if (!type.IsGenericType)
         {
-            return type.FullName ?? type.Name;
+            return type.Name;
         }
 
         var genericName = type.Name;
@@ -461,6 +461,24 @@ internal static class QudiVisualizationAnalyzer
         }
 
         var args = type.GetGenericArguments().Select(ToDisplayName);
+        return genericName + "<" + string.Join(", ", args) + ">";
+    }
+
+    internal static string ToFullDisplayName(Type type)
+    {
+        if (!type.IsGenericType)
+        {
+            return type.FullName ?? type.Name;
+        }
+
+        var genericName = type.Name;
+        var tick = genericName.IndexOf('`');
+        if (tick > 0)
+        {
+            genericName = genericName.Substring(0, tick);
+        }
+
+        var args = type.GetGenericArguments().Select(ToFullDisplayName);
         var prefix = type.Namespace is null ? string.Empty : type.Namespace + ".";
         return prefix + genericName + "<" + string.Join(", ", args) + ">";
     }
@@ -469,7 +487,7 @@ internal static class QudiVisualizationAnalyzer
     /// Determines if a type is from an external library.
     /// A type is considered external if its assembly is not in the internal assemblies set.
     /// </summary>
-    internal static bool IsExternalType(Type type, IReadOnlySet<string> internalAssemblies)
+    internal static bool IsExternalType(Type type, HashSet<string> internalAssemblies)
     {
         if (type.Namespace == null)
         {

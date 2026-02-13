@@ -9,8 +9,8 @@
     },
     "Registrations": [
       {
-        "Service": "Qudi.Example.Core.INotificationService",
-        "Implementation": "Qudi.Example.Worker.NotifyDecorator",
+        "Service": "INotificationService",
+        "Implementation": "NotifyDecorator",
         "Lifetime": "Singleton",
         "Key": "-",
         "When": "*",
@@ -18,8 +18,8 @@
         "Decorator": true
       },
       {
-        "Service": "Qudi.Example.Core.INotificationService",
-        "Implementation": "Qudi.Example.Worker.NotifyToLogger",
+        "Service": "INotificationService",
+        "Implementation": "NotifyToLogger",
         "Lifetime": "Singleton",
         "Key": "-",
         "When": "*",
@@ -27,8 +27,8 @@
         "Decorator": false
       },
       {
-        "Service": "Qudi.Example.Core.IPokemon",
-        "Implementation": "Qudi.Example.Core.Altaria",
+        "Service": "IPokemon",
+        "Implementation": "Altaria",
         "Lifetime": "Transient",
         "Key": "-",
         "When": "*",
@@ -36,8 +36,8 @@
         "Decorator": false
       },
       {
-        "Service": "Qudi.Example.Core.IPokemon",
-        "Implementation": "Qudi.Example.Core.Garchomp",
+        "Service": "IPokemon",
+        "Implementation": "Garchomp",
         "Lifetime": "Transient",
         "Key": "-",
         "When": "Development",
@@ -45,8 +45,8 @@
         "Decorator": false
       },
       {
-        "Service": "Qudi.Example.Core.IPokemon",
-        "Implementation": "Qudi.Example.Core.Lucario",
+        "Service": "IPokemon",
+        "Implementation": "Lucario",
         "Lifetime": "Transient",
         "Key": "-",
         "When": "Production",
@@ -54,8 +54,8 @@
         "Decorator": false
       },
       {
-        "Service": "Qudi.Example.Core.NotifyPokemonInfoService",
-        "Implementation": "Qudi.Example.Core.NotifyPokemonInfoService",
+        "Service": "NotifyPokemonInfoService",
+        "Implementation": "NotifyPokemonInfoService",
         "Lifetime": "Singleton",
         "Key": "-",
         "When": "*",
@@ -67,7 +67,7 @@
     "Cycles": [],
     "MultipleRegistrations": [
       {
-        "Service": "Qudi.Example.Core.IPokemon",
+        "Service": "IPokemon",
         "Key": "-",
         "Count": 3
       }
@@ -79,104 +79,116 @@
     "Nodes": [
       {
         "Id": "Qudi.Example.Worker.NotifyToLogger",
-        "Label": "Qudi.Example.Worker.NotifyToLogger",
-        "Kind": "implementation",
-        "IsConditionMatched": true
+        "Label": "NotifyToLogger",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
       },
       {
         "Id": "Qudi.Example.Core.INotificationService",
-        "Label": "Qudi.Example.Core.INotificationService",
-        "Kind": "service",
-        "IsConditionMatched": true
+        "Label": "INotificationService",
+        "Kind": "interface",
+        "IsConditionMatched": true,
+        "IsExternal": false
       },
       {
         "Id": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
-        "Label": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
-        "Kind": "service",
-        "IsConditionMatched": true
+        "Label": "ILogger\u003CNotifyToLogger\u003E",
+        "Kind": "interface",
+        "IsConditionMatched": true,
+        "IsExternal": true
       },
       {
         "Id": "Qudi.Example.Core.NotifyPokemonInfoService",
-        "Label": "Qudi.Example.Core.NotifyPokemonInfoService",
-        "Kind": "service",
-        "IsConditionMatched": true
+        "Label": "NotifyPokemonInfoService",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
       },
       {
         "Id": "Qudi.Example.Core.IPokemon",
-        "Label": "Qudi.Example.Core.IPokemon",
-        "Kind": "service",
-        "IsConditionMatched": true
+        "Label": "IPokemon",
+        "Kind": "interface",
+        "IsConditionMatched": true,
+        "IsExternal": false
       },
       {
         "Id": "Qudi.Example.Core.Altaria",
-        "Label": "Qudi.Example.Core.Altaria",
-        "Kind": "implementation",
-        "IsConditionMatched": true
+        "Label": "Altaria",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
       },
       {
         "Id": "Qudi.Example.Core.Garchomp",
-        "Label": "Qudi.Example.Core.Garchomp",
-        "Kind": "implementation",
-        "IsConditionMatched": true
+        "Label": "Garchomp",
+        "Kind": "class",
+        "IsConditionMatched": true,
+        "IsExternal": false
       },
       {
         "Id": "Qudi.Example.Core.Lucario",
-        "Label": "Qudi.Example.Core.Lucario",
-        "Kind": "implementation",
-        "IsConditionMatched": false
+        "Label": "Lucario",
+        "Kind": "class",
+        "IsConditionMatched": false,
+        "IsExternal": false
       },
       {
         "Id": "Qudi.Example.Worker.NotifyDecorator",
-        "Label": "Qudi.Example.Worker.NotifyDecorator",
+        "Label": "NotifyDecorator",
         "Kind": "decorator",
-        "IsConditionMatched": true
+        "IsConditionMatched": true,
+        "IsExternal": false
       }
     ],
     "Edges": [
       {
-        "From": "Qudi.Example.Core.INotificationService",
-        "To": "Qudi.Example.Worker.NotifyToLogger",
-        "Kind": "registration"
-      },
-      {
         "From": "Qudi.Example.Worker.NotifyToLogger",
         "To": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
-        "Kind": "dependency"
+        "Kind": "dependency",
+        "Condition": null
       },
       {
         "From": "Qudi.Example.Core.NotifyPokemonInfoService",
         "To": "Qudi.Example.Core.IPokemon",
-        "Kind": "collection"
+        "Kind": "collection",
+        "Condition": null
       },
       {
         "From": "Qudi.Example.Core.NotifyPokemonInfoService",
         "To": "Qudi.Example.Core.INotificationService",
-        "Kind": "dependency"
+        "Kind": "dependency",
+        "Condition": null
       },
       {
         "From": "Qudi.Example.Core.IPokemon",
         "To": "Qudi.Example.Core.Altaria",
-        "Kind": "registration"
+        "Kind": "registration",
+        "Condition": null
       },
       {
         "From": "Qudi.Example.Core.IPokemon",
         "To": "Qudi.Example.Core.Garchomp",
-        "Kind": "registration"
+        "Kind": "registration",
+        "Condition": "Development"
       },
       {
         "From": "Qudi.Example.Core.IPokemon",
         "To": "Qudi.Example.Core.Lucario",
-        "Kind": "registration"
+        "Kind": "registration",
+        "Condition": "Production"
       },
       {
         "From": "Qudi.Example.Core.INotificationService",
         "To": "Qudi.Example.Worker.NotifyDecorator",
-        "Kind": "decorator-provides"
+        "Kind": "registration",
+        "Condition": null
       },
       {
         "From": "Qudi.Example.Worker.NotifyDecorator",
         "To": "Qudi.Example.Worker.NotifyToLogger",
-        "Kind": "decorator-wraps"
+        "Kind": "registration",
+        "Condition": null
       }
     ]
   }
