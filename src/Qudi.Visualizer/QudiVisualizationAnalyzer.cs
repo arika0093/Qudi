@@ -180,6 +180,25 @@ internal static class QudiVisualizationAnalyzer
         {
             foreach (var required in registration.Registration.RequiredTypes.Distinct())
             {
+                // For decorators, check if a non-decorator implementation exists
+                if (registration.IsDecorator && registration.ServiceTypes.Contains(required))
+                {
+                    // Check if there's at least one non-decorator registration for this service type
+                    var hasNonDecoratorImpl = context.Applicable
+                        .Any(r => !r.IsDecorator && r.ServiceTypes.Contains(required));
+                    
+                    if (!hasNonDecoratorImpl)
+                    {
+                        result.Add(
+                            new QudiMissingRegistration(
+                                ToDisplayName(required) + " (non-decorator implementation)",
+                                registration.ImplementationDisplay
+                            )
+                        );
+                    }
+                    continue;
+                }
+
                 if (serviceAndSelf.Contains(required))
                 {
                     continue;
