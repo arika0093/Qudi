@@ -200,9 +200,26 @@ internal static class MermaidOutputWriter
 
     private static string BuildArrowStyle(QudiVisualizationEdge edge)
     {
-        var label = string.IsNullOrWhiteSpace(edge.Condition)
-            ? string.Empty
-            : $"|{EscapeMermaidLabel(edge.Condition!)}|";
+        var labelParts = new List<string>();
+        
+        if (!string.IsNullOrWhiteSpace(edge.Condition))
+        {
+            labelParts.Add(edge.Condition!);
+        }
+        
+        if (!string.IsNullOrWhiteSpace(edge.Key))
+        {
+            labelParts.Add($"Key:{edge.Key}");
+        }
+        
+        if (edge.Order != 0)
+        {
+            labelParts.Add($"Order:{edge.Order}");
+        }
+        
+        var label = labelParts.Count > 0
+            ? $"|{EscapeMermaidLabel(string.Join(", ", labelParts))}|"
+            : string.Empty;
 
         return edge.Kind switch
         {

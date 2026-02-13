@@ -76,7 +76,9 @@ public sealed record QudiVisualizationEdge(
     string From,
     string To,
     string Kind,
-    string? Condition = null
+    string? Condition = null,
+    string? Key = null,
+    int Order = 0
 );
 
 public sealed record QudiVisualizationGraph(

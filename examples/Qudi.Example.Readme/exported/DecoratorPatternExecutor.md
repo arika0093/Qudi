@@ -10,7 +10,6 @@ flowchart LR
     Qudi_Examples_DecoratorPattern_IMessageService --> Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator
     Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator --> Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator
     Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator --> Microsoft_Extensions_Logging_ILogger_Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator_
-    Qudi_Examples_DecoratorPattern_IMessageService --> Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator
     Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator --> Qudi_Examples_DecoratorPattern_MessageService
     classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
     class Qudi_Examples_DecoratorPattern_IMessageService interface;
