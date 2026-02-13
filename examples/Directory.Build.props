@@ -8,11 +8,11 @@
     <CompilerGeneratedFilesOutputPath>.generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qudi.Generator\Qudi.Generator.csproj">
+    <ProjectReference Include="../../src/Qudi.Generator/Qudi.Generator.csproj">
       <OutputItemType>Analyzer</OutputItemType>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\Qudi\Qudi.csproj" />
-    <ProjectReference Include="..\..\src\Qudi.Visualizer\Qudi.Visualizer.csproj" />
+    <ProjectReference Include="../../src/Qudi/Qudi.csproj" />
+    <ProjectReference Include="../../src/Qudi.Visualizer/Qudi.Visualizer.csproj" />
   </ItemGroup>
 </Project>

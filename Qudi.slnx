@@ -28,9 +28,7 @@
     <Project Path="src/Qudi.Container.Microsoft/Qudi.Container.Microsoft.csproj" />
     <Project Path="src/Qudi.Core/Qudi.Core.csproj" />
     <Project Path="src/Qudi.Generator/Qudi.Generator.csproj" />
-    <Project Path="src/Qudi.Visualizer/Qudi.Visualizer.csproj">
-      <Build Solution="Debug|*" Project="false" />
-    </Project>
+    <Project Path="src/Qudi.Visualizer/Qudi.Visualizer.csproj" />
     <Project Path="src/Qudi/Qudi.csproj" />
   </Folder>
   <Folder Name="/tests/">
