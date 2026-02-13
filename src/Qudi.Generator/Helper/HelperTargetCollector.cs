@@ -65,8 +65,34 @@ internal static class HelperTargetCollector
         var asTypes = GetExplicitAsTypes(attribute);
         var useIntercept = SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false;
 
-        // typename is only class name without namespace, such as "MyService"
-        // TODO: Support nested classes (classes within classes)
+        // Collect nested class information (from innermost to outermost)
+        var containingTypesList = new List<ContainingTypeInfo>();
+        var currentType = typeSymbol.ContainingType;
+        while (currentType is not null)
+        {
+            var containingTypeKind = currentType.TypeKind switch
+            {
+                TypeKind.Class => "class",
+                TypeKind.Struct => "struct",
+                _ => "class",
+            };
+            var containingIsRecord = currentType.IsRecord;
+            var containingTypeKeyword = $"{(containingIsRecord ? "record " : "")}{containingTypeKind}";
+            var accessibility = GetAccessibility(currentType.DeclaredAccessibility);
+
+            containingTypesList.Add(
+                new ContainingTypeInfo
+                {
+                    Name = currentType.Name,
+                    TypeKeyword = containingTypeKeyword,
+                    Accessibility = accessibility,
+                }
+            );
+            currentType = currentType.ContainingType;
+        }
+        // Reverse to get from outermost to innermost
+        containingTypesList.Reverse();
+
         var typeName = typeSymbol.Name;
         var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
             ? string.Empty
@@ -134,7 +160,8 @@ internal static class HelperTargetCollector
                 typeSymbol,
                 iface,
                 isDecorator,
-                useIntercept
+                useIntercept,
+                containingTypesList
             );
             if (constructorTarget is not null)
             {
@@ -469,7 +496,8 @@ internal static class HelperTargetCollector
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol interfaceSymbol,
         bool isDecorator,
-        bool useIntercept
+        bool useIntercept,
+        List<ContainingTypeInfo> containingTypes
     )
     {
         if (context.TargetNode is not ClassDeclarationSyntax)
@@ -520,6 +548,7 @@ internal static class HelperTargetCollector
             ImplementingTypeName = typeName,
             ImplementingTypeNamespace = typeNamespace,
             ImplementingTypeKeyword = typeKeyword,
+            ContainingTypes = new EquatableArray<ContainingTypeInfo>(containingTypes.ToImmutableArray()),
             ConstructorAccessibility = accessibility,
             InterfaceName = interfaceName,
             InterfaceNamespace = interfaceNamespace,

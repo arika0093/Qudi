@@ -35,3 +35,10 @@ public sealed class OrderedDecorator(IOrderedService innerService) : IOrderedSer
 {
     public string Get() => $"decorator({innerService.Get()})";
 }
+
+public partial class PartialTest
+{
+    // it is checked that the partial class is generated correctly
+    [QudiDecorator]
+    public partial class PartialDecorator(IHelperService inner) : IHelperService;
+}

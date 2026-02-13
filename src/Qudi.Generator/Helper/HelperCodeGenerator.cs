@@ -61,9 +61,19 @@ internal static class HelperCodeGenerator
         // namespace
         var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
         builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
-        // class declaration
         using (builder.BeginScopeIf(useNamespace))
         {
+            // Open containing (parent) types if this is a nested class
+            var containingTypes = target.ContainingTypes.ToArray();
+            foreach (var containingType in containingTypes)
+            {
+                builder.AppendLine(
+                    $"{containingType.Accessibility} partial {containingType.TypeKeyword} {containingType.Name}"
+                );
+                builder.AppendLine("{");
+                builder.IncreaseIndent();
+            }
+
             if (target.UseIntercept)
             {
                 builder.AppendLine(
@@ -92,6 +102,13 @@ internal static class HelperCodeGenerator
                     }
                     """
                 );
+            }
+
+            // Close containing types
+            for (var i = 0; i < containingTypes.Length; i++)
+            {
+                builder.DecreaseIndent();
+                builder.AppendLine("}");
             }
         }
     }

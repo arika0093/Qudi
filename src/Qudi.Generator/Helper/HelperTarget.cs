@@ -49,6 +49,27 @@ internal sealed record HelperInterfaceTarget
 }
 
 /// <summary>
+/// Represents a containing (parent) type for nested classes.
+/// </summary>
+internal sealed record ContainingTypeInfo
+{
+    /// <summary>
+    /// Name of the containing type.
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    /// Type keyword (e.g., class, struct, record).
+    /// </summary>
+    public required string TypeKeyword { get; init; }
+
+    /// <summary>
+    /// Accessibility of the containing type.
+    /// </summary>
+    public required string Accessibility { get; init; }
+}
+
+/// <summary>
 /// Represents a target type that should implement a decorator helper interface.
 /// </summary>
 internal sealed record HelperImplementingTarget
@@ -68,6 +89,11 @@ internal sealed record HelperImplementingTarget
     /// Keyword describing the implementing type (e.g., class, struct, record).
     /// </summary>
     public required string ImplementingTypeKeyword { get; init; }
+
+    /// <summary>
+    /// Parent classes if this is a nested class (ordered from outermost to innermost).
+    /// </summary>
+    public required EquatableArray<ContainingTypeInfo> ContainingTypes { get; init; }
 
     /// <summary>
     /// Accessibility of the constructor used for helper generation.
