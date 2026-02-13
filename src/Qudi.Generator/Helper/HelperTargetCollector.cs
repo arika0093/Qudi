@@ -54,7 +54,6 @@ internal static class HelperTargetCollector
             return blankInput;
         }
 
-        // TODO: There may be multiple attributes
         var attribute = context
             .Attributes.Where(attr =>
                 SymbolEqualityComparer.Default.Equals(

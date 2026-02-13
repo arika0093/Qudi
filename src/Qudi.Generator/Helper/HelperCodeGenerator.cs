@@ -10,7 +10,7 @@ namespace Qudi.Generator.Helper;
 
 internal static class HelperCodeGenerator
 {
-    private const string IEnumerable = "global::System.Collections.IEnumerable";
+    private const string IEnumerable = "global::System.Collections.Generic.IEnumerable";
 
     public static void GenerateHelpers(SourceProductionContext context, HelperGenerationInput input)
     {
@@ -145,25 +145,20 @@ internal static class HelperCodeGenerator
                     AppendDecoratorProperty(builder, member, helperAccessor);
                 }
             }
-
-            // helper accessor
-            builder.AppendLine(
-                $$"""
-                {{interfaceName}} {{helperAccessor}} { get; }
-
-                """
-            );
+            builder.AppendLine("");
 
             // base impl class and intercept method
             if (useIntercept)
             {
                 builder.AppendLine(
                     $$"""
-                    {{CodeTemplateContents.EditorBrowsableAttribute}}
                     {{IEnumerable}}<bool> Intercept(string methodName, object?[] args)
                     {
                         yield return true;
                     }
+
+                    {{CodeTemplateContents.EditorBrowsableAttribute}}
+                    protected __BaseImpl __Base { get; }
 
                     {{CodeTemplateContents.EditorBrowsableAttribute}}
                     protected class __BaseImpl({{interfaceName}} __Service, {{helperName}} __Root)
@@ -183,6 +178,12 @@ internal static class HelperCodeGenerator
                         }
                     }
                 }
+            }
+            else
+            {
+                builder.AppendLine($$"""
+                    {{interfaceName}} {{helperAccessor}} { get; }
+                    """);
             }
         }
     }
@@ -246,7 +247,7 @@ internal static class HelperCodeGenerator
 
         builder.AppendLine(
             $$"""
-            {{asyncModifier}}{{returnType}} {{method.Name}}({{parameters}})
+            public {{asyncModifier}}{{returnType}} {{method.Name}}({{parameters}})
             {
                 using var enumerator = __Root.Intercept("{{method.Name}}", new object?[] { {{interceptArguments}} }).GetEnumerator();
                 if (enumerator.MoveNext() && enumerator.Current)
@@ -272,64 +273,40 @@ internal static class HelperCodeGenerator
         var accessSuffix = property.IsIndexer
             ? $"[{BuildArgumentList(property.Parameters)}]"
             : string.Empty;
+        var accessor = property.IsIndexer
+            ? $"__Service{accessSuffix}"
+            : $"__Service.{propertyName}{accessSuffix}";
 
         builder.AppendLine($"public {typeName} {propertyName}{indexerSuffix}");
         builder.AppendLine("{");
         builder.IncreaseIndent();
 
-        if (property.HasGetter)
-        {
-            var getterAccess = property.IsIndexer
-                ? $"__Service{accessSuffix}"
-                : $"__Service.{propertyName}{accessSuffix}";
-            builder.AppendLine("get");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine(
-                $"using var enumerator = __Root.Intercept(\"get_{propertyName}\", new object?[] {{ {BuildInterceptArgumentList(property.Parameters)} }}).GetEnumerator();"
-            );
-            builder.AppendLine("if (enumerator.MoveNext() && enumerator.Current)");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine($"var result = {getterAccess};");
-            builder.AppendLine("enumerator.MoveNext();");
-            builder.AppendLine("return result;");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.AppendLine(
-                $"throw new global::System.InvalidOperationException(\"Execution of get_{propertyName} was cancelled by Intercept.\");"
-            );
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-        }
-
-        if (property.HasSetter)
-        {
-            var setterAccess = property.IsIndexer
-                ? $"__Service{accessSuffix}"
-                : $"__Service.{propertyName}{accessSuffix}";
-            builder.AppendLine("set");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            var setterArgs = BuildInterceptArgumentListWithValue(property.Parameters);
-            builder.AppendLine(
-                $"using var enumerator = __Root.Intercept(\"set_{propertyName}\", new object?[] {{ {setterArgs} }}).GetEnumerator();"
-            );
-            builder.AppendLine("if (enumerator.MoveNext() && enumerator.Current)");
-            builder.AppendLine("{");
-            builder.IncreaseIndent();
-            builder.AppendLine($"{setterAccess} = value;");
-            builder.AppendLine("enumerator.MoveNext();");
-            builder.AppendLine("return;");
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-            builder.AppendLine(
-                $"throw new global::System.InvalidOperationException(\"Execution of set_{propertyName} was cancelled by Intercept.\");"
-            );
-            builder.DecreaseIndent();
-            builder.AppendLine("}");
-        }
-
+        builder.AppendLineIf(property.HasGetter, $$"""
+            get
+            {
+                using var enumerator = __Root.Intercept("get_{{propertyName}}", new object?[] { {{BuildInterceptArgumentList(property.Parameters)}} }).GetEnumerator();
+                if (enumerator.MoveNext() && enumerator.Current)
+                {
+                    var result = {{accessor}};
+                    enumerator.MoveNext();
+                    return result;
+                }
+                throw new global::System.InvalidOperationException("Execution of get_{{propertyName}} was cancelled by Intercept.");
+            }
+            """);
+        builder.AppendLineIf(property.HasSetter, $$"""
+            set
+            {
+                using var enumerator = __Root.Intercept("set_{{propertyName}}", new object?[] { {{BuildInterceptArgumentListWithValue(property.Parameters)}} }).GetEnumerator();
+                if (enumerator.MoveNext() && enumerator.Current)
+                {
+                    {{accessor}} = value;
+                    enumerator.MoveNext();
+                    return;
+                }
+                throw new global::System.InvalidOperationException("Execution of set_{{propertyName}} was cancelled by Intercept.");
+            }
+            """);
         builder.DecreaseIndent();
         builder.AppendLine("}");
     }
