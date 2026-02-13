@@ -894,9 +894,3 @@ dotnet test
 # run AOT tests ( e.g. Windows )
 dotnet publish tests/Qudi.Tests/Qudi.Tests.csproj -o ./publish -f net10.0 -r win-x64 && publish\Qudi.Tests.exe 
 ```
-
-## TODO
-- [ ] Support more DI containers (e.g. Autofac, DryIoc, etc.)
-- [ ] Add Analyzer(Codefix)
-    - [ ] Generate `Intercept` method automatically
-- [ ] Improve error messages and diagnostics
