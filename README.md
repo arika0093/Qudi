@@ -523,6 +523,9 @@ This is useful for logging, performance measurement, and other cross-cutting con
 
 Set the UseIntercept property of the [QudiDecorator] attribute to true to use it.
 
+> [!IMPORTANT]
+> Due to implementation constraints (access to the common class via the `Base` property), this feature is only available for decorator classes that implement a single interface.
+
 ```csharp
 [QudiDecorator(UseIntercept = true)] // enable Intercept method
 public partial class SampleInterceptor(IManyFeatureService innerService, ILogger<SampleInterceptor> logger) : IManyFeatureService
@@ -627,9 +630,6 @@ public interface IDecoratorHelper_IManyFeatureService : IManyFeatureService
 The generated code creates a helper interface and a base implementation class that handles method delegation and interception logic. The decorator class can then focus on implementing only the methods that require custom behavior, while the rest are automatically handled by the generated code.
 
 </details>
-
-> [!IMPORTANT]
-> Due to implementation constraints (access to the common class via the `Base` property), this feature is only available for decorator classes that implement a single interface.
 
 ### Visualize Registration
 #### Overview
