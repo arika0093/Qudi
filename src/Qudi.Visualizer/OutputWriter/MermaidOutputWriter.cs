@@ -8,7 +8,7 @@ namespace Qudi.Visualizer.OutputWriter;
 
 internal static class MermaidOutputWriter
 {
-    public static string Generate(QudiVisualizationGraph graph)
+    public static string Generate(QudiVisualizationGraph graph, bool groupByNamespace = false)
     {
         var sb = new StringBuilder();
         sb.AppendLine("flowchart LR");
@@ -16,7 +16,7 @@ internal static class MermaidOutputWriter
         var ids = new Dictionary<string, string>(StringComparer.Ordinal);
         var used = new HashSet<string>(StringComparer.Ordinal);
 
-        // Generate node IDs and nodes
+        // Generate node IDs
         foreach (var node in graph.Nodes)
         {
             var baseId = SanitizeMermaidId(node.Id);
@@ -28,10 +28,16 @@ internal static class MermaidOutputWriter
                 index++;
             }
             ids[node.Id] = id;
+        }
 
-            // Escape generics in label
-            var escapedLabel = EscapeMermaidLabel(node.Label);
-            sb.AppendLine($"    {id}[\"{escapedLabel}\"]");
+        // Generate nodes (with or without subgraphs)
+        if (groupByNamespace)
+        {
+            GenerateNodesWithSubgraphs(sb, graph, ids);
+        }
+        else
+        {
+            GenerateNodesFlat(sb, graph, ids);
         }
 
         // Generate edges with condition labels
@@ -198,5 +204,86 @@ internal static class MermaidOutputWriter
             }
         }
         return sb.Length == 0 ? "node" : sb.ToString();
+    }
+
+    private static void GenerateNodesFlat(StringBuilder sb, QudiVisualizationGraph graph, Dictionary<string, string> ids)
+    {
+        foreach (var node in graph.Nodes)
+        {
+            if (ids.TryGetValue(node.Id, out var id))
+            {
+                var escapedLabel = EscapeMermaidLabel(node.Label);
+                sb.AppendLine($"    {id}[\"{escapedLabel}\"]");
+            }
+        }
+    }
+
+    private static void GenerateNodesWithSubgraphs(StringBuilder sb, QudiVisualizationGraph graph, Dictionary<string, string> ids)
+    {
+        // Group nodes by namespace
+        var externalNodes = new List<QudiVisualizationNode>();
+        var namespaceGroups = new Dictionary<string, List<QudiVisualizationNode>>(StringComparer.Ordinal);
+
+        foreach (var node in graph.Nodes)
+        {
+            if (node.IsExternal)
+            {
+                externalNodes.Add(node);
+            }
+            else
+            {
+                var ns = GetNamespace(node.Id);
+                if (!namespaceGroups.TryGetValue(ns, out var group))
+                {
+                    group = new List<QudiVisualizationNode>();
+                    namespaceGroups[ns] = group;
+                }
+                group.Add(node);
+            }
+        }
+
+        // Write external subgraph
+        if (externalNodes.Count > 0)
+        {
+            sb.AppendLine("    subgraph External");
+            foreach (var node in externalNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    var escapedLabel = EscapeMermaidLabel(node.Label);
+                    sb.AppendLine($"        {id}[\"{escapedLabel}\"]");
+                }
+            }
+            sb.AppendLine("    end");
+        }
+
+        // Write namespace subgraphs
+        foreach (var kvp in namespaceGroups.OrderBy(x => x.Key))
+        {
+            var ns = kvp.Key;
+            var nodes = kvp.Value;
+            var subgraphId = SanitizeMermaidId(ns);
+            
+            sb.AppendLine($"    subgraph {subgraphId} [\"{ns}\"]");
+            foreach (var node in nodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    var escapedLabel = EscapeMermaidLabel(node.Label);
+                    sb.AppendLine($"        {id}[\"{escapedLabel}\"]");
+                }
+            }
+            sb.AppendLine("    end");
+        }
+    }
+
+    private static string GetNamespace(string fullTypeName)
+    {
+        var lastDotIndex = fullTypeName.LastIndexOf('.');
+        if (lastDotIndex < 0)
+        {
+            return "(global)";
+        }
+        return fullTypeName.Substring(0, lastDotIndex);
     }
 }

@@ -23,6 +23,12 @@ public sealed class QudiVisualizationOptions
 
     public bool EnableConsoleOutput { get; set; } = true;
 
+    /// <summary>
+    /// Enable grouping by namespace using subgraph in Mermaid output.
+    /// Default is false.
+    /// </summary>
+    public bool GroupByNamespace { get; set; } = false;
+
     public IReadOnlyCollection<QudiVisualizationFileOutput> Outputs => _outputs;
 
     public IReadOnlyCollection<Type> TraceServices => _traceServices;
@@ -68,7 +74,8 @@ public sealed class QudiVisualizationOptions
         return new QudiVisualizationRuntimeOptions(
             EnableConsoleOutput,
             [.. _outputs],
-            [.. _traceServices]
+            [.. _traceServices],
+            GroupByNamespace
         );
     }
 
@@ -92,5 +99,6 @@ public sealed class QudiVisualizationOptions
 internal sealed record QudiVisualizationRuntimeOptions(
     bool EnableConsoleOutput,
     IReadOnlyCollection<QudiVisualizationFileOutput> Outputs,
-    IReadOnlyCollection<Type> TraceServices
+    IReadOnlyCollection<Type> TraceServices,
+    bool GroupByNamespace
 );

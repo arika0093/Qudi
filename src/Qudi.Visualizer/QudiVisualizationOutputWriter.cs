@@ -12,12 +12,12 @@ internal static class QudiVisualizationOutputWriter
     public static List<string> WriteAll(
         QudiVisualizationReport report,
         QudiVisualizationGraph graph,
-        IReadOnlyCollection<QudiVisualizationFileOutput> outputs
+        QudiVisualizationRuntimeOptions options
     )
     {
         var warnings = new List<string>();
 
-        foreach (var output in outputs)
+        foreach (var output in options.Outputs)
         {
             EnsureDirectory(output.FilePath);
 
@@ -30,7 +30,7 @@ internal static class QudiVisualizationOutputWriter
                     File.WriteAllText(output.FilePath, DotOutputWriter.Generate(graph));
                     break;
                 case QudiVisualizationFormat.Mermaid:
-                    File.WriteAllText(output.FilePath, MermaidOutputWriter.Generate(graph));
+                    File.WriteAllText(output.FilePath, MermaidOutputWriter.Generate(graph, options.GroupByNamespace));
                     break;
                 case QudiVisualizationFormat.Svg:
                     var warning = SvgOutputWriter.TryWrite(output.FilePath, graph);

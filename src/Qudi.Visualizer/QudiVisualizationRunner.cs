@@ -19,7 +19,7 @@ internal static class QudiVisualizationRunner
 
         if (options.Outputs.Count > 0)
         {
-            warnings.AddRange(QudiVisualizationOutputWriter.WriteAll(report, graph, options.Outputs));
+            warnings.AddRange(QudiVisualizationOutputWriter.WriteAll(report, graph, options));
         }
 
         if (options.EnableConsoleOutput)
