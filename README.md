@@ -415,10 +415,8 @@ You can easily register decorator classes using the `[QudiDecorator]` attribute.
 
 ```csharp
 [QudiDecorator]
-public class LoggingMessageServiceDecorator(
-    IMessageService innerService,
-    ILogger<LoggingMessageServiceDecorator> logger
-) : IMessageService
+public class LoggingMessageServiceDecorator(IMessageService innerService, ILogger<LoggingMessageServiceDecorator> logger)
+    : IMessageService
 {
     public void SendMessage(string message)
     {
@@ -429,9 +427,8 @@ public class LoggingMessageServiceDecorator(
 }
 
 [QudiDecorator(Order = 1)] // you can specify order
-public class CensorshipMessageServiceDecorator(
-    IMessageService innerService
-) : IMessageService
+public class CensorshipMessageServiceDecorator(IMessageService innerService)
+    : IMessageService
 {
     public void SendMessage(string message)
     {
@@ -465,7 +462,8 @@ To solve this, mark the decorator class as `partial` and implement only the meth
 ```csharp
 // when use QudiDecoratorAttribute, marked partial and implement single interface
 [QudiDecorator]
-public partial class SampleDecorator(IManyFeatureService innerService, ILogger<SampleDecorator> logger) : IManyFeatureService
+public partial class SampleDecorator(IManyFeatureService innerService, ILogger<SampleDecorator> logger)
+    : IManyFeatureService
 {
     // Only generate the methods you want to customize
     public void FeatureA()
@@ -528,7 +526,8 @@ Set the UseIntercept property of the [QudiDecorator] attribute to true to use it
 
 ```csharp
 [QudiDecorator(UseIntercept = true)] // enable Intercept method
-public partial class SampleInterceptor(IManyFeatureService innerService, ILogger<SampleInterceptor> logger) : IManyFeatureService
+public partial class SampleInterceptor(IManyFeatureService innerService, ILogger<SampleInterceptor> logger)
+    : IManyFeatureService
 {
     // you can implement the Intercept method to add common behavior
     public IEnumerable<bool> Intercept(string methodName, object?[] args)
