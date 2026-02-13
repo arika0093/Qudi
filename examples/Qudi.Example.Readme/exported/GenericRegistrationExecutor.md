@@ -5,11 +5,13 @@ flowchart LR
     Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_["IComponentValidator#lt;Screen#gt;"]
     Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_["IComponentValidator#lt;Keyboard#gt;"]
     Qudi_Examples_GenericRegistration_BatteryValidator["BatteryValidator"]
+    Qudi_Examples_GenericRegistration_BatteryAnotherValidator["BatteryAnotherValidator"]
     Qudi_Examples_GenericRegistration_ScreenValidator["ScreenValidator"]
     Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_
     Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_
     Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_
     Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryValidator
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryAnotherValidator
     Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ --> Qudi_Examples_GenericRegistration_ScreenValidator
     classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;
     class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ missing;
@@ -19,6 +21,7 @@ flowchart LR
     classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
     class Qudi_Examples_GenericRegistration_GenericRegistrationExecutor cls;
     class Qudi_Examples_GenericRegistration_BatteryValidator cls;
+    class Qudi_Examples_GenericRegistration_BatteryAnotherValidator cls;
     class Qudi_Examples_GenericRegistration_ScreenValidator cls;
 
 ```

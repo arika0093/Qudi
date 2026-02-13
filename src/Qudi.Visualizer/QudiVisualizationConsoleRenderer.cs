@@ -103,7 +103,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             .AddColumn(new TableColumn("[bold cyan]Service[/]"))
             .AddColumn(new TableColumn("[bold green]Implementation[/]"))
             .AddColumn(new TableColumn("[bold yellow]Life[/]").Centered())
-            .AddColumn(new TableColumn("[bold blue]Condition|Key[/]"))
+            .AddColumn(new TableColumn("[bold blue]Condition[/] | [bold magenta]Key[/]"))
             .AddColumn(new TableColumn("[bold orange1]Order[/]"))
             ;
 
@@ -132,7 +132,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             
             if (!string.IsNullOrEmpty(row.Key) && row.Key != "-")
             {
-                condition += $" [magenta]{row.Key}[/]";
+                condition += $" | [magenta]{row.Key}[/]";
             }
             
             var orderText = row.Order switch

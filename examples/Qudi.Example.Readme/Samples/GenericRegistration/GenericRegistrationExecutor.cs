@@ -48,6 +48,18 @@ public class BatteryValidator : IComponentValidator<Battery>
     }
 }
 
+// another implementation for Battery
+[DITransient]
+public class BatteryAnotherValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component)
+    {
+        bool isValid = component.Capacity % 2 == 0;
+        Console.WriteLine($"  {(isValid ? "✅" : "❌")} Battery: Capacity {component.Capacity}mAh is even");
+        return isValid;
+    }
+}
+
 // specialized implementation for Screen
 [DITransient]
 public class ScreenValidator : IComponentValidator<Screen>
@@ -75,15 +87,24 @@ public class GenericRegistrationExecutor(
         Console.WriteLine("Validating components:");
 
         // Get specialized validator for Battery
-        var batteryValidator = batteryValidators.Last();
-        batteryValidator.Validate(new Battery { Capacity = 5000 });
+        var battery = new Battery { Capacity = 5000 };
+        foreach(var validator in batteryValidators)
+        {
+            validator.Validate(battery);
+        }
 
         // Get specialized validator for Screen
-        var screenValidator = screenValidators.Last();
-        screenValidator.Validate(new Screen { Size = 6 });
+        var screen = new Screen { Size = 6 };
+        foreach(var validator in screenValidators)
+        {
+            validator.Validate(screen);
+        }
 
         // Get default validator for Keyboard (no specialized implementation)
-        var keyboardValidator = keyboardValidators.Last();
-        keyboardValidator.Validate(new Keyboard { Keys = 104 });
+        var keyboard = new Keyboard { Keys = 104 };
+        foreach(var validator in keyboardValidators)
+        {
+            validator.Validate(keyboard);
+        }
     }
 }
