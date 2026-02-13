@@ -25,22 +25,12 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         AnsiConsole.Write(CreateRegistrationsPanel(report.Registrations));
         AnsiConsole.WriteLine();
 
-        // Create bottom layout for Issues and Multiples side-by-side
-        var bottomLayout = new Layout("Bottom")
-            .SplitColumns(
-                new Layout("Issues"),
-                new Layout("Multiples")
-            );
-        
-        bottomLayout["Issues"].Update(CreateIssuesPanel(
+        // Issues panel (fixed height, no vertical expansion)
+        AnsiConsole.Write(CreateIssuesPanel(
             report.MissingRegistrations, 
             report.Cycles, 
             report.LifetimeWarnings
         ));
-        
-        bottomLayout["Multiples"].Update(CreateMultiplesPanel(report.MultipleRegistrations));
-        
-        AnsiConsole.Write(bottomLayout);
         AnsiConsole.WriteLine();
 
         // Footer: Traces and Warnings
@@ -62,11 +52,12 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
     private Panel CreateSummaryPanel(QudiVisualizationSummary summary)
     {
         var grid = new Grid()
-            .AddColumn(new GridColumn().PadRight(4))
-            .AddColumn(new GridColumn().PadRight(4))
-            .AddColumn(new GridColumn().PadRight(4))
-            .AddColumn(new GridColumn().PadRight(4))
-            .AddColumn(new GridColumn().PadRight(4));
+            .Alignment(Justify.Center)
+            .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
+            .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
+            .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
+            .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
+            .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4));
 
         // Row 1: Labels
         grid.AddRow(
@@ -96,8 +87,8 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
         return new Panel(grid)
         {
-            Header = new PanelHeader("[bold]📈 Summary Metrics[/]", Justify.Center),
-            Border = BoxBorder.Double,
+            Header = new PanelHeader("[bold]📈 Summary Metrics[/]", Justify.Left),
+            Border = BoxBorder.Rounded,
             BorderStyle = new Style(Color.Cyan1),
             Expand = true
         };
@@ -106,31 +97,22 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
     private Panel CreateRegistrationsPanel(IReadOnlyList<QudiRegistrationTableRow> rows)
     {
         var table = new Table()
-            .Border(TableBorder.Rounded)
+            .Border(TableBorder.Simple)
             .BorderColor(Color.Green)
             .Expand()
             .AddColumn(new TableColumn("[bold cyan]Service[/]"))
             .AddColumn(new TableColumn("[bold green]Implementation[/]"))
             .AddColumn(new TableColumn("[bold yellow]Life[/]").Centered())
-            .AddColumn(new TableColumn("[bold blue]Condition[/]"))
-            .AddColumn(new TableColumn("[bold red]Dec[/]").Centered());
+            .AddColumn(new TableColumn("[bold blue]Condition[/]"));
 
         foreach (var row in rows)
         {
-            var lifetimeColor = row.Lifetime switch
-            {
-                "Singleton" => "green",
-                "Scoped" => "yellow",
-                "Transient" => "cyan",
-                _ => "white"
-            };
-
             var lifetimeIcon = row.Lifetime switch
             {
                 "Singleton" => "🔒",
                 "Scoped" => "📦",
                 "Transient" => "⚡",
-                _ => "?"
+                _ => row.Lifetime
             };
 
             // Combine condition info - keep it concise
@@ -156,12 +138,14 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 condition += $" [orange1]#{row.Order}[/]";
             }
 
+            var serviceColor = row.Service == row.Implementation ? "green" : "cyan";
+            var implColor = row.Decorator ? "red" : "green";
+            
             table.AddRow(
-                $"[cyan]{Markup.Escape(row.Service)}[/]",
-                $"[green]{Markup.Escape(row.Implementation)}[/]",
-                $"[{lifetimeColor}]{lifetimeIcon}[/]",
-                condition,
-                row.Decorator ? "[bold red]✓[/]" : "[dim]✗[/]"
+                $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",
+                $"[{implColor}]{Markup.Escape(row.Implementation)}[/]",
+                $"[yellow]{lifetimeIcon}[/]",
+                condition
             );
         }
 
@@ -183,7 +167,8 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         
         if (totalIssues == 0)
         {
-            return new Panel(new Markup("[bold green]✅ No issues detected![/]"))
+            var mk = new Markup("[bold green]✅ No issues detected![/]");
+            return new Panel(mk)
             {
                 Header = new PanelHeader("[bold]🛡️  Issues[/]", Justify.Left),
                 Border = BoxBorder.Rounded,
@@ -192,7 +177,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             };
         }
 
-        var grid = new Grid().AddColumn();
+        var grid = new Grid().Expand().Centered().AddColumn();
 
         if (missing.Count > 0)
         {
@@ -264,44 +249,6 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             Header = new PanelHeader($"[bold]🛡️  Issues ({totalIssues})[/]", Justify.Left),
             Border = BoxBorder.Rounded,
             BorderStyle = new Style(borderColor),
-            Expand = true
-        };
-    }
-
-    private Panel CreateMultiplesPanel(IReadOnlyList<QudiMultipleRegistration> multiples)
-    {
-        if (multiples.Count == 0)
-        {
-            return new Panel(new Markup("[dim]No multiple registrations[/]"))
-            {
-                Header = new PanelHeader("[bold]⚡ Multiple Registrations[/]", Justify.Left),
-                Border = BoxBorder.Rounded,
-                BorderStyle = new Style(Color.Grey),
-                Expand = true
-            };
-        }
-
-        var table = new Table()
-            .Border(TableBorder.Rounded)
-            .BorderColor(Color.Cyan1)
-            .AddColumn(new TableColumn("[bold cyan]Service[/]"))
-            .AddColumn(new TableColumn("[bold magenta]Key[/]").Centered())
-            .AddColumn(new TableColumn("[bold yellow]Count[/]").RightAligned());
-        
-        foreach (var item in multiples)
-        {
-            table.AddRow(
-                $"[cyan]{Markup.Escape(item.Service)}[/]",
-                string.IsNullOrEmpty(item.Key) ? "[dim]-[/]" : $"[magenta]{Markup.Escape(item.Key)}[/]",
-                $"[bold yellow]{item.Count}[/]"
-            );
-        }
-
-        return new Panel(table)
-        {
-            Header = new PanelHeader($"[bold]⚡ Multiple Registrations ({multiples.Count})[/]", Justify.Left),
-            Border = BoxBorder.Rounded,
-            BorderStyle = new Style(Color.Cyan1),
             Expand = true
         };
     }
