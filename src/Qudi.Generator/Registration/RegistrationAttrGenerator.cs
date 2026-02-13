@@ -63,6 +63,12 @@ internal static class RegistrationAttrGenerator
                 /// Whether this registration is a decorator.
                 /// </summary>
                 public bool MarkAsDecorator { get; set; }
+
+                /// <summary>
+                /// Whether to export this type for visualization. 
+                /// When true, generates a separate dependency graph starting from this type.
+                /// </summary>
+                public bool Export { get; set; }
             }
 
             /// <summary>

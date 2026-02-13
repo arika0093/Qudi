@@ -58,6 +58,12 @@ public sealed record TypeRegistrationInfo
     public bool MarkAsDecorator { get; init; }
 
     /// <summary>
+    /// Whether to export this type for visualization.
+    /// When true, generates a separate dependency graph starting from this type.
+    /// </summary>
+    public bool Export { get; init; }
+
+    /// <summary>
     /// The namespace where the type is defined.
     /// </summary>
     public string Namespace { get; init; } = string.Empty;

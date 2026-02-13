@@ -38,4 +38,7 @@ internal sealed record RegistrationSpec
 
     // Whether to mark the registration as a decorator.
     public bool MarkAsDecorator { get; init; }
+
+    // Whether to export this type for visualization.
+    public bool Export { get; init; }
 }

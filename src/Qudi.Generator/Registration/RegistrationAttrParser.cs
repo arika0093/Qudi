@@ -134,6 +134,7 @@ internal static class RegistrationAttrParser
             KeyLiteral = SGAttributeParser.GetValueAsLiteral(attr, "Key"),
             Order = SGAttributeParser.GetValue<int?>(attr, "Order") ?? 0,
             MarkAsDecorator = SGAttributeParser.GetValue<bool?>(attr, "MarkAsDecorator") ?? false,
+            Export = SGAttributeParser.GetValue<bool?>(attr, "Export") ?? false,
         };
     }
 
