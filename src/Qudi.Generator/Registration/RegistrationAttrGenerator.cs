@@ -83,21 +83,21 @@ internal static class RegistrationAttrGenerator
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             {{AttributeClassUsage}}
-            public sealed class DISingletonAttribute : QudiAttribute {}
+            public sealed class DISingletonAttribute : QudiCoreAttribute {}
 
             /// <summary>
             /// Shorthand attribute for transient lifetime.
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             {{AttributeClassUsage}}
-            public sealed class DITransientAttribute : QudiAttribute {}
+            public sealed class DITransientAttribute : QudiCoreAttribute {}
 
             /// <summary>
             /// Shorthand attribute for scoped lifetime.
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
             {{AttributeClassUsage}}
-            public sealed class DIScopedAttribute : QudiAttribute {}
+            public sealed class DIScopedAttribute : QudiCoreAttribute {}
 
             /// <summary>
             /// Shorthand attribute for decorator registration.
