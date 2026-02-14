@@ -114,18 +114,4 @@ internal static class QudiVisualizationRunner
         var invalid = System.IO.Path.GetInvalidFileNameChars();
         return string.Join("_", name.Split(invalid));
     }
-
-    private static string GetFileExtension(QudiVisualizationFormat format)
-    {
-        return format switch
-        {
-            QudiVisualizationFormat.Json => "json",
-            QudiVisualizationFormat.Dot => "dot",
-            QudiVisualizationFormat.Mermaid => "mermaid",
-            QudiVisualizationFormat.Markdown => "md",
-            QudiVisualizationFormat.Dgml => "dgml",
-            QudiVisualizationFormat.Svg => "svg",
-            _ => "txt",
-        };
-    }
 }

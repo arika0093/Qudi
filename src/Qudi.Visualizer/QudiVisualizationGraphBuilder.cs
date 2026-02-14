@@ -102,7 +102,7 @@ internal static class QudiVisualizationGraphBuilder
                     AddNode(nodes, implType, "implementation", isMatched, false);
                 }
 
-                // Add service nodes and edges (デコレーターの場合は直接の登録線を引かない)
+                // Add service nodes and edges (if it's a decorator, we will connect it to the decorated service later in the dependencies section)
                 foreach (var serviceType in view.ServiceTypes)
                 {
                     var serviceId = QudiVisualizationAnalyzer.ToFullDisplayName(serviceType);
@@ -134,7 +134,8 @@ internal static class QudiVisualizationGraphBuilder
                     else
                     {
                         // Normal registration: Service -> Implementation (with condition)
-                        // デコレーターが存在する場合は線を引かない
+                        // If a decorator exists for this service, we will connect the decorator to the service instead of the implementation,
+                        // so we skip adding this edge here. The connection from the decorator to the implementation will be handled in the dependencies section.
                         var hasDecorator = decoratorsByService.ContainsKey(serviceType);
                         if (!hasDecorator)
                         {
@@ -199,7 +200,7 @@ internal static class QudiVisualizationGraphBuilder
                             );
                             if (currentIndex >= 0 && currentIndex < decorators.Count - 1)
                             {
-                                // Connect to next decorator (普通の線)
+                                // Connect to next decorator (normal edge)
                                 var nextDecorator = decorators[currentIndex + 1];
                                 var nextId = QudiVisualizationAnalyzer.ToFullDisplayName(
                                     nextDecorator.Registration.Type
@@ -229,7 +230,7 @@ internal static class QudiVisualizationGraphBuilder
                                 )
                             )
                             {
-                                // Connect to final implementation(s) (普通の線)
+                                // Connect to final implementation(s)
                                 foreach (var impl in implementations)
                                 {
                                     var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
@@ -259,7 +260,7 @@ internal static class QudiVisualizationGraphBuilder
                             implementationsByService.TryGetValue(required, out var implementations)
                         )
                         {
-                            // No other decorators, connect directly to implementation(s) (普通の線)
+                            // No other decorators, connect directly to implementation(s)
                             foreach (var impl in implementations)
                             {
                                 var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(

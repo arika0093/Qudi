@@ -3,12 +3,19 @@ using Qudi.Visualizer;
 
 namespace Qudi;
 
+/// <summary>
+/// Extension methods for Qudi visualization.
+/// </summary>
 public static class QudiVisualizationExtensions
 {
+    /// <summary>
+    /// Enables the Qudi visualization output. This will run the visualization runner with the specified options.
+    /// </summary>
+    /// <param name="builder"> The Qudi configuration root builder to add the visualization output to.</param>
+    /// <param name="configure"> An action to configure the visualization options.</param>
     public static QudiConfigurationRootBuilder EnableVisualizationOutput(
         this QudiConfigurationRootBuilder builder,
-        string? filePath = null,
-        Action<QudiVisualizationOptions>? configure = null
+        Action<QudiVisualizationOptions> configure
     )
     {
         // export UTF-8
@@ -20,11 +27,6 @@ public static class QudiVisualizationExtensions
         }
 
         var options = new QudiVisualizationOptions();
-        if (!string.IsNullOrWhiteSpace(filePath))
-        {
-            options.AddOutput(filePath!);
-        }
-
         configure?.Invoke(options);
 
         builder.AddService(configuration =>
@@ -34,13 +36,5 @@ public static class QudiVisualizationExtensions
         });
 
         return builder;
-    }
-
-    public static QudiConfigurationRootBuilder EnableVisualizationOutput(
-        this QudiConfigurationRootBuilder builder,
-        Action<QudiVisualizationOptions> configure
-    )
-    {
-        return EnableVisualizationOutput(builder, null, configure);
     }
 }
