@@ -11,6 +11,9 @@ public static class QudiVisualizationExtensions
         Action<QudiVisualizationOptions>? configure = null
     )
     {
+        // export UTF-8
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+
         if (builder is null)
         {
             throw new ArgumentNullException(nameof(builder));

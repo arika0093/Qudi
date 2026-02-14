@@ -146,49 +146,65 @@
         "From": "Qudi.Example.Worker.NotifyToLogger",
         "To": "Microsoft.Extensions.Logging.ILogger\u003CQudi.Example.Worker.NotifyToLogger\u003E",
         "Kind": "dependency",
-        "Condition": null
+        "Condition": null,
+        "Key": null,
+        "Order": 0
       },
       {
         "From": "Qudi.Example.Core.NotifyPokemonInfoService",
         "To": "Qudi.Example.Core.IPokemon",
         "Kind": "collection",
-        "Condition": null
+        "Condition": null,
+        "Key": null,
+        "Order": 0
       },
       {
         "From": "Qudi.Example.Core.NotifyPokemonInfoService",
         "To": "Qudi.Example.Core.INotificationService",
         "Kind": "dependency",
-        "Condition": null
+        "Condition": null,
+        "Key": null,
+        "Order": 0
       },
       {
         "From": "Qudi.Example.Core.IPokemon",
         "To": "Qudi.Example.Core.Altaria",
         "Kind": "registration",
-        "Condition": null
+        "Condition": null,
+        "Key": null,
+        "Order": 0
       },
       {
         "From": "Qudi.Example.Core.IPokemon",
         "To": "Qudi.Example.Core.Garchomp",
         "Kind": "registration",
-        "Condition": "Development"
+        "Condition": "Development",
+        "Key": null,
+        "Order": 0
       },
       {
         "From": "Qudi.Example.Core.IPokemon",
         "To": "Qudi.Example.Core.Lucario",
         "Kind": "registration",
-        "Condition": "Production"
+        "Condition": "Production",
+        "Key": null,
+        "Order": 0
       },
       {
         "From": "Qudi.Example.Core.INotificationService",
         "To": "Qudi.Example.Worker.NotifyDecorator",
         "Kind": "registration",
-        "Condition": null
+        "Condition": null,
+        "Key": null,
+        "Order": 0
       },
       {
         "From": "Qudi.Example.Worker.NotifyDecorator",
         "To": "Qudi.Example.Worker.NotifyToLogger",
         "Kind": "registration",
-        "Condition": null
+        "Condition": null,
+        "Key": null,
+        "Order": 0
       }
     ]
   }

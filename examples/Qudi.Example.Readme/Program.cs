@@ -6,9 +6,6 @@ using Spectre.Console;
 
 var services = new ServiceCollection();
 
-// export UTF-8
-Console.OutputEncoding = System.Text.Encoding.UTF8;
-
 // Add logging
 services.AddLogging(builder =>
 {
