@@ -70,16 +70,10 @@ public enum ConsoleDisplay
     ListAuto = 1 << 4,
 
     /// <summary>
-    /// Traces of the resolved services and their dependencies. This can be useful for debugging and understanding the resolution process,
-    /// especially when using advanced features like conditional registrations, open generics, or assembly scanning.
+    /// Tree view of service dependencies. This is a more compact representation that shows the hierarchy of services and their dependencies in a tree structure.
+    /// It can be useful for visualizing complex configurations with many services and dependencies. Default is off.
     /// </summary>
-    Traces = 1 << 5,
-
-    /// <summary>
-    /// Warnings about potential issues in the configuration, such as missing dependencies, circular dependencies, or services with multiple implementations.
-    /// This can help identify and fix problems in the configuration before they cause runtime errors.
-    /// </summary>
-    Warnings = 1 << 6,
+    Tree = 1 << 5,
 
     /// <summary>
     /// Default console output. Summary | ListAuto | Issues.
@@ -89,7 +83,7 @@ public enum ConsoleDisplay
     /// <summary>
     /// All console output.
     /// </summary>
-    All = Summary | Issues | ListAlways | Traces | Warnings,
+    All = Summary | Issues | ListAlways | Tree,
 }
 
 /// <summary>
