@@ -8,8 +8,7 @@ public interface IPokemon
 {
     string Name { get; }
     IEnumerable<string> Types { get; }
-    void DisplayInfo() =>
-        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+    void DisplayInfo() => Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
 }
 
 [DISingleton] // ✅️ mark as singleton
@@ -24,6 +23,13 @@ public class Abomasnow : IPokemon
 {
     public string Name => "Abomasnow";
     public IEnumerable<string> Types => ["Grass", "Ice"];
+}
+
+[DIScoped]
+public class Azumarill : IPokemon
+{
+    public string Name => "Azumarill";
+    public IEnumerable<string> Types => ["Water", "Fairy"];
 }
 
 [DISingleton(Export = true)]

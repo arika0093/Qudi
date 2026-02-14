@@ -6,6 +6,9 @@ using Spectre.Console;
 
 var services = new ServiceCollection();
 
+// export UTF-8
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 // Add logging
 services.AddLogging(builder =>
 {
@@ -16,7 +19,8 @@ services.AddLogging(builder =>
 // ✅️ register services marked with Qudi attributes (see below)
 services.AddQudiServices(conf =>
 {
-    conf.EnableVisualizationOutput(option => {
+    conf.EnableVisualizationOutput(option =>
+    {
         option.SetOutputDirectory("exported/", Qudi.Visualizer.QudiVisualizationFormat.Markdown);
     });
 });
@@ -33,36 +37,50 @@ if (!executors.Any())
 }
 
 // Display header
-AnsiConsole.Write(
-    new FigletText("Qudi Examples")
-        .Centered()
-        .Color(Color.Blue));
+AnsiConsole.Write(new FigletText("Qudi Examples").Centered().Color(Color.Blue));
 
 // Create selection prompt
-var selection = AnsiConsole.Prompt(
-    new SelectionPrompt<ISampleExecutor>()
-        .Title("[green]Select a sample to run:[/]")
-        .PageSize(10)
-        .MoreChoicesText("[grey](Move up and down to reveal more samples)[/]")
-        .AddChoices(executors)
-        .UseConverter(executor => Markup.Escape($"{executor.Name} - {executor.Description}")));
-
-// Display separator
-AnsiConsole.WriteLine();
-AnsiConsole.Write(new Rule($"[yellow]{selection.Name}[/]").RuleStyle("grey").LeftJustified());
-AnsiConsole.WriteLine();
-
-// Execute the selected sample
 try
 {
-    selection.Execute();
+    var selection = AnsiConsole.Prompt(
+        new SelectionPrompt<ISampleExecutor>()
+            .Title("[green]Select a sample to run:[/]")
+            .PageSize(10)
+            .MoreChoicesText("[grey](Move up and down to reveal more samples)[/]")
+            .AddChoices(executors)
+            .UseConverter(executor => Markup.Escape($"{executor.Name} - {executor.Description}"))
+    );
+    SampleExecute(selection);
 }
-catch (Exception ex)
+catch (NotSupportedException)
 {
-    AnsiConsole.MarkupLine($"[red]Error executing sample: {ex.Message}[/]");
-    AnsiConsole.WriteException(ex);
+    // In non-interactive environments (e.g., during testing),
+    // the selection prompt is not available, so we execute all samples sequentially.
+    foreach (var executor in executors)
+    {
+        SampleExecute(executor);
+    }
 }
 
 // Display footer
 AnsiConsole.WriteLine();
 AnsiConsole.Write(new Rule("[grey]End of sample[/]").RuleStyle("grey").LeftJustified());
+
+void SampleExecute(ISampleExecutor selection)
+{
+    // Display separator
+    AnsiConsole.WriteLine();
+    AnsiConsole.Write(new Rule($"[yellow]{selection.Name}[/]").RuleStyle("grey").LeftJustified());
+    AnsiConsole.WriteLine();
+
+    // Execute the selected sample
+    try
+    {
+        selection.Execute();
+    }
+    catch (Exception ex)
+    {
+        AnsiConsole.MarkupLine($"[red]Error executing sample: {ex.Message}[/]");
+        AnsiConsole.WriteException(ex);
+    }
+}
