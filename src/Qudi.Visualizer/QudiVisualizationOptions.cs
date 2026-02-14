@@ -32,7 +32,7 @@ public enum QudiVisualizationFormat
     Markdown,
 
     /// <summary>
-    /// DGML format.
+    /// SVG format.
     /// </summary>
     Svg,
 }
@@ -188,7 +188,7 @@ public sealed class QudiVisualizationOptions
     /// <summary>
     /// Adds an output file for the visualization report. The format can be inferred from the file extension or specified explicitly.
     /// </summary>
-    /// <param name="filePath"> The file path to write the visualization report to. Supported extensions include .json, .dot/.gv, .mmd/.mermaid, .md, .dgml, and .svg.</param>
+    /// <param name="filePath"> The file path to write the visualization report to. Supported extensions include .json, .dot/.gv, .mmd/.mermaid, .md and .svg.</param>
     /// <param name="format"> Optional format to use for the output. If not specified, the format will be inferred from the file extension.</param>
     public QudiVisualizationOptions AddOutput(
         string filePath,
@@ -210,7 +210,7 @@ public sealed class QudiVisualizationOptions
     /// <summary>
     /// Adds multiple output files for the visualization report. The format for each file can be inferred from the file extension or specified explicitly.
     /// </summary>
-    /// <param name="filePaths"> The file paths to write the visualization report to. Supported extensions include .json, .dot/.gv, .mmd/.mermaid, .md, .dgml, and .svg.</param>
+    /// <param name="filePaths"> The file paths to write the visualization report to. Supported extensions include .json, .dot/.gv, .mmd/.mermaid, .md, and .svg.</param>
     public QudiVisualizationOptions AddOutputs(params string[] filePaths)
     {
         foreach (var filePath in filePaths.Where(p => !string.IsNullOrWhiteSpace(p)))
@@ -315,7 +315,7 @@ internal static class VisualizeFormatConvertExtensions
             ".md" => QudiVisualizationFormat.Markdown,
             ".svg" => QudiVisualizationFormat.Svg,
             _ => throw new InvalidOperationException(
-                "Unable to infer format from extension. Use .json/.dot/.mmd/.md/.dgml/.svg or specify format explicitly."
+                "Unable to infer format from extension. Use .json/.dot/.mmd/.md/.svg or specify format explicitly."
             ),
         };
     }
