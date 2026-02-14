@@ -689,7 +689,7 @@ services.AddQudiServices(conf => {
         // Summary + Issues
         options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.Issues;
         // Always output list, even if the count is large
-        options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListOn;
+        options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListAlways;
         // Output to Logger
         options.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
     });

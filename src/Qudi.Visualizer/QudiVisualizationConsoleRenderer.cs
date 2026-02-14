@@ -193,7 +193,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         var message =
             $"Registrations list hidden (count: {count} > {RegistrationListAutoHideThreshold}).";
         var instruction =
-            "To show, set ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListOn | ConsoleDisplay.Issues.";
+            "To show, set ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListAlways | ConsoleDisplay.Issues.";
 
         var text = new Markup(
             $"[dim]{Markup.Escape(message + Environment.NewLine + instruction)}[/]"
