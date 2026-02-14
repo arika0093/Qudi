@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Spectre.Console;
 
@@ -36,7 +36,7 @@ internal static class QudiVisualizationRunner
         if (options.ConsoleOutput != ConsoleDisplay.None)
         {
             var consoleRenderer = new QudiVisualizationConsoleRenderer(AnsiConsole.Console);
-            consoleRenderer.Render(report, graph, warnings, options.ConsoleOutput);
+            consoleRenderer.Render(report, warnings, options.ConsoleOutput);
         }
     }
 

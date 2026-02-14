@@ -311,49 +311,6 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         };
     }
 
-    private Panel CreateTracesPanel(IReadOnlyList<QudiTraceResult> traces)
-    {
-        if (traces.Count == 0)
-        {
-            return new Panel(new Markup("[dim]No traces[/]"))
-            {
-                Header = new PanelHeader(
-                    $"[bold]🔍 Resolution Traces ({traces.Count})[/]",
-                    Justify.Left
-                ),
-                Border = BoxBorder.Rounded,
-                BorderStyle = new Style(Color.Grey),
-                Expand = true,
-            };
-        }
-
-        var grid = new Grid().AddColumn();
-        foreach (var trace in traces)
-        {
-            var root = new Tree($"[bold green]{Markup.Escape(trace.Service)}[/]")
-            {
-                Style = new Style(Color.Green),
-            };
-
-            foreach (var node in trace.Roots)
-            {
-                AddTraceNode(root, node);
-            }
-            grid.AddRow(root);
-        }
-
-        return new Panel(grid)
-        {
-            Header = new PanelHeader(
-                $"[bold]剥 Resolution Traces ({traces.Count})[/]",
-                Justify.Left
-            ),
-            Border = BoxBorder.Rounded,
-            BorderStyle = new Style(Color.Blue),
-            Expand = true,
-        };
-    }
-
     private static bool IsEnabled(ConsoleDisplay display, ConsoleDisplay flag)
     {
         return (display & flag) == flag;
