@@ -35,7 +35,7 @@ public class PushNotificationService : INotificationService
     }
 }
 
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class KeyedRegistrationExecutor(
     [FromKeyedServices("email")] INotificationService emailService,
     [FromKeyedServices("sms")] INotificationService smsService,

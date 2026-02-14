@@ -26,7 +26,7 @@ public class ThirdService : IService
     public string GetName() => "Third Service (Order = 1)";
 }
 
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class RegistrationOrderExecutor(IEnumerable<IService> services) : ISampleExecutor
 {
     public string Name => "Registration Order";

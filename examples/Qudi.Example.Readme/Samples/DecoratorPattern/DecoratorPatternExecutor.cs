@@ -46,7 +46,7 @@ public class CensorshipMessageServiceDecorator(IMessageService innerService) : I
     }
 }
 
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class DecoratorPatternExecutor(IMessageService messageService) : ISampleExecutor
 {
     public string Name => "Decorator Pattern";

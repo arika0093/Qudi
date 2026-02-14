@@ -27,7 +27,7 @@ public class RealPaymentService : IPaymentService
     }
 }
 
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class ConditionalRegistrationExecutor(IPaymentService? paymentService) : ISampleExecutor
 {
     public string Name => "Conditional Registration";

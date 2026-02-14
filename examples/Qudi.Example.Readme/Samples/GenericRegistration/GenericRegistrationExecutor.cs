@@ -80,7 +80,7 @@ public class ScreenValidator : IComponentValidator<Screen>
     }
 }
 
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class GenericRegistrationExecutor(
     IEnumerable<IComponentValidator<Battery>> batteryValidators,
     IEnumerable<IComponentValidator<Screen>> screenValidators,

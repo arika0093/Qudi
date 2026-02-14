@@ -5,7 +5,7 @@ namespace Qudi.Example.Core;
 /// <summary>
 /// This is a example service that uses dependency injection to get all registered IPokemon implementations
 /// </summary>
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class NotifyPokemonInfoService(
     IEnumerable<IPokemon> pokemons,
     INotificationService notificationService

@@ -32,11 +32,12 @@ public class Azumarill : IPokemon
     public IEnumerable<string> Types => ["Water", "Fairy"];
 }
 
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class SimpleUsageExecutor(IEnumerable<IPokemon> pokemons) : ISampleExecutor
 {
     public string Name => "Simple Usage";
-    public string Description => "Basic DI registration with [DISingleton] and [DITransient]";
+    public string Description =>
+        "Basic DI registration with [DISingleton], [DIScoped] and [DITransient]";
     public string Namespace => typeof(SimpleUsageExecutor).Namespace!;
 
     public void Execute()

@@ -349,14 +349,14 @@ internal static class QudiVisualizationAnalyzer
                 foreach (var candidate in ResolveImplementationCandidates(context, required))
                 {
                     var toLifetime = NormalizeLifetime(candidate.Lifetime);
-                    if (fromLifetime == "singleton" && toLifetime == "scoped")
+                    if (fromLifetime == "singleton" && toLifetime != "singleton")
                     {
                         warnings.Add(
                             new QudiLifetimeWarning(
                                 registration.ServiceDisplay,
                                 registration.ImplementationDisplay,
                                 candidate.ImplementationDisplay,
-                                "Singleton service may capture a Scoped dependency."
+                                $"{registration.Lifetime} depends on {candidate.Lifetime}"
                             )
                         );
                     }

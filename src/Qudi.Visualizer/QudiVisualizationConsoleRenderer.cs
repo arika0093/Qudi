@@ -243,14 +243,16 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 .Border(TableBorder.Simple)
                 .BorderColor(Color.Orange1)
                 .AddColumn(new TableColumn("[bold orange1]Service[/]"))
-                .AddColumn(new TableColumn("[bold orange1]From → To[/]"))
+                .AddColumn(new TableColumn("[bold orange1]From[/]"))
+                .AddColumn(new TableColumn("[bold orange1]To[/]"))
                 .AddColumn(new TableColumn("[bold orange1]Message[/]"));
 
             foreach (var item in lifetimeWarnings)
             {
                 warningTable.AddRow(
                     $"[orange1]{Markup.Escape(item.Service)}[/]",
-                    $"[orange1]{Markup.Escape(item.From)} → {Markup.Escape(item.To)}[/]",
+                    $"[orange1]{Markup.Escape(item.From)}[/]",
+                    $"[orange1]{Markup.Escape(item.To)}[/]",
                     $"[orange1]{Markup.Escape(item.Message)}[/]"
                 );
             }
@@ -258,7 +260,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 new Panel(warningTable)
                 {
                     Header = new PanelHeader(
-                        $"[bold orange1]⚠️  Lifetime Warnings ({lifetimeWarnings.Count})[/]"
+                        $"[bold orange1]💡  Lifetime Warnings ({lifetimeWarnings.Count})[/]"
                     ),
                     Border = BoxBorder.None,
                 }
