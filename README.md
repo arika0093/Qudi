@@ -633,7 +633,7 @@ The generated code creates a helper interface and a base implementation class th
 </details>
 
 ## Visualize Registration
-### Overview
+### Setup
 Qudi collects registration information and generates code.
 Therefore, it is possible to visualize the registration status and dependencies based on the collected information.
 
@@ -660,16 +660,26 @@ services.AddQudiServices(conf => {
 > [!TIP]
 > Since visualization is mainly needed during development, it is recommended to enable it only for DEBUG builds.
 
-### Report Missing Registrations
+### Registration Status Visualization
+When visualization is enabled, visual runtime errors will be output when there are issues in the registration, such as missing registrations or circular dependencies. This helps you identify and resolve problems in your registration.
+
+### Report Issues in Registration
+When there are issues in the registration, such as missing registrations or circular dependencies, visual runtime errors will be output to help you identify and resolve the problems.
+
+#### Missing Registrations
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
 
 ![](./assets/missing.png)
 
-### Detect Circular Dependencies
+#### Detect Circular Dependencies
 When circular dependencies exist in your project, a visual runtime error like the following is output:
 
 ![](./assets/circular.png)
 
+#### Lifetime Warnings
+When there are potential lifetime issues in your registrations, such as a singleton depending on a transient service, a warning like the following is output:
+
+![](./assets/lifetime-warning.png)
 
 ### Export Registration Diagram
 By adding the following call when calling `AddQudiServices`, a diagram showing the registration status will be generated.
@@ -698,7 +708,7 @@ By default, the graph of all dependencies of the project is output. For projects
 
 ```csharp
 // specify on attribute side
-[DISingleton(Export = true)]
+[DITransient(Export = true)]
 public class YourClass : IYourService { /* ... */ }
 ```
 
