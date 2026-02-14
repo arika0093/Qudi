@@ -4,6 +4,8 @@
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based **simple** dependency injection helper library.  
 Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 
+![](./assets/image.png)
+
 ## Quick Start
 ### Overview
 Well, it's easier to show you than to explain it. 😉
