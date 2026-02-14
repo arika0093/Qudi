@@ -663,16 +663,13 @@ services.AddQudiServices(conf => {
 ### Registration Status Visualization
 When visualization is enabled, visual runtime errors will be output when there are issues in the registration, such as missing registrations or circular dependencies. This helps you identify and resolve problems in your registration.
 
-### Report Issues in Registration
-When there are issues in the registration, such as missing registrations or circular dependencies, visual runtime errors will be output to help you identify and resolve the problems.
-
 #### Missing Registrations
-When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
+When registrations are missing for interfaces in your project, a visual error like the following is output:
 
 ![](./assets/missing.png)
 
 #### Detect Circular Dependencies
-When circular dependencies exist in your project, a visual runtime error like the following is output:
+When circular dependencies exist in your project, a visual error like the following is output:
 
 ![](./assets/circular.png)
 
@@ -680,6 +677,24 @@ When circular dependencies exist in your project, a visual runtime error like th
 When there are potential lifetime issues in your registrations, such as a singleton depending on a transient service, a warning like the following is output:
 
 ![](./assets/lifetime-warning.png)
+
+### Customize Output
+By default, statistical information, lists (only when the count is small), and warnings are output. You can specify options as an argument of `EnableVisualizationOutput` to customize it.
+
+```csharp
+services.AddQudiServices(conf => {
+    conf.EnableVisualizationOutput(option => {
+        // Only Summary
+        options.ConsoleOutput = ConsoleDisplay.Summary;
+        // Summary + Issues
+        options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.Issues;
+        // Always output list, even if the count is large
+        options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListOn;
+        // Output to Logger
+        options.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    });
+});
+```
 
 ### Export Registration Diagram
 By adding the following call when calling `AddQudiServices`, a diagram showing the registration status will be generated.
