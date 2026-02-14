@@ -143,7 +143,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for condition-unmatched class nodes 
+        // Add styles for condition-unmatched class nodes
         var unmatchedClassNodes = graph
             .Nodes.Where(n => n.Kind == "class" && !n.IsConditionMatched)
             .ToList();
@@ -161,7 +161,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for condition-unmatched decorator nodes 
+        // Add styles for condition-unmatched decorator nodes
         var unmatchedDecoratorNodes = graph
             .Nodes.Where(n => n.Kind == "decorator" && !n.IsConditionMatched)
             .ToList();
@@ -179,7 +179,7 @@ internal static class MermaidOutputWriter
             }
         }
 
-        // Add styles for external nodes 
+        // Add styles for external nodes
         var externalNodes = graph.Nodes.Where(n => n.IsExternal).ToList();
         if (externalNodes.Count > 0)
         {
@@ -201,25 +201,26 @@ internal static class MermaidOutputWriter
     private static string BuildArrowStyle(QudiVisualizationEdge edge)
     {
         var labelParts = new List<string>();
-        
+
         if (!string.IsNullOrWhiteSpace(edge.Condition))
         {
             labelParts.Add(edge.Condition!);
         }
-        
+
         if (!string.IsNullOrWhiteSpace(edge.Key))
         {
             labelParts.Add($"Key:{edge.Key}");
         }
-        
+
         if (edge.Order != 0)
         {
             labelParts.Add($"Order:{edge.Order}");
         }
-        
-        var label = labelParts.Count > 0
-            ? $"|{EscapeMermaidLabel(string.Join(", ", labelParts))}|"
-            : string.Empty;
+
+        var label =
+            labelParts.Count > 0
+                ? $"|{EscapeMermaidLabel(string.Join(", ", labelParts))}|"
+                : string.Empty;
 
         return edge.Kind switch
         {

@@ -39,7 +39,8 @@ public class PushNotificationService : INotificationService
 public class KeyedRegistrationExecutor(
     [FromKeyedServices("email")] INotificationService emailService,
     [FromKeyedServices("sms")] INotificationService smsService,
-    [FromKeyedServices("push")] INotificationService pushService) : ISampleExecutor
+    [FromKeyedServices("push")] INotificationService pushService
+) : ISampleExecutor
 {
     public string Name => "Keyed Registration";
     public string Description => "Register services with keys and resolve them by key";

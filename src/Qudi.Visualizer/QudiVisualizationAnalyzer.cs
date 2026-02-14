@@ -184,9 +184,10 @@ internal static class QudiVisualizationAnalyzer
                 if (registration.IsDecorator && registration.ServiceTypes.Contains(required))
                 {
                     // Check if there's at least one non-decorator registration for this service type
-                    var hasNonDecoratorImpl = context.Applicable
-                        .Any(r => !r.IsDecorator && r.ServiceTypes.Contains(required));
-                    
+                    var hasNonDecoratorImpl = context.Applicable.Any(r =>
+                        !r.IsDecorator && r.ServiceTypes.Contains(required)
+                    );
+
                     if (!hasNonDecoratorImpl)
                     {
                         result.Add(

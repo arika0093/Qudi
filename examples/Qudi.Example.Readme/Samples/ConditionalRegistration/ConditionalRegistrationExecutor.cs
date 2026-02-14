@@ -37,7 +37,9 @@ public class ConditionalRegistrationExecutor(IPaymentService? paymentService) : 
     public void Execute()
     {
         Console.WriteLine("Note: This sample shows conditional registration.");
-        Console.WriteLine("Set ASPNETCORE_ENVIRONMENT to 'Development' or 'Production' to see different implementations.");
+        Console.WriteLine(
+            "Set ASPNETCORE_ENVIRONMENT to 'Development' or 'Production' to see different implementations."
+        );
         Console.WriteLine();
 
         if (paymentService != null)
@@ -46,7 +48,9 @@ public class ConditionalRegistrationExecutor(IPaymentService? paymentService) : 
         }
         else
         {
-            Console.WriteLine("⚠️  No payment service registered. Set environment variable to register one.");
+            Console.WriteLine(
+                "⚠️  No payment service registered. Set environment variable to register one."
+            );
         }
     }
 }

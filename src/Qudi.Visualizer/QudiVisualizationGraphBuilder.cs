@@ -175,7 +175,9 @@ internal static class QudiVisualizationGraphBuilder
                         isMatched,
                         isExternal
                     );
-                    edges.Add(new QudiVisualizationEdge(implId, elementId, "collection", null, null, 0));
+                    edges.Add(
+                        new QudiVisualizationEdge(implId, elementId, "collection", null, null, 0)
+                    );
                 }
                 else
                 {
@@ -210,7 +212,14 @@ internal static class QudiVisualizationGraphBuilder
                                     false
                                 );
                                 edges.Add(
-                                    new QudiVisualizationEdge(implId, nextId, "registration", null, null, 0)
+                                    new QudiVisualizationEdge(
+                                        implId,
+                                        nextId,
+                                        "registration",
+                                        null,
+                                        null,
+                                        0
+                                    )
                                 );
                             }
                             else if (
@@ -288,7 +297,14 @@ internal static class QudiVisualizationGraphBuilder
                             isExternal
                         );
                         edges.Add(
-                            new QudiVisualizationEdge(implId, requiredId, "dependency", null, null, 0)
+                            new QudiVisualizationEdge(
+                                implId,
+                                requiredId,
+                                "dependency",
+                                null,
+                                null,
+                                0
+                            )
                         );
                     }
                 }
@@ -297,10 +313,16 @@ internal static class QudiVisualizationGraphBuilder
 
         // Handle open generic types (e.g., NullComponentValidator<T>) for generic services
         var openGenericImplementations = registrationViews
-            .Where(v => !v.Registration.MarkAsDecorator && v.IsMatched && v.Registration.Type.IsGenericTypeDefinition)
+            .Where(v =>
+                !v.Registration.MarkAsDecorator
+                && v.IsMatched
+                && v.Registration.Type.IsGenericTypeDefinition
+            )
             .ToList();
 
-        System.Diagnostics.Debug.WriteLine($"Found {openGenericImplementations.Count} open generic implementations");
+        System.Diagnostics.Debug.WriteLine(
+            $"Found {openGenericImplementations.Count} open generic implementations"
+        );
         foreach (var og in openGenericImplementations)
         {
             System.Diagnostics.Debug.WriteLine($"  - {og.Registration.Type.Name}");
@@ -353,7 +375,8 @@ internal static class QudiVisualizationGraphBuilder
                 {
                     var implementedInterfaces = openGenericType.GetInterfaces();
                     var matchingInterface = implementedInterfaces.FirstOrDefault(i =>
-                        i.IsGenericType && i.GetGenericTypeDefinition() == genericTypeDef);
+                        i.IsGenericType && i.GetGenericTypeDefinition() == genericTypeDef
+                    );
 
                     if (matchingInterface == null)
                     {
@@ -391,7 +414,10 @@ internal static class QudiVisualizationGraphBuilder
         return new QudiVisualizationGraph(nodes.Values.ToList(), distinctEdges);
     }
 
-    private static Type? FindTypeFromNodeId(string nodeId, IReadOnlyList<TypeRegistrationInfo> registrations)
+    private static Type? FindTypeFromNodeId(
+        string nodeId,
+        IReadOnlyList<TypeRegistrationInfo> registrations
+    )
     {
         // Try to find the type from registrations
         foreach (var registration in registrations)
@@ -417,8 +443,10 @@ internal static class QudiVisualizationGraphBuilder
                 }
 
                 var requiredElementType = TryGetCollectionElementType(requiredType);
-                if (requiredElementType != null
-                    && QudiVisualizationAnalyzer.ToFullDisplayName(requiredElementType) == nodeId)
+                if (
+                    requiredElementType != null
+                    && QudiVisualizationAnalyzer.ToFullDisplayName(requiredElementType) == nodeId
+                )
                 {
                     return requiredElementType;
                 }

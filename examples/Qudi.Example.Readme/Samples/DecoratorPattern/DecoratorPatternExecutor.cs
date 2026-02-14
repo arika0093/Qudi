@@ -21,7 +21,8 @@ public class MessageService : IMessageService
 [QudiDecorator]
 public class LoggingMessageServiceDecorator(
     IMessageService innerService,
-    ILogger<LoggingMessageServiceDecorator> logger) : IMessageService
+    ILogger<LoggingMessageServiceDecorator> logger
+) : IMessageService
 {
     public void SendMessage(string message)
     {

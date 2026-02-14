@@ -36,10 +36,7 @@ internal static class QudiVisualizationOutputWriter
                     );
                     break;
                 case QudiVisualizationFormat.Markdown:
-                    var mermaid = MermaidOutputWriter.Generate(
-                        graph,
-                        options.GroupByNamespace
-                    );
+                    var mermaid = MermaidOutputWriter.Generate(graph, options.GroupByNamespace);
                     File.WriteAllText(
                         output.FilePath,
                         $"```mermaid{Environment.NewLine}{mermaid}{Environment.NewLine}```"
