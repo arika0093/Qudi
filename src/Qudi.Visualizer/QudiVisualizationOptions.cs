@@ -36,8 +36,16 @@ public enum QudiVisualizationFormat
     Svg,
 }
 
+/// <summary>
+/// Represents an output file for Qudi visualization, including the file path and format.
+/// </summary>
 public sealed record QudiVisualizationFileOutput(string FilePath, QudiVisualizationFormat Format);
 
+/// <summary>
+/// Options for configuring Qudi visualization output.
+/// This class provides a fluent API for specifying various output options,
+/// such as enabling console output, adding file outputs, specifying services to trace, and configuring output directories and formats for exported individual graphs.
+/// </summary>
 public sealed class QudiVisualizationOptions
 {
     private readonly List<QudiVisualizationFileOutput> _outputs = [];
@@ -92,9 +100,9 @@ public sealed class QudiVisualizationOptions
         }
 
         var normalized = Path.GetFullPath(filePath);
-        _outputs.Add(
-            new QudiVisualizationFileOutput(normalized, format ?? InferFormatFromPath(normalized))
-        );
+        var ext = VisualizeFormatConvertExtensions.DetermineFromFilePath(normalized);
+
+        _outputs.Add(new QudiVisualizationFileOutput(normalized, format ?? ext));
         return this;
     }
 
@@ -174,27 +182,11 @@ public sealed class QudiVisualizationOptions
             [.. _outputFormats]
         );
     }
-
-    private static QudiVisualizationFormat InferFormatFromPath(string filePath)
-    {
-        var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        return ext switch
-        {
-            ".json" => QudiVisualizationFormat.Json,
-            ".dot" or ".gv" => QudiVisualizationFormat.Dot,
-            ".mmd" or ".mermaid" => QudiVisualizationFormat.Mermaid,
-            ".md" => QudiVisualizationFormat.Markdown,
-            ".dgml" => QudiVisualizationFormat.Dgml,
-            ".svg" => QudiVisualizationFormat.Svg,
-            _ => throw new InvalidOperationException(
-                "Unable to infer format from extension. Use .json/.dot/.mmd/.md/.dgml/.svg or specify format explicitly."
-            ),
-        };
-    }
 }
 
 internal static class VisualizeFormatConvertExtensions
 {
+    // Helper method to get file extension for a given format
     public static string ToExtension(this QudiVisualizationFormat format)
     {
         return format switch
@@ -208,6 +200,7 @@ internal static class VisualizeFormatConvertExtensions
         };
     }
 
+    // Helper method to determine format from file extension
     public static QudiVisualizationFormat DetermineFromFilePath(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();

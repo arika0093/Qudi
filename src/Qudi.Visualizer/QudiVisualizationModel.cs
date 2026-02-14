@@ -17,7 +17,7 @@ internal sealed record RegistrationView(
     bool IsConditionMatched
 );
 
-public sealed record QudiTraceNode(
+internal sealed record QudiTraceNode(
     string Label,
     string? Detail,
     bool IsMissing,
@@ -25,17 +25,17 @@ public sealed record QudiTraceNode(
     IReadOnlyList<QudiTraceNode> Children
 );
 
-public sealed record QudiTraceResult(string Service, IReadOnlyList<QudiTraceNode> Roots);
+internal sealed record QudiTraceResult(string Service, IReadOnlyList<QudiTraceNode> Roots);
 
-public sealed record QudiMissingRegistration(string RequiredType, string RequestedBy);
+internal sealed record QudiMissingRegistration(string RequiredType, string RequestedBy);
 
-public sealed record QudiCycle(IReadOnlyList<string> Path);
+internal sealed record QudiCycle(IReadOnlyList<string> Path);
 
-public sealed record QudiLifetimeWarning(string Service, string From, string To, string Message);
+internal sealed record QudiLifetimeWarning(string Service, string From, string To, string Message);
 
-public sealed record QudiMultipleRegistration(string Service, string Key, int Count);
+internal sealed record QudiMultipleRegistration(string Service, string Key, int Count);
 
-public sealed record QudiVisualizationSummary(
+internal sealed record QudiVisualizationSummary(
     int RegistrationCount,
     int MissingCount,
     int CycleCount,
@@ -43,7 +43,7 @@ public sealed record QudiVisualizationSummary(
     int LifetimeWarningCount
 );
 
-public sealed record QudiRegistrationTableRow(
+internal sealed record QudiRegistrationTableRow(
     string Service,
     string Implementation,
     string Lifetime,
@@ -53,7 +53,7 @@ public sealed record QudiRegistrationTableRow(
     bool Decorator
 );
 
-public sealed record QudiVisualizationReport(
+internal sealed record QudiVisualizationReport(
     QudiVisualizationSummary Summary,
     IReadOnlyList<QudiRegistrationTableRow> Registrations,
     IReadOnlyList<QudiMissingRegistration> MissingRegistrations,
@@ -64,7 +64,7 @@ public sealed record QudiVisualizationReport(
     [property: JsonIgnore] IReadOnlyList<Type> ExportedTypes
 );
 
-public sealed record QudiVisualizationNode(
+internal sealed record QudiVisualizationNode(
     string Id,
     string Label,
     string Kind,
@@ -72,7 +72,7 @@ public sealed record QudiVisualizationNode(
     bool IsExternal = false
 );
 
-public sealed record QudiVisualizationEdge(
+internal sealed record QudiVisualizationEdge(
     string From,
     string To,
     string Kind,
@@ -81,7 +81,7 @@ public sealed record QudiVisualizationEdge(
     int Order = 0
 );
 
-public sealed record QudiVisualizationGraph(
+internal sealed record QudiVisualizationGraph(
     IReadOnlyList<QudiVisualizationNode> Nodes,
     IReadOnlyList<QudiVisualizationEdge> Edges
 );

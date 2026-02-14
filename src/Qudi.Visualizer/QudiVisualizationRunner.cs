@@ -77,7 +77,7 @@ internal static class QudiVisualizationRunner
 
             foreach (var format in options.OutputFormats)
             {
-                var fileName = $"{sanitizedTypeName}.{GetFileExtension(format)}";
+                var fileName = $"{sanitizedTypeName}.{format.ToExtension()}";
                 var filePath = System.IO.Path.Combine(options.OutputDirectory!, fileName);
 
                 var fakeOutput = new QudiVisualizationFileOutput(filePath, format);
