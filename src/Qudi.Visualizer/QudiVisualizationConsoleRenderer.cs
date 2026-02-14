@@ -68,6 +68,12 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             );
             AnsiConsole.WriteLine();
         }
+
+        if (warnings.Count > 0)
+        {
+            AnsiConsole.Write(CreateWarningsPanel(warnings));
+            AnsiConsole.WriteLine();
+        }
     }
 
     private Panel CreateSummaryPanel(QudiVisualizationSummary summary)

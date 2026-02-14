@@ -69,7 +69,8 @@ internal sealed record QudiVisualizationNode(
     string Label,
     string Kind,
     bool IsConditionMatched = true,
-    bool IsExternal = false
+    bool IsExternal = false,
+    bool IsInterface = false
 );
 
 internal sealed record QudiVisualizationEdge(

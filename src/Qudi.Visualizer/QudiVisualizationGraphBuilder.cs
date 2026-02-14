@@ -467,29 +467,20 @@ internal static class QudiVisualizationGraphBuilder
     {
         var id = QudiVisualizationAnalyzer.ToFullDisplayName(type);
         var label = QudiVisualizationAnalyzer.ToDisplayName(type);
-
-        // Determine actual kind based on type
-        var actualKind = kind;
-        if (kind == "service" || kind == "implementation")
-        {
-            actualKind = type.IsInterface ? "interface" : "class";
-        }
-        else if (kind == "decorator")
-        {
-            actualKind = "decorator";
-        }
+        var isInterface = type.IsInterface;
 
         if (nodes.TryGetValue(id, out var existing))
         {
             // Upgrade node kind if needed
-            if (existing.Kind == "missing" && actualKind != "missing")
+            if (existing.Kind == "missing" && kind != "missing")
             {
                 nodes[id] = new QudiVisualizationNode(
                     id,
                     label,
-                    actualKind,
-                    isConditionMatched && existing.IsConditionMatched,
-                    isExternal || existing.IsExternal
+                    kind,
+                    isConditionMatched || existing.IsConditionMatched,
+                    isExternal || existing.IsExternal,
+                    isInterface || existing.IsInterface
                 );
             }
             else if (!existing.IsConditionMatched && isConditionMatched)
@@ -499,7 +490,8 @@ internal static class QudiVisualizationGraphBuilder
                     label,
                     existing.Kind,
                     true,
-                    isExternal || existing.IsExternal
+                    isExternal || existing.IsExternal,
+                    isInterface || existing.IsInterface
                 );
             }
             else if (!existing.IsExternal && isExternal)
@@ -509,7 +501,8 @@ internal static class QudiVisualizationGraphBuilder
                     label,
                     existing.Kind,
                     existing.IsConditionMatched,
-                    true
+                    true,
+                    isInterface || existing.IsInterface
                 );
             }
             return;
@@ -518,9 +511,10 @@ internal static class QudiVisualizationGraphBuilder
         nodes[id] = new QudiVisualizationNode(
             id,
             label,
-            actualKind,
+            kind,
             isConditionMatched,
-            isExternal
+            isExternal,
+            isInterface
         );
     }
 

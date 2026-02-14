@@ -73,7 +73,12 @@ internal static class MermaidOutputWriter
 
         // Add styles for interface nodes
         var interfaceNodes = graph
-            .Nodes.Where(n => n.Kind == "interface" && n.IsConditionMatched && !n.IsExternal)
+            .Nodes.Where(n =>
+                (n.Kind == "service" || n.Kind == "implementation")
+                && n.IsInterface
+                && n.IsConditionMatched
+                && !n.IsExternal
+            )
             .ToList();
         if (interfaceNodes.Count > 0)
         {
@@ -91,7 +96,12 @@ internal static class MermaidOutputWriter
 
         // Add styles for class nodes
         var classNodes = graph
-            .Nodes.Where(n => n.Kind == "class" && n.IsConditionMatched && !n.IsExternal)
+            .Nodes.Where(n =>
+                (n.Kind == "service" || n.Kind == "implementation")
+                && !n.IsInterface
+                && n.IsConditionMatched
+                && !n.IsExternal
+            )
             .ToList();
         if (classNodes.Count > 0)
         {
@@ -127,7 +137,11 @@ internal static class MermaidOutputWriter
 
         // Add styles for condition-unmatched interface nodes
         var unmatchedInterfaceNodes = graph
-            .Nodes.Where(n => n.Kind == "interface" && !n.IsConditionMatched)
+            .Nodes.Where(n =>
+                (n.Kind == "service" || n.Kind == "implementation")
+                && n.IsInterface
+                && !n.IsConditionMatched
+            )
             .ToList();
         if (unmatchedInterfaceNodes.Count > 0)
         {
@@ -145,7 +159,11 @@ internal static class MermaidOutputWriter
 
         // Add styles for condition-unmatched class nodes
         var unmatchedClassNodes = graph
-            .Nodes.Where(n => n.Kind == "class" && !n.IsConditionMatched)
+            .Nodes.Where(n =>
+                (n.Kind == "service" || n.Kind == "implementation")
+                && !n.IsInterface
+                && !n.IsConditionMatched
+            )
             .ToList();
         if (unmatchedClassNodes.Count > 0)
         {

@@ -38,9 +38,12 @@ internal static class DotOutputWriter
         {
             return node.Kind switch
             {
-                "interface" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#4caf50\"",
-                "class" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#2196f3\"",
+                "missing" => ", style=dashed, color=red",
                 "decorator" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#9c27b0\"",
+                _ when node.IsInterface =>
+                    ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#4caf50\"",
+                _ when !node.IsInterface =>
+                    ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#2196f3\"",
                 _ => ", style=\"filled,dashed\", fillcolor=lightgray, color=gray",
             };
         }
@@ -53,9 +56,9 @@ internal static class DotOutputWriter
         return node.Kind switch
         {
             "missing" => ", style=dashed, color=red",
-            "interface" => ", style=filled, fillcolor=\"#c8e6c9\"",
-            "class" => ", style=filled, fillcolor=\"#bbdefb\"",
             "decorator" => ", style=filled, fillcolor=\"#e1bee7\"",
+            _ when node.IsInterface => ", style=filled, fillcolor=\"#c8e6c9\"",
+            _ when !node.IsInterface => ", style=filled, fillcolor=\"#bbdefb\"",
             _ => string.Empty,
         };
     }

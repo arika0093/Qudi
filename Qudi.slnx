@@ -35,5 +35,6 @@
     <File Path="tests/Directory.Build.props" />
     <Project Path="tests/Qudi.Tests.Deps/Qudi.Tests.Deps.csproj" />
     <Project Path="tests/Qudi.Tests/Qudi.Tests.csproj" />
+    <Project Path="tests/Qudi.Tests.Visualize/Qudi.Tests.Visualize.csproj" />
   </Folder>
 </Solution>
