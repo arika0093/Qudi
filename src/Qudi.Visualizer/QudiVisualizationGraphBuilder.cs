@@ -295,7 +295,7 @@ internal static class QudiVisualizationGraphBuilder
             }
         }
 
-        // Handle open generic types (e.g., NullComponentValidator<T>) for missing generic services
+        // Handle open generic types (e.g., NullComponentValidator<T>) for generic services
         var openGenericImplementations = registrationViews
             .Where(v => !v.Registration.MarkAsDecorator && v.IsMatched && v.Registration.Type.IsGenericTypeDefinition)
             .ToList();
@@ -306,75 +306,75 @@ internal static class QudiVisualizationGraphBuilder
             System.Diagnostics.Debug.WriteLine($"  - {og.Registration.Type.Name}");
         }
 
-        // Find all missing generic services and try to resolve with open generic implementations
-        var missingNodes = nodes.Values.Where(n => n.Kind == "missing").ToList();
-        System.Diagnostics.Debug.WriteLine($"Found {missingNodes.Count} missing nodes");
-        foreach (var mn in missingNodes)
+        // Find all generic service nodes and connect them to open generic implementations
+        var candidateServiceTypes = new HashSet<Type>();
+        foreach (var view in registrationViews)
         {
-            System.Diagnostics.Debug.WriteLine($"  - {mn.Id}");
+            foreach (var serviceType in view.ServiceTypes)
+            {
+                candidateServiceTypes.Add(serviceType);
+            }
         }
 
-        foreach (var missingNode in missingNodes)
+        foreach (var registration in allRegistrations)
         {
-            // Try to find the type from the node ID
-            var missingType = FindTypeFromNodeId(missingNode.Id, allRegistrations);
-            if (missingType == null || !missingType.IsGenericType || missingType.IsGenericTypeDefinition)
+            foreach (var requiredType in registration.RequiredTypes)
+            {
+                candidateServiceTypes.Add(requiredType);
+                var elementType = TryGetCollectionElementType(requiredType);
+                if (elementType != null)
+                {
+                    candidateServiceTypes.Add(elementType);
+                }
+            }
+        }
+
+        foreach (var node in nodes.Values.ToList())
+        {
+            var nodeType = FindTypeFromNodeId(node.Id, allRegistrations);
+            if (
+                nodeType == null
+                || !candidateServiceTypes.Contains(nodeType)
+                || !nodeType.IsGenericType
+                || nodeType.IsGenericTypeDefinition
+            )
             {
                 continue;
             }
 
-            var genericTypeDef = missingType.GetGenericTypeDefinition();
-            var typeArgs = missingType.GetGenericArguments();
+            var genericTypeDef = nodeType.GetGenericTypeDefinition();
+            var typeArgs = nodeType.GetGenericArguments();
 
-            // Find matching open generic implementations
             foreach (var openGenericView in openGenericImplementations)
             {
                 var openGenericType = openGenericView.Registration.Type;
-                
+
                 try
                 {
-                    // Get the base type and all interfaces implemented by the open generic type
-                    var baseType = openGenericType.BaseType;
                     var implementedInterfaces = openGenericType.GetInterfaces();
-                    
-                    // Check if any of the implemented interfaces match the missing service's generic type definition
-                    var matchingInterface = implementedInterfaces.FirstOrDefault(i => 
-                        i.IsGenericType && 
-                        i.GetGenericTypeDefinition() == genericTypeDef);
-                    
-                    if (matchingInterface != null)
+                    var matchingInterface = implementedInterfaces.FirstOrDefault(i =>
+                        i.IsGenericType && i.GetGenericTypeDefinition() == genericTypeDef);
+
+                    if (matchingInterface == null)
                     {
-                        // Found a match! Create a closed generic implementation
-                        var closedGenericImpl = openGenericType.MakeGenericType(typeArgs);
-                        var closedImplId = QudiVisualizationAnalyzer.ToFullDisplayName(closedGenericImpl);
-
-                        // Add the closed generic implementation node
-                        AddNode(nodes, closedGenericImpl, "implementation", true, false);
-
-                        // Add edge from the missing service to the closed generic implementation
-                        var keyValue = openGenericView.Registration.Key?.ToString();
-                        edges.Add(
-                            new QudiVisualizationEdge(
-                                missingNode.Id,
-                                closedImplId,
-                                "registration",
-                                openGenericView.Condition,
-                                keyValue,
-                                openGenericView.Registration.Order
-                            )
-                        );
-
-                        // Upgrade the missing node to interface/service
-                        nodes[missingNode.Id] = new QudiVisualizationNode(
-                            missingNode.Id,
-                            missingNode.Label,
-                            missingType.IsInterface ? "interface" : "class",
-                            true,
-                            false
-                        );
-                        
-                        break;
+                        continue;
                     }
+
+                    var openImplId = QudiVisualizationAnalyzer.ToFullDisplayName(openGenericType);
+
+                    AddNode(nodes, openGenericType, "implementation", true, false);
+
+                    var keyValue = openGenericView.Registration.Key?.ToString();
+                    edges.Add(
+                        new QudiVisualizationEdge(
+                            node.Id,
+                            openImplId,
+                            "registration",
+                            openGenericView.Condition,
+                            keyValue,
+                            openGenericView.Registration.Order
+                        )
+                    );
                 }
                 catch (ArgumentException)
                 {
@@ -414,6 +414,13 @@ internal static class QudiVisualizationGraphBuilder
                 if (QudiVisualizationAnalyzer.ToFullDisplayName(requiredType) == nodeId)
                 {
                     return requiredType;
+                }
+
+                var requiredElementType = TryGetCollectionElementType(requiredType);
+                if (requiredElementType != null
+                    && QudiVisualizationAnalyzer.ToFullDisplayName(requiredElementType) == nodeId)
+                {
+                    return requiredElementType;
                 }
             }
         }
