@@ -4,7 +4,7 @@
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based **simple** dependency injection helper library.  
 Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 
-![](./assets/image.png)
+![](./assets/hero.png)
 
 ## Quick Start
 ### Overview
@@ -663,13 +663,13 @@ services.AddQudiServices(conf => {
 ### Report Missing Registrations
 When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
 
-```
-TODO
-```
+![](./assets/missing.png)
 
-> [!NOTE]
-> Visualize registrations are detected only for interface types included in project dependencies.
-> This is a limitation of Qudi's scanning approach, but it should be sufficient for most cases.
+### Detect Circular Dependencies
+When circular dependencies exist in your project, a visual runtime error like the following is output:
+
+![](./assets/circular.png)
+
 
 ### Export Registration Diagram
 By adding the following call when calling `AddQudiServices`, a diagram showing the registration status will be generated.
@@ -682,15 +682,17 @@ services.AddQudiServices(conf => {
         option.AddOutput("assets/output.dot");
         option.AddOutput("assets/output.mermaid");
         // or output with `Export=true` to a specific folder
-        option.SetOutputDirectory("assets/exported", QudiVisualizationFormat.Mermaid);
+        option.SetOutputDirectory("assets/exported", QudiVisualizationFormat.Markdown);
     });
 });
 ```
 
 Currently, the following outputs are supported.
-* JSON: Contains detailed information about registrations and dependencies. Useful for debugging and custom visualization.
-* DOT: Can be visualized using Graphviz or similar tools. Useful for complex dependency graphs.
-* Mermaid: Can be visualized using Mermaid.js. Useful for quick visualization in Markdown or web pages.
+* Json: Contains detailed information about registrations and dependencies.
+* Dot: Can be visualized using Graphviz.
+* Mermaid: Useful for quick visualization.
+* Markdown: mermaid format wrapped in markdown, which can be easily viewed in GitHub, VSCode, etc.
+* SVG(required dot): Converted from Dot format, can be viewed in browsers and image viewers.
 
 By default, the graph of all dependencies of the project is output. For projects other than small ones, it is obviously hard to see, so you can also output starting from a specific class.
 

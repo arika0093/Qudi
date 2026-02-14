@@ -1,13 +1,15 @@
+```mermaid
 flowchart LR
     Qudi_Example_Worker_NotifyToLogger["NotifyToLogger"]
     Qudi_Example_Core_INotificationService["INotificationService"]
-    Microsoft_Extensions_Logging_ILogger_Qudi_Example_Worker_NotifyToLogger_["ILogger#lt;NotifyToLogger#gt;"]
     Qudi_Example_Core_NotifyPokemonInfoService["NotifyPokemonInfoService"]
+    Microsoft_Extensions_Logging_ILogger_Qudi_Example_Worker_NotifyToLogger_["ILogger#lt;NotifyToLogger#gt;"]
     Qudi_Example_Core_IPokemon["IPokemon"]
     Qudi_Example_Core_Altaria["Altaria"]
     Qudi_Example_Core_Garchomp["Garchomp"]
     Qudi_Example_Core_Lucario["Lucario"]
     Qudi_Example_Worker_NotifyDecorator["NotifyDecorator"]
+    Qudi_Example_Worker_NotifyToLogger --> Qudi_Example_Core_NotifyPokemonInfoService
     Qudi_Example_Worker_NotifyToLogger --> Microsoft_Extensions_Logging_ILogger_Qudi_Example_Worker_NotifyToLogger_
     Qudi_Example_Core_NotifyPokemonInfoService -.->|"*"| Qudi_Example_Core_IPokemon
     Qudi_Example_Core_NotifyPokemonInfoService --> Qudi_Example_Core_INotificationService
@@ -30,3 +32,5 @@ flowchart LR
     class Qudi_Example_Core_Lucario unmatchedCls;
     classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;
     class Microsoft_Extensions_Logging_ILogger_Qudi_Example_Worker_NotifyToLogger_ external;
+
+```

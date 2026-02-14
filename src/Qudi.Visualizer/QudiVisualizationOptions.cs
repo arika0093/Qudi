@@ -191,11 +191,11 @@ internal static class VisualizeFormatConvertExtensions
     {
         return format switch
         {
-            QudiVisualizationFormat.Json => ".json",
-            QudiVisualizationFormat.Dot => ".dot",
-            QudiVisualizationFormat.Mermaid => ".mmd",
-            QudiVisualizationFormat.Markdown => ".md",
-            QudiVisualizationFormat.Svg => ".svg",
+            QudiVisualizationFormat.Json => "json",
+            QudiVisualizationFormat.Dot => "dot",
+            QudiVisualizationFormat.Mermaid => "mmd",
+            QudiVisualizationFormat.Markdown => "md",
+            QudiVisualizationFormat.Svg => "svg",
             _ => throw new InvalidOperationException("Unsupported visualization format."),
         };
     }
