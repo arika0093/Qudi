@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Spectre.Console;
 
@@ -11,15 +11,6 @@ internal static class QudiVisualizationRunner
         QudiVisualizationRuntimeOptions options
     )
     {
-        if (
-            !options.EnableConsoleOutput
-            && options.Outputs.Count == 0
-            && string.IsNullOrEmpty(options.OutputDirectory)
-        )
-        {
-            return;
-        }
-
         var report = QudiVisualizationAnalyzer.Analyze(configuration, options);
         var graph = QudiVisualizationGraphBuilder.Build(configuration);
         var warnings = new List<string>();
@@ -36,10 +27,16 @@ internal static class QudiVisualizationRunner
             warnings.AddRange(ExportIndividualGraphs(configuration, report, options));
         }
 
-        if (options.EnableConsoleOutput)
+        if (options.LoggerOutput != LoggerOutput.None && options.LoggerFactory != null)
+        {
+            var logger = options.LoggerFactory.CreateLogger("Qudi.Visualizer");
+            QudiVisualizationLoggerRenderer.Render(logger, report, options.LoggerOutput);
+        }
+
+        if (options.ConsoleOutput != ConsoleDisplay.None)
         {
             var consoleRenderer = new QudiVisualizationConsoleRenderer(AnsiConsole.Console);
-            consoleRenderer.Render(report, warnings);
+            consoleRenderer.Render(report, warnings, options.ConsoleOutput);
         }
     }
 
@@ -82,7 +79,9 @@ internal static class QudiVisualizationRunner
 
                 var fakeOutput = new QudiVisualizationFileOutput(filePath, format);
                 var fakeOptions = new QudiVisualizationRuntimeOptions(
-                    false,
+                    ConsoleDisplay.None,
+                    LoggerOutput.None,
+                    null,
                     [fakeOutput],
                     [],
                     options.GroupByNamespace,

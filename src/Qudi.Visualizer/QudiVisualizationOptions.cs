@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Qudi.Visualizer;
 
@@ -37,6 +38,36 @@ public enum QudiVisualizationFormat
 }
 
 /// <summary>
+/// Controls which sections are rendered to the console output.
+/// </summary>
+[Flags]
+public enum ConsoleDisplay
+{
+    None = 0,
+    Summary = 1 << 0,
+    Issues = 1 << 1,
+    ListOn = 1 << 2,
+    ListOff = 1 << 3,
+    ListAuto = 1 << 4,
+    Traces = 1 << 5,
+    Warnings = 1 << 6,
+    Default = Summary | ListAuto | Issues,
+}
+
+/// <summary>
+/// Controls which sections are emitted via ILogger.
+/// </summary>
+[Flags]
+public enum LoggerOutput
+{
+    None = 0,
+    Summary = 1 << 0,
+    List = 1 << 1,
+    Issues = 1 << 2,
+    Default = Summary | Issues,
+}
+
+/// <summary>
 /// Represents an output file for Qudi visualization, including the file path and format.
 /// </summary>
 public sealed record QudiVisualizationFileOutput(string FilePath, QudiVisualizationFormat Format);
@@ -51,11 +82,36 @@ public sealed class QudiVisualizationOptions
     private readonly List<QudiVisualizationFileOutput> _outputs = [];
     private readonly List<Type> _traceServices = [];
     private readonly List<QudiVisualizationFormat> _outputFormats = [];
+    private ConsoleDisplay _consoleOutput = ConsoleDisplay.Default;
 
     /// <summary>
-    /// Enable console output of visualization results. Default is true.
+    /// Enable console output of visualization results. Use <see cref="ConsoleOutput"/> for fine-grained control.
     /// </summary>
-    public bool EnableConsoleOutput { get; set; } = true;
+    public bool EnableConsoleOutput
+    {
+        get => _consoleOutput != ConsoleDisplay.None;
+        set => _consoleOutput = value ? ConsoleDisplay.Default : ConsoleDisplay.None;
+    }
+
+    /// <summary>
+    /// Controls which sections are rendered to the console output.
+    /// Default is <see cref="ConsoleDisplay.Default"/>.
+    /// </summary>
+    public ConsoleDisplay ConsoleOutput
+    {
+        get => _consoleOutput;
+        set => _consoleOutput = value;
+    }
+
+    /// <summary>
+    /// Controls which sections are emitted via ILogger. Default is <see cref="LoggerOutput.Default"/>.
+    /// </summary>
+    public LoggerOutput LoggerOutput { get; set; } = LoggerOutput.Default;
+
+    /// <summary>
+    /// Optional logger factory for ILogger output.
+    /// </summary>
+    public ILoggerFactory? LoggerFactory { get; set; }
 
     /// <summary>
     /// Enable grouping by namespace using subgraph in Mermaid output.
@@ -174,7 +230,9 @@ public sealed class QudiVisualizationOptions
     internal QudiVisualizationRuntimeOptions BuildRuntimeOptions()
     {
         return new QudiVisualizationRuntimeOptions(
-            EnableConsoleOutput,
+            ConsoleOutput,
+            LoggerOutput,
+            LoggerFactory,
             [.. _outputs],
             [.. _traceServices],
             GroupByNamespace,
@@ -219,7 +277,9 @@ internal static class VisualizeFormatConvertExtensions
 }
 
 internal sealed record QudiVisualizationRuntimeOptions(
-    bool EnableConsoleOutput,
+    ConsoleDisplay ConsoleOutput,
+    LoggerOutput LoggerOutput,
+    ILoggerFactory? LoggerFactory,
     IReadOnlyCollection<QudiVisualizationFileOutput> Outputs,
     IReadOnlyCollection<Type> TraceServices,
     bool GroupByNamespace,

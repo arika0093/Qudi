@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Spectre.Console;
@@ -7,10 +7,20 @@ namespace Qudi.Visualizer;
 
 internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 {
-    public void Render(QudiVisualizationReport report, IReadOnlyList<string> warnings)
+    private const int RegistrationListAutoHideThreshold = 30;
+
+    public void Render(
+        QudiVisualizationReport report,
+        IReadOnlyList<string> warnings,
+        ConsoleDisplay display
+    )
     {
+        if (display == ConsoleDisplay.None)
+        {
+            return;
+        }
         // Header with logo
-        var rule = new Rule("[bold cyan]🎯 Qudi Dependency Injection Visualization[/]")
+        var rule = new Rule("[bold cyan]識 Qudi Dependency Injection Visualization[/]")
         {
             Justification = Justify.Center,
         };
@@ -18,21 +28,52 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         AnsiConsole.WriteLine();
 
         // Summary metrics
-        AnsiConsole.Write(CreateSummaryPanel(report.Summary));
-        AnsiConsole.WriteLine();
+        if (IsEnabled(display, ConsoleDisplay.Summary))
+        {
+            AnsiConsole.Write(CreateSummaryPanel(report.Summary));
+            AnsiConsole.WriteLine();
+        }
 
         // Registrations table
-        AnsiConsole.Write(CreateRegistrationsPanel(report.Registrations));
-        AnsiConsole.WriteLine();
+        var listDisplay = ResolveRegistrationListDisplay(display);
+        if (listDisplay != RegistrationListDisplay.None)
+        {
+            if (
+                listDisplay == RegistrationListDisplay.On
+                || (
+                    listDisplay == RegistrationListDisplay.Auto
+                    && report.Registrations.Count <= RegistrationListAutoHideThreshold
+                )
+            )
+            {
+                AnsiConsole.Write(CreateRegistrationsPanel(report.Registrations));
+                AnsiConsole.WriteLine();
+            }
+            else if (listDisplay == RegistrationListDisplay.Auto)
+            {
+                AnsiConsole.Write(CreateRegistrationsAutoHiddenPanel(report.Registrations.Count));
+                AnsiConsole.WriteLine();
+            }
+        }
 
         // Issues panel (fixed height, no vertical expansion)
-        AnsiConsole.Write(
-            CreateIssuesPanel(report.MissingRegistrations, report.Cycles, report.LifetimeWarnings)
-        );
-        AnsiConsole.WriteLine();
+        if (IsEnabled(display, ConsoleDisplay.Issues))
+        {
+            AnsiConsole.Write(
+                CreateIssuesPanel(
+                    report.MissingRegistrations,
+                    report.Cycles,
+                    report.LifetimeWarnings
+                )
+            );
+            AnsiConsole.WriteLine();
+        }
+
+        var showTraces = IsEnabled(display, ConsoleDisplay.Traces);
+        var showWarnings = IsEnabled(display, ConsoleDisplay.Warnings);
 
         // Footer: Traces and Warnings
-        if (report.Traces.Count > 0 || warnings.Count > 0)
+        if (showTraces && showWarnings)
         {
             var footerLayout = new Layout("Footer").SplitColumns(
                 new Layout("Traces").Ratio(2),
@@ -44,6 +85,14 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
             AnsiConsole.Write(footerLayout);
         }
+        else if (showTraces)
+        {
+            AnsiConsole.Write(CreateTracesPanel(report.Traces));
+        }
+        else if (showWarnings)
+        {
+            AnsiConsole.Write(CreateWarningsPanel(warnings));
+        }
     }
 
     private Panel CreateSummaryPanel(QudiVisualizationSummary summary)
@@ -53,16 +102,14 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
             .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
             .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
-            .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4))
             .AddColumn(new GridColumn().Alignment(Justify.Right).PadRight(4));
 
         // Row 1: Labels
         grid.AddRow(
-            new Markup("[bold green]📊 Registrations[/]"),
-            new Markup("[bold red]❌ Missing[/]"),
-            new Markup("[bold magenta]🔄 Cycles[/]"),
-            new Markup("[bold cyan]⚡ Multiple[/]"),
-            new Markup("[bold orange1]💡 Lifetime[/]")
+            new Markup("[bold green]投 Registrations[/]"),
+            new Markup("[bold red]笶・Missing[/]"),
+            new Markup("[bold magenta]売 Cycles[/]"),
+            new Markup("[bold orange1]庁 Lifetime[/]")
         );
 
         // Row 2: Values with color coding
@@ -79,11 +126,6 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                     : $"[dim]{summary.CycleCount}[/]"
             ),
             new Markup(
-                summary.MultipleRegistrationCount > 0
-                    ? $"[bold cyan]{summary.MultipleRegistrationCount}[/]"
-                    : $"[dim]{summary.MultipleRegistrationCount}[/]"
-            ),
-            new Markup(
                 summary.LifetimeWarningCount > 0
                     ? $"[bold orange1]{summary.LifetimeWarningCount}[/]"
                     : $"[dim]{summary.LifetimeWarningCount}[/]"
@@ -92,7 +134,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
         return new Panel(grid)
         {
-            Header = new PanelHeader("[bold]📈 Summary Metrics[/]", Justify.Left),
+            Header = new PanelHeader("[bold]嶋 Summary Metrics[/]", Justify.Left),
             Border = BoxBorder.Rounded,
             BorderStyle = new Style(Color.Cyan1),
             Expand = true,
@@ -118,9 +160,9 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         {
             var lifetimeIcon = row.Lifetime switch
             {
-                "Singleton" => "🔒",
-                "Scoped" => "📦",
-                "Transient" => "⚡",
+                "Singleton" => "白",
+                "Scoped" => "逃",
+                "Transient" => "笞｡",
                 _ => row.Lifetime,
             };
 
@@ -162,11 +204,30 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         return new Panel(table)
         {
             Header = new PanelHeader(
-                $"[bold]🔧 Service Registrations ({rows.Count})[/]",
+                $"[bold]肌 Service Registrations ({rows.Count})[/]",
                 Justify.Left
             ),
             Border = BoxBorder.Rounded,
             BorderStyle = new Style(Color.Green),
+            Expand = true,
+        };
+    }
+
+    private Panel CreateRegistrationsAutoHiddenPanel(int count)
+    {
+        var message =
+            $"Registrations list hidden (count: {count} > {RegistrationListAutoHideThreshold}).";
+        var instruction =
+            "To show, set ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListOn | ConsoleDisplay.Issues.";
+
+        var text = new Markup(
+            $"[dim]{Markup.Escape(message + Environment.NewLine + instruction)}[/]"
+        );
+        return new Panel(text)
+        {
+            Header = new PanelHeader("[bold]肌 Service Registrations (hidden)[/]", Justify.Left),
+            Border = BoxBorder.Rounded,
+            BorderStyle = new Style(Color.Grey),
             Expand = true,
         };
     }
@@ -181,10 +242,10 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
         if (totalIssues == 0)
         {
-            var mk = new Markup("[bold green]✅ No issues detected![/]");
+            var mk = new Markup("[bold green]笨・No issues detected![/]");
             return new Panel(mk)
             {
-                Header = new PanelHeader("[bold]🛡️  Issues[/]", Justify.Left),
+                Header = new PanelHeader("[bold]孱・・ Issues[/]", Justify.Left),
                 Border = BoxBorder.Rounded,
                 BorderStyle = new Style(Color.Green),
                 Expand = true,
@@ -211,7 +272,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             grid.AddRow(
                 new Panel(missingTable)
                 {
-                    Header = new PanelHeader($"[bold red]❌ Missing ({missing.Count})[/]"),
+                    Header = new PanelHeader($"[bold red]笶・Missing ({missing.Count})[/]"),
                     Border = BoxBorder.None,
                 }
             );
@@ -226,12 +287,12 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
             foreach (var cycle in cycles)
             {
-                cycleTable.AddRow($"[magenta]{Markup.Escape(string.Join(" → ", cycle.Path))}[/]");
+                cycleTable.AddRow($"[magenta]{Markup.Escape(string.Join(" 竊・", cycle.Path))}[/]");
             }
             grid.AddRow(
                 new Panel(cycleTable)
                 {
-                    Header = new PanelHeader($"[bold magenta]🔄 Cycles ({cycles.Count})[/]"),
+                    Header = new PanelHeader($"[bold magenta]売 Cycles ({cycles.Count})[/]"),
                     Border = BoxBorder.None,
                 }
             );
@@ -260,7 +321,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 new Panel(warningTable)
                 {
                     Header = new PanelHeader(
-                        $"[bold orange1]💡  Lifetime Warnings ({lifetimeWarnings.Count})[/]"
+                        $"[bold orange1]庁  Lifetime Warnings ({lifetimeWarnings.Count})[/]"
                     ),
                     Border = BoxBorder.None,
                 }
@@ -270,7 +331,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         var borderColor = missing.Count > 0 || cycles.Count > 0 ? Color.Red : Color.Orange1;
         return new Panel(grid)
         {
-            Header = new PanelHeader($"[bold]🛡️  Issues ({totalIssues})[/]", Justify.Left),
+            Header = new PanelHeader($"[bold]孱・・ Issues ({totalIssues})[/]", Justify.Left),
             Border = BoxBorder.Rounded,
             BorderStyle = new Style(borderColor),
             Expand = true,
@@ -283,7 +344,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         {
             return new Panel(new Markup("[dim]No traces[/]"))
             {
-                Header = new PanelHeader("[bold]🔍 Resolution Traces[/]", Justify.Left),
+                Header = new PanelHeader("[bold]剥 Resolution Traces[/]", Justify.Left),
                 Border = BoxBorder.Rounded,
                 BorderStyle = new Style(Color.Grey),
                 Expand = true,
@@ -308,7 +369,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         return new Panel(grid)
         {
             Header = new PanelHeader(
-                $"[bold]🔍 Resolution Traces ({traces.Count})[/]",
+                $"[bold]剥 Resolution Traces ({traces.Count})[/]",
                 Justify.Left
             ),
             Border = BoxBorder.Rounded,
@@ -350,13 +411,46 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         }
     }
 
+    private static bool IsEnabled(ConsoleDisplay display, ConsoleDisplay flag)
+    {
+        return (display & flag) == flag;
+    }
+
+    private static RegistrationListDisplay ResolveRegistrationListDisplay(ConsoleDisplay display)
+    {
+        if (IsEnabled(display, ConsoleDisplay.ListOn))
+        {
+            return RegistrationListDisplay.On;
+        }
+
+        if (IsEnabled(display, ConsoleDisplay.ListOff))
+        {
+            return RegistrationListDisplay.Off;
+        }
+
+        if (IsEnabled(display, ConsoleDisplay.ListAuto))
+        {
+            return RegistrationListDisplay.Auto;
+        }
+
+        return RegistrationListDisplay.None;
+    }
+
+    private enum RegistrationListDisplay
+    {
+        None,
+        Auto,
+        On,
+        Off,
+    }
+
     private Panel CreateWarningsPanel(IReadOnlyList<string> warnings)
     {
         if (warnings.Count == 0)
         {
             return new Panel(new Markup("[dim]No warnings[/]"))
             {
-                Header = new PanelHeader("[bold]⚠️  Visualizer Warnings[/]", Justify.Left),
+                Header = new PanelHeader("[bold]笞・・ Visualizer Warnings[/]", Justify.Left),
                 Border = BoxBorder.Rounded,
                 BorderStyle = new Style(Color.Grey),
                 Expand = true,
@@ -366,7 +460,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         var list = new List<Markup>();
         foreach (var warning in warnings)
         {
-            list.Add(new Markup($"[orange1]• {Markup.Escape(warning)}[/]"));
+            list.Add(new Markup($"[orange1]窶｢ {Markup.Escape(warning)}[/]"));
         }
 
         var grid = new Grid().AddColumn();
@@ -378,7 +472,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         return new Panel(grid)
         {
             Header = new PanelHeader(
-                $"[bold]⚠️  Visualizer Warnings ({warnings.Count})[/]",
+                $"[bold]笞・・ Visualizer Warnings ({warnings.Count})[/]",
                 Justify.Left
             ),
             Border = BoxBorder.Rounded,
