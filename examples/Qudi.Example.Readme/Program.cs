@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Qudi;
 using Qudi.Examples;
+using Qudi.Visualizer;
 using Spectre.Console;
 
 var services = new ServiceCollection();
@@ -18,7 +19,8 @@ services.AddQudiServices(conf =>
 {
     conf.EnableVisualizationOutput(option =>
     {
-        option.SetOutputDirectory("exported/", Qudi.Visualizer.QudiVisualizationFormat.Markdown);
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.SetOutputDirectory("exported/", QudiVisualizationFormat.Markdown);
     });
 });
 

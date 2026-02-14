@@ -354,39 +354,6 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         };
     }
 
-    private void AddTraceNode(IHasTreeNodes parent, QudiTraceNode node)
-    {
-        var label = Markup.Escape(node.Label);
-        string color;
-        var suffix = "";
-
-        if (node.IsMissing)
-        {
-            color = "red";
-            suffix = " ❌";
-        }
-        else if (node.IsCycle)
-        {
-            color = "magenta";
-            suffix = " 🔄";
-        }
-        else
-        {
-            color = "green";
-        }
-
-        if (!string.IsNullOrWhiteSpace(node.Detail))
-        {
-            label += $" [dim]({Markup.Escape(node.Detail!)})[/]";
-        }
-
-        var child = parent.AddNode($"[{color}]{label}{suffix}[/]");
-        foreach (var nested in node.Children)
-        {
-            AddTraceNode(child, nested);
-        }
-    }
-
     private static bool IsEnabled(ConsoleDisplay display, ConsoleDisplay flag)
     {
         return (display & flag) == flag;

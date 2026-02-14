@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -70,12 +70,6 @@ public enum ConsoleDisplay
     ListAuto = 1 << 4,
 
     /// <summary>
-    /// Tree view of service dependencies. This is a more compact representation that shows the hierarchy of services and their dependencies in a tree structure.
-    /// It can be useful for visualizing complex configurations with many services and dependencies. Default is off.
-    /// </summary>
-    Tree = 1 << 5,
-
-    /// <summary>
     /// Default console output. Summary | ListAuto | Issues.
     /// </summary>
     Default = Summary | ListAuto | Issues,
@@ -83,7 +77,7 @@ public enum ConsoleDisplay
     /// <summary>
     /// All console output.
     /// </summary>
-    All = Summary | Issues | ListAlways | Tree,
+    All = Summary | Issues | ListAlways,
 }
 
 /// <summary>
