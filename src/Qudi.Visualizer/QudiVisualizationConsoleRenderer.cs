@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Spectre.Console;
@@ -418,22 +418,18 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
     private static RegistrationListDisplay ResolveRegistrationListDisplay(ConsoleDisplay display)
     {
-        if (IsEnabled(display, ConsoleDisplay.ListOn))
+        if (IsEnabled(display, ConsoleDisplay.ListAlways))
         {
             return RegistrationListDisplay.On;
         }
-
-        if (IsEnabled(display, ConsoleDisplay.ListOff))
-        {
-            return RegistrationListDisplay.Off;
-        }
-
-        if (IsEnabled(display, ConsoleDisplay.ListAuto))
+        else if (IsEnabled(display, ConsoleDisplay.ListAuto))
         {
             return RegistrationListDisplay.Auto;
         }
-
-        return RegistrationListDisplay.None;
+        else
+        {
+            return RegistrationListDisplay.Off;
+        }
     }
 
     private enum RegistrationListDisplay

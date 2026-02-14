@@ -43,15 +43,53 @@ public enum QudiVisualizationFormat
 [Flags]
 public enum ConsoleDisplay
 {
+    /// <summary>
+    /// No output to console.
+    /// </summary>
     None = 0,
+
+    /// <summary>
+    /// Summary section with overall statistics and key insights.
+    /// </summary>
     Summary = 1 << 0,
+
+    /// <summary>
+    /// Issues section with warnings about potential problems in the configuration, such as missing dependencies, circular dependencies, or services with multiple implementations.
+    /// </summary>
     Issues = 1 << 1,
-    ListOn = 1 << 2,
-    ListOff = 1 << 3,
+
+    /// <summary>
+    /// List of all services and their dependencies. Can be turned on/off or set to auto (only show if number of services is below a certain threshold). Default is auto.
+    /// </summary>
+    ListAlways = 1 << 2,
+
+    /// <summary>
+    /// List of all services and their dependencies, but only if the total number of services is below a certain threshold (e.g. 20).
+    /// If the number of services exceeds the threshold, the list will be hidden to avoid overwhelming the console output. Default is auto.
+    /// </summary>
     ListAuto = 1 << 4,
+
+    /// <summary>
+    /// Traces of the resolved services and their dependencies. This can be useful for debugging and understanding the resolution process,
+    /// especially when using advanced features like conditional registrations, open generics, or assembly scanning.
+    /// </summary>
     Traces = 1 << 5,
+
+    /// <summary>
+    /// Warnings about potential issues in the configuration, such as missing dependencies, circular dependencies, or services with multiple implementations.
+    /// This can help identify and fix problems in the configuration before they cause runtime errors.
+    /// </summary>
     Warnings = 1 << 6,
+
+    /// <summary>
+    /// Default console output. Summary | ListAuto | Issues.
+    /// </summary>
     Default = Summary | ListAuto | Issues,
+
+    /// <summary>
+    /// All console output.
+    /// </summary>
+    All = Summary | Issues | ListAlways | Traces | Warnings,
 }
 
 /// <summary>
@@ -60,10 +98,29 @@ public enum ConsoleDisplay
 [Flags]
 public enum LoggerOutput
 {
+    /// <summary>
+    /// No output to logger.
+    /// </summary>
     None = 0,
+
+    /// <summary>
+    /// Summary section with overall statistics and key insights.
+    /// </summary>
     Summary = 1 << 0,
+
+    /// <summary>
+    /// Warnings about potential issues in the configuration, such as missing dependencies, circular dependencies, or services with multiple implementations.
+    /// </summary>
     List = 1 << 1,
+
+    /// <summary>
+    /// Warnings about potential issues in the configuration, such as missing dependencies, circular dependencies, or services with multiple implementations.
+    /// </summary>
     Issues = 1 << 2,
+
+    /// <summary>
+    /// Default logger output. Summary | Issues.
+    /// </summary>
     Default = Summary | Issues,
 }
 
