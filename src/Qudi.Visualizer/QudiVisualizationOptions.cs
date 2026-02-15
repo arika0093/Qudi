@@ -75,43 +75,6 @@ public enum ConsoleDisplay
 }
 
 /// <summary>
-/// Controls which sections are emitted via ILogger.
-/// </summary>
-[Flags]
-public enum LoggerOutput
-{
-    /// <summary>
-    /// No output to logger.
-    /// </summary>
-    None = 0,
-
-    /// <summary>
-    /// Summary section with overall statistics and key insights.
-    /// </summary>
-    Summary = 1 << 0,
-
-    /// <summary>
-    /// Warnings about potential issues in the configuration, such as missing dependencies, circular dependencies, or services with multiple implementations.
-    /// </summary>
-    List = 1 << 1,
-
-    /// <summary>
-    /// Warnings about potential issues in the configuration, such as missing dependencies, circular dependencies, or services with multiple implementations.
-    /// </summary>
-    Issues = 1 << 2,
-
-    /// <summary>
-    /// All logger output.
-    /// </summary>
-    All = Summary | Issues | List,
-
-    /// <summary>
-    /// Default logger output.
-    /// </summary>
-    Default = All,
-}
-
-/// <summary>
 /// Represents an output file for Qudi visualization, including the file path and format.
 /// </summary>
 public sealed record QudiVisualizationFileOutput(string FilePath, QudiVisualizationFormat Format);
@@ -141,11 +104,6 @@ public sealed class QudiVisualizationOptions
     /// Default is <see cref="ConsoleDisplay.Default"/>.
     /// </summary>
     public ConsoleDisplay ConsoleOutput { get; set; } = ConsoleDisplay.Default;
-
-    /// <summary>
-    /// Controls which sections are emitted via ILogger. Default is <see cref="LoggerOutput.Default"/>.
-    /// </summary>
-    public LoggerOutput LoggerOutput { get; set; } = LoggerOutput.Default;
 
     /// <summary>
     /// Optional logger factory for ILogger output.
@@ -270,7 +228,6 @@ public sealed class QudiVisualizationOptions
     {
         return new QudiVisualizationRuntimeOptions(
             ConsoleOutput,
-            LoggerOutput,
             LoggerFactory,
             [.. _outputs],
             [.. _traceServices],
@@ -317,7 +274,6 @@ internal static class VisualizeFormatConvertExtensions
 
 internal sealed record QudiVisualizationRuntimeOptions(
     ConsoleDisplay ConsoleOutput,
-    LoggerOutput LoggerOutput,
     ILoggerFactory? LoggerFactory,
     IReadOnlyCollection<QudiVisualizationFileOutput> Outputs,
     IReadOnlyCollection<Type> TraceServices,

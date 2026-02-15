@@ -27,10 +27,10 @@ internal static class QudiVisualizationRunner
             warnings.AddRange(ExportIndividualGraphs(configuration, report, options));
         }
 
-        if (options.LoggerOutput != LoggerOutput.None && options.LoggerFactory != null)
+        if (options.LoggerFactory != null)
         {
             var logger = options.LoggerFactory.CreateLogger("Qudi.Visualizer");
-            QudiVisualizationLoggerRenderer.Render(logger, report, options.LoggerOutput);
+            QudiVisualizationLoggerRenderer.Render(logger, report);
         }
 
         if (options.ConsoleOutput != ConsoleDisplay.None)
@@ -80,7 +80,6 @@ internal static class QudiVisualizationRunner
                 var fakeOutput = new QudiVisualizationFileOutput(filePath, format);
                 var fakeOptions = new QudiVisualizationRuntimeOptions(
                     ConsoleDisplay.None,
-                    LoggerOutput.None,
                     null,
                     [fakeOutput],
                     [],
