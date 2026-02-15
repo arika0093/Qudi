@@ -58,6 +58,8 @@ public sealed class ConstrainedGenericRegistrationTests
         var provider = services.BuildServiceProvider();
         var consumer = provider.GetRequiredService<ComponentValidationConsumer>();
 
+        // Constructor injection flows through FilteringServiceProvider, which trims fallback
+        // open-generic validators when a concrete closed validator exists.
         consumer.BatteryValidators.Count.ShouldBe(1);
         consumer.BatteryValidators[0].GetType().ShouldBe(typeof(BatteryValidator));
 

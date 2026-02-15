@@ -50,10 +50,11 @@ public static class QudiAddServiceToContainer
             .ThenBy(t => t.Order)
             .ToList();
 
-        var openGenericFallbacks = BuildOpenGenericFallbackMap(applicable);
+        var materialized = MaterializeOpenGenericFallbacks(applicable);
+        var openGenericFallbacks = BuildOpenGenericFallbackMap(materialized);
 
-        var registrations = applicable.Where(t => !t.MarkAsDecorator).ToList();
-        var decorators = applicable.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
+        var registrations = materialized.Where(t => !t.MarkAsDecorator).ToList();
+        var decorators = materialized.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
 
         foreach (var registration in registrations)
         {
@@ -136,14 +137,22 @@ public static class QudiAddServiceToContainer
                         continue;
                     }
 
-                    var closedAsTypes = registration
-                        .AsTypes.Select(t =>
-                            t.IsGenericTypeDefinition
-                                ? t.MakeGenericType(candidate.GetGenericArguments())
-                                : t
-                        )
-                        .Distinct()
-                        .ToList();
+                    List<Type> closedAsTypes;
+                    try
+                    {
+                        closedAsTypes = registration
+                            .AsTypes.Select(t =>
+                                t.IsGenericTypeDefinition
+                                    ? t.MakeGenericType(candidate.GetGenericArguments())
+                                    : t
+                            )
+                            .Distinct()
+                            .ToList();
+                    }
+                    catch (ArgumentException)
+                    {
+                        continue;
+                    }
 
                     materialized.Add(
                         registration with
@@ -577,6 +586,11 @@ public static class QudiAddServiceToContainer
                 return _inner;
             }
 
+            if (serviceType == typeof(IServiceProviderIsService))
+            {
+                return this;
+            }
+
             if (
                 serviceType.IsGenericType
                 && serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
@@ -600,7 +614,7 @@ public static class QudiAddServiceToContainer
                 return isService.IsService(serviceType);
             }
 
-            return true;
+            return false;
         }
 
         private object? TryFilterEnumerable(Type elementType)
@@ -621,6 +635,7 @@ public static class QudiAddServiceToContainer
 
             var all = ServiceProviderServiceExtensions
                 .GetServices(_inner, elementType)
+                .Where(service => service is not null)
                 .Cast<object>()
                 .ToList();
 
