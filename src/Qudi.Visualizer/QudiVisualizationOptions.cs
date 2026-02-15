@@ -64,7 +64,7 @@ public enum ConsoleDisplay
     ListAlways = 1 << 2,
 
     /// <summary>
-    /// List of all services and their dependencies, but only if the total number of services is below a certain threshold (e.g. 20).
+    /// List of all services and their dependencies, but only if the total number of services is below a certain threshold.
     /// If the number of services exceeds the threshold, the list will be hidden to avoid overwhelming the console output. Default is auto.
     /// </summary>
     ListAuto = 1 << 4,
@@ -107,9 +107,14 @@ public enum LoggerOutput
     Issues = 1 << 2,
 
     /// <summary>
-    /// Default logger output. Summary | Issues.
+    /// All logger output.
     /// </summary>
-    Default = Summary | Issues,
+    All = Summary | Issues | List,
+
+    /// <summary>
+    /// Default logger output.
+    /// </summary>
+    Default = All,
 }
 
 /// <summary>
@@ -127,26 +132,21 @@ public sealed class QudiVisualizationOptions
     private readonly List<QudiVisualizationFileOutput> _outputs = [];
     private readonly List<Type> _traceServices = [];
     private readonly List<QudiVisualizationFormat> _outputFormats = [];
-    private ConsoleDisplay _consoleOutput = ConsoleDisplay.Default;
 
     /// <summary>
     /// Enable console output of visualization results. Use <see cref="ConsoleOutput"/> for fine-grained control.
     /// </summary>
     public bool EnableConsoleOutput
     {
-        get => _consoleOutput != ConsoleDisplay.None;
-        set => _consoleOutput = value ? ConsoleDisplay.Default : ConsoleDisplay.None;
+        get => ConsoleOutput != ConsoleDisplay.None;
+        set => ConsoleOutput = value ? ConsoleDisplay.Default : ConsoleDisplay.None;
     }
 
     /// <summary>
     /// Controls which sections are rendered to the console output.
     /// Default is <see cref="ConsoleDisplay.Default"/>.
     /// </summary>
-    public ConsoleDisplay ConsoleOutput
-    {
-        get => _consoleOutput;
-        set => _consoleOutput = value;
-    }
+    public ConsoleDisplay ConsoleOutput { get; set; } = ConsoleDisplay.Default;
 
     /// <summary>
     /// Controls which sections are emitted via ILogger. Default is <see cref="LoggerOutput.Default"/>.

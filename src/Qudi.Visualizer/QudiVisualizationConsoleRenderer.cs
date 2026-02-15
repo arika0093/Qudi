@@ -196,17 +196,15 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
     private Panel CreateRegistrationsAutoHiddenPanel(int count)
     {
-        var message =
-            $"Registrations list hidden (count: {count} > {RegistrationListAutoHideThreshold}).";
-        var instruction =
-            "To show, set ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListAlways | ConsoleDisplay.Issues.";
-
-        var text = new Markup(
-            $"[dim]{Markup.Escape(message + Environment.NewLine + instruction)}[/]"
-        );
+        var msg = $"""
+            Registrations list hidden (count: {count} > {RegistrationListAutoHideThreshold}).
+            To show, set ConsoleOutput |= ConsoleDisplay.ListAlways or ConsoleOutput = ConsoleDisplay.All.
+            If you want remove this section, set ConsoleOutput &= ~ConsoleDisplay.ListAuto.
+            """;
+        var text = new Markup($"[dim]{Markup.Escape(msg)}[/]");
         return new Panel(text)
         {
-            Header = new PanelHeader("[bold]肌 Service Registrations (hidden)[/]", Justify.Left),
+            Header = new PanelHeader("[bold]🔧 Service Registrations[/]", Justify.Left),
             Border = BoxBorder.Rounded,
             BorderStyle = new Style(Color.Grey),
             Expand = true,

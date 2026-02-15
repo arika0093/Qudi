@@ -20,7 +20,16 @@ services.AddQudiServices(conf =>
     conf.EnableVisualizationOutput(option =>
     {
         option.ConsoleOutput = ConsoleDisplay.All;
-        option.SetOutputDirectory("exported/", QudiVisualizationFormat.Markdown);
+        option.LoggerOutput = LoggerOutput.All;
+        option.LoggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
+        option.SetOutputDirectory(
+            "exported/",
+            [QudiVisualizationFormat.Markdown, QudiVisualizationFormat.Dot]
+        );
     });
 });
 

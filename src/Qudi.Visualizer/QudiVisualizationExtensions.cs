@@ -15,7 +15,7 @@ public static class QudiVisualizationExtensions
     /// <param name="configure"> An action to configure the visualization options.</param>
     public static QudiConfigurationRootBuilder EnableVisualizationOutput(
         this QudiConfigurationRootBuilder builder,
-        Action<QudiVisualizationOptions> configure
+        Action<QudiVisualizationOptions>? configure = null
     )
     {
         // export UTF-8

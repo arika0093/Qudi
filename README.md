@@ -684,14 +684,18 @@ By default, statistical information, lists (only when the count is small), and w
 ```csharp
 services.AddQudiServices(conf => {
     conf.EnableVisualizationOutput(option => {
-        // Only Summary
-        options.ConsoleOutput = ConsoleDisplay.Summary;
         // Summary + Issues
         options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.Issues;
         // Always output list, even if the count is large
-        options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.ListAlways;
+        options.ConsoleOutput = ConsoleDisplay.All;
+        // No output to console
+        options.ConsoleOutput = ConsoleDisplay.None;
         // Output to Logger
-        options.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        option.LoggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
     });
 });
 ```
