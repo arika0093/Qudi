@@ -71,7 +71,9 @@ void SampleExecute(ISampleExecutor selection)
 {
     // Display separator
     AnsiConsole.WriteLine();
-    AnsiConsole.Write(new Rule($"[yellow]{selection.Name}[/]").RuleStyle("grey").LeftJustified());
+    AnsiConsole.Write(
+        new Rule($"[yellow]{Markup.Escape(selection.Name)}[/]").RuleStyle("grey").LeftJustified()
+    );
     AnsiConsole.WriteLine();
 
     // Execute the selected sample

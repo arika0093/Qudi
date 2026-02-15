@@ -369,8 +369,8 @@ internal static class QudiVisualizationGraphBuilder
 
                 var hasMatchingServiceType = declaredServiceTypes.Any(serviceType =>
                     serviceType.IsGenericType
-                    && !serviceType.IsGenericTypeDefinition
-                    && serviceType.GetGenericTypeDefinition() == genericTypeDef
+                        ? serviceType.GetGenericTypeDefinition() == genericTypeDef
+                        : serviceType == genericTypeDef
                 );
 
                 if (!hasMatchingServiceType)
