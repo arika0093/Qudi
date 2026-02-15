@@ -231,14 +231,14 @@ internal static class QudiVisualizationGraphBuilder
                             )
                             {
                                 // Connect to final implementation(s)
-                                foreach (var impl in implementations)
+                                foreach (var implementationType in implementations.Select(impl => impl.Registration.Type))
                                 {
                                     var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                        impl.Registration.Type
+                                        implementationType
                                     );
                                     AddNode(
                                         nodes,
-                                        impl.Registration.Type,
+                                        implementationType,
                                         "implementation",
                                         isMatched,
                                         false
@@ -261,14 +261,14 @@ internal static class QudiVisualizationGraphBuilder
                         )
                         {
                             // No other decorators, connect directly to implementation(s)
-                            foreach (var impl in implementations)
+                            foreach (var implementationType in implementations.Select(impl => impl.Registration.Type))
                             {
                                 var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                    impl.Registration.Type
+                                    implementationType
                                 );
                                 AddNode(
                                     nodes,
-                                    impl.Registration.Type,
+                                    implementationType,
                                     "implementation",
                                     isMatched,
                                     false
@@ -344,9 +344,9 @@ internal static class QudiVisualizationGraphBuilder
             }
         }
 
-        foreach (var node in nodes.Values.ToList())
+        foreach (var nodeId in nodes.Values.Select(node => node.Id).ToList())
         {
-            var nodeType = FindTypeFromNodeId(node.Id, allRegistrations);
+            var nodeType = FindTypeFromNodeId(nodeId, allRegistrations);
             if (
                 nodeType == null
                 || !candidateServiceTypes.Contains(nodeType)
@@ -385,7 +385,7 @@ internal static class QudiVisualizationGraphBuilder
                 var keyValue = openGenericView.Registration.Key?.ToString();
                 edges.Add(
                     new QudiVisualizationEdge(
-                        node.Id,
+                        nodeId,
                         openImplId,
                         "registration",
                         openGenericView.Condition,
@@ -416,29 +416,31 @@ internal static class QudiVisualizationGraphBuilder
                 return registration.Type;
             }
 
-            foreach (var asType in registration.AsTypes)
+            var matchingAsType = registration.AsTypes.FirstOrDefault(asType =>
+                QudiVisualizationAnalyzer.ToFullDisplayName(asType) == nodeId
+            );
+            if (matchingAsType != null)
             {
-                if (QudiVisualizationAnalyzer.ToFullDisplayName(asType) == nodeId)
-                {
-                    return asType;
-                }
+                return matchingAsType;
             }
 
-            foreach (var requiredType in registration.RequiredTypes)
+            var matchingRequiredType = registration.RequiredTypes.FirstOrDefault(requiredType =>
+                QudiVisualizationAnalyzer.ToFullDisplayName(requiredType) == nodeId
+            );
+            if (matchingRequiredType != null)
             {
-                if (QudiVisualizationAnalyzer.ToFullDisplayName(requiredType) == nodeId)
-                {
-                    return requiredType;
-                }
+                return matchingRequiredType;
+            }
 
-                var requiredElementType = TryGetCollectionElementType(requiredType);
-                if (
+            var matchingRequiredElementType = registration
+                .RequiredTypes.Select(TryGetCollectionElementType)
+                .FirstOrDefault(requiredElementType =>
                     requiredElementType != null
                     && QudiVisualizationAnalyzer.ToFullDisplayName(requiredElementType) == nodeId
-                )
-                {
-                    return requiredElementType;
-                }
+                );
+            if (matchingRequiredElementType != null)
+            {
+                return matchingRequiredElementType;
             }
         }
 
@@ -568,13 +570,13 @@ internal static class QudiVisualizationGraphBuilder
             var currentId = queue.Dequeue();
 
             // Find all outgoing edges from current node
-            foreach (var edge in fullGraph.Edges.Where(e => e.From == currentId))
+            foreach (var toId in fullGraph
+                .Edges.Where(e => e.From == currentId)
+                .Select(e => e.To)
+                .Where(toId => !reachableNodeIds.Contains(toId)))
             {
-                if (!reachableNodeIds.Contains(edge.To))
-                {
-                    reachableNodeIds.Add(edge.To);
-                    queue.Enqueue(edge.To);
-                }
+                reachableNodeIds.Add(toId);
+                queue.Enqueue(toId);
             }
         }
 

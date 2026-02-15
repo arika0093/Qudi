@@ -97,33 +97,6 @@ internal static class QudiVisualizationAnalyzer
             .ThenBy(r => r.ImplementationDisplay, StringComparer.Ordinal)
             .ToList();
 
-        // Also include non-applicable registrations for visualization purposes (marked as unmatched)
-        var nonApplicable = configuration
-            .Registrations.Where(r => !IsApplicable(r, configuration.Conditions))
-            .Select(registration =>
-            {
-                var serviceTypes =
-                    registration.AsTypes.Count > 0
-                        ? registration.AsTypes.Distinct().ToList()
-                        : [registration.Type];
-
-                return new RegistrationView(
-                    registration,
-                    serviceTypes,
-                    string.Join(", ", serviceTypes.Select(ToDisplayName)),
-                    ToDisplayName(registration.Type),
-                    registration.Lifetime,
-                    registration.Key?.ToString() ?? "-",
-                    registration.When.Count == 0 ? "*" : string.Join(", ", registration.When),
-                    registration.Order,
-                    registration.MarkAsDecorator,
-                    IsConditionMatched: false
-                );
-            })
-            .OrderBy(r => r.Order)
-            .ThenBy(r => r.ImplementationDisplay, StringComparer.Ordinal)
-            .ToList();
-
         var serviceMap = new Dictionary<Type, List<RegistrationView>>();
         var implementationMap = new Dictionary<Type, List<RegistrationView>>();
 
@@ -295,22 +268,21 @@ internal static class QudiVisualizationAnalyzer
     {
         var edges = new Dictionary<Type, HashSet<Type>>();
 
-        foreach (var registration in context.Applicable.Where(r => !r.IsDecorator))
+        foreach (var registration in context.Applicable.Where(r => !r.IsDecorator).Select(r => r.Registration))
         {
-            var implType = registration.Registration.Type;
+            var implType = registration.Type;
             if (!edges.TryGetValue(implType, out var targets))
             {
                 targets = [];
                 edges[implType] = targets;
             }
 
-            foreach (var required in registration.Registration.RequiredTypes.Distinct())
+            foreach (var required in registration.RequiredTypes.Distinct())
             {
-                var candidates = ResolveImplementationCandidates(context, required);
-                foreach (var target in candidates)
-                {
-                    targets.Add(target.Registration.Type);
-                }
+                targets.UnionWith(
+                    ResolveImplementationCandidates(context, required)
+                        .Select(target => target.Registration.Type)
+                );
             }
         }
 

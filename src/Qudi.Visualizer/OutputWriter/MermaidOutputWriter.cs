@@ -17,9 +17,9 @@ internal static class MermaidOutputWriter
         var used = new HashSet<string>(StringComparer.Ordinal);
 
         // Generate node IDs
-        foreach (var node in graph.Nodes)
+        foreach (var nodeId in graph.Nodes.Select(node => node.Id))
         {
-            var baseId = SanitizeMermaidId(node.Id);
+            var baseId = SanitizeMermaidId(nodeId);
             var id = baseId;
             var index = 1;
             while (!used.Add(id))
@@ -27,7 +27,7 @@ internal static class MermaidOutputWriter
                 id = baseId + "_" + index.ToString(CultureInfo.InvariantCulture);
                 index++;
             }
-            ids[node.Id] = id;
+            ids[nodeId] = id;
         }
 
         // Generate nodes (with or without subgraphs)
