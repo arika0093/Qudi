@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Qudi.Visualizer;
 using Shouldly;
 using TUnit;
@@ -41,15 +40,16 @@ public sealed class VisualizeSmokeTests
     }
 
     [Test]
-    public void OutputsWarningWhenSvgGenerationFails()
+    public void HandlesVisualizationOutputWarnings()
     {
+        // This test verifies that the visualizer gracefully handles scenarios that may produce warnings,
+        // such as SVG generation when Graphviz is not available.
         var rootDir = Path.Combine(
             Path.GetTempPath(),
             "Qudi.Visualize.Tests",
             Guid.NewGuid().ToString("N")
         );
         var svgOutputPath = Path.Combine(rootDir, "visualization.svg");
-        var logMessages = new System.Collections.Generic.List<string>();
 
         var services = new ServiceCollection();
         services.AddQudiServices(conf =>
@@ -58,21 +58,20 @@ public sealed class VisualizeSmokeTests
             {
                 opt.ConsoleOutput = ConsoleDisplay.None;
                 opt.AddOutput(svgOutputPath);
-                opt.LoggerFactory = LoggerFactory.Create(builder =>
-                {
-                    builder.AddProvider(new TestLoggerProvider(logMessages));
-                    builder.SetMinimumLevel(LogLevel.Information);
-                });
             });
         });
 
         using var provider = services.BuildServiceProvider();
         _ = provider.GetRequiredService<VisualizeWarningRoot>();
 
-        // When dot (Graphviz) is not available, an SVG output should still create a .dot file
-        // and the warning should be logged
+        // When SVG output is requested, it should always create a .dot file
+        // (either as the source for SVG generation, or as a fallback if graphviz is not available)
         var dotPath = Path.ChangeExtension(svgOutputPath, ".dot");
         File.Exists(dotPath).ShouldBeTrue();
+        
+        // The .dot file should contain valid DOT format content
+        var dotContent = File.ReadAllText(dotPath);
+        dotContent.ShouldContain("digraph");
     }
 }
 
@@ -103,31 +102,3 @@ internal sealed class VisualizeWarningRoot
 
 [DITransient]
 internal sealed class VisualizeWarningDependency;
-
-// Test logger provider to capture log messages
-internal sealed class TestLoggerProvider(System.Collections.Generic.List<string> logMessages)
-    : ILoggerProvider
-{
-    public ILogger CreateLogger(string categoryName) => new TestLogger(logMessages);
-
-    public void Dispose() { }
-}
-
-internal sealed class TestLogger(System.Collections.Generic.List<string> logMessages) : ILogger
-{
-    public IDisposable? BeginScope<TState>(TState state)
-        where TState : notnull => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter
-    )
-    {
-        logMessages.Add(formatter(state, exception));
-    }
-}
