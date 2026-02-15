@@ -20,7 +20,6 @@ services.AddQudiServices(conf =>
     conf.EnableVisualizationOutput(option =>
     {
         option.ConsoleOutput = ConsoleDisplay.All;
-        option.LoggerOutput = LoggerOutput.All;
         option.LoggerFactory = LoggerFactory.Create(builder =>
         {
             builder.AddConsole();

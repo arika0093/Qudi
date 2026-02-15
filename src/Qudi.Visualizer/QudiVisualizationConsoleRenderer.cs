@@ -57,6 +57,10 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             AnsiConsole.Write(CreateWarningsPanel(warnings));
             AnsiConsole.WriteLine();
         }
+
+        var errorCount = report.MissingRegistrations.Count + report.Cycles.Count;
+        var warningCount = report.LifetimeWarnings.Count + warnings.Count;
+        AskContinue(errorCount, warningCount);
     }
 
     private Panel CreateSummaryPanel(QudiVisualizationSummary summary)
@@ -321,5 +325,40 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             BorderStyle = new Style(Color.Orange1),
             Expand = true,
         };
+    }
+
+    private bool AskContinue(int errorCount, int warningCount)
+    {
+        try
+        {
+            if (errorCount > 0)
+            {
+                // ask continue only if there are issues, otherwise just show the summary
+                var isContinue = AnsiConsole.Confirm(
+                    $"[bold red]There are {errorCount} errors detected. Do you want to continue?[/]"
+                );
+                if (!isContinue)
+                {
+                    Environment.Exit(1);
+                }
+            }
+            if (warningCount > 0)
+            {
+                // ask too if there are warnings, but less urgent than errors
+                var isContinue = AnsiConsole.Confirm(
+                    $"[bold orange1]There are {warningCount} warnings detected. Do you want to continue?[/]"
+                );
+                if (!isContinue)
+                {
+                    Environment.Exit(1);
+                }
+            }
+            return true;
+        }
+        catch (NotSupportedException)
+        {
+            // ignore if console input is not supported (e.g. in some IDEs or environments)
+            return true;
+        }
     }
 }
