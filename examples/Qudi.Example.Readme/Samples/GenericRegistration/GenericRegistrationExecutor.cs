@@ -26,7 +26,8 @@ public interface IComponentValidator<T>
     bool Validate(T component);
 }
 
-// default(fallback) implementation (not directly registered)
+// default(fallback) implementation
+[DITransient]
 public class NullComponentValidator<T> : IComponentValidator<T>
     where T : IComponent
 {
@@ -36,10 +37,6 @@ public class NullComponentValidator<T> : IComponentValidator<T>
         return true;
     }
 }
-
-// fallback is registered only for types without specialized implementations
-[DITransient]
-public class KeyboardFallbackValidator : NullComponentValidator<Keyboard> { }
 
 // specialized implementation for Battery
 [DITransient]
