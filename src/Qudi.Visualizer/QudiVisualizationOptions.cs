@@ -59,25 +59,19 @@ public enum ConsoleDisplay
     Issues = 1 << 1,
 
     /// <summary>
-    /// List of all services and their dependencies. Can be turned on/off or set to auto (only show if number of services is below a certain threshold). Default is auto.
+    /// List of all services and their dependencies.
     /// </summary>
-    ListAlways = 1 << 2,
+    List = 1 << 2,
 
     /// <summary>
-    /// List of all services and their dependencies, but only if the total number of services is below a certain threshold.
-    /// If the number of services exceeds the threshold, the list will be hidden to avoid overwhelming the console output. Default is auto.
+    /// Default console output. Summary | Issues.
     /// </summary>
-    ListAuto = 1 << 4,
-
-    /// <summary>
-    /// Default console output. Summary | ListAuto | Issues.
-    /// </summary>
-    Default = Summary | ListAuto | Issues,
+    Default = Summary | Issues,
 
     /// <summary>
     /// All console output.
     /// </summary>
-    All = Summary | Issues | ListAlways,
+    All = Summary | Issues | List,
 }
 
 /// <summary>

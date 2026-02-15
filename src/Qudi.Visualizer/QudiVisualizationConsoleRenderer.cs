@@ -7,8 +7,6 @@ namespace Qudi.Visualizer;
 
 internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 {
-    private const int RegistrationListAutoHideThreshold = 30;
-
     public void Render(
         QudiVisualizationReport report,
         IReadOnlyList<string> warnings,
@@ -35,25 +33,10 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         }
 
         // Registrations table
-        var listDisplay = ResolveRegistrationListDisplay(display);
-        if (listDisplay != RegistrationListDisplay.None)
+        if (IsEnabled(display, ConsoleDisplay.List))
         {
-            if (
-                listDisplay == RegistrationListDisplay.On
-                || (
-                    listDisplay == RegistrationListDisplay.Auto
-                    && report.Registrations.Count <= RegistrationListAutoHideThreshold
-                )
-            )
-            {
-                AnsiConsole.Write(CreateRegistrationsPanel(report.Registrations));
-                AnsiConsole.WriteLine();
-            }
-            else if (listDisplay == RegistrationListDisplay.Auto)
-            {
-                AnsiConsole.Write(CreateRegistrationsAutoHiddenPanel(report.Registrations.Count));
-                AnsiConsole.WriteLine();
-            }
+            AnsiConsole.Write(CreateRegistrationsPanel(report.Registrations));
+            AnsiConsole.WriteLine();
         }
 
         // Issues panel (fixed height, no vertical expansion)
@@ -194,23 +177,6 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         };
     }
 
-    private Panel CreateRegistrationsAutoHiddenPanel(int count)
-    {
-        var msg = $"""
-            Registrations list hidden (count: {count} > {RegistrationListAutoHideThreshold}).
-            To show, set ConsoleOutput |= ConsoleDisplay.ListAlways or ConsoleOutput = ConsoleDisplay.All.
-            If you want remove this section, set ConsoleOutput &= ~ConsoleDisplay.ListAuto.
-            """;
-        var text = new Markup($"[dim]{Markup.Escape(msg)}[/]");
-        return new Panel(text)
-        {
-            Header = new PanelHeader("[bold]🔧 Service Registrations[/]", Justify.Left),
-            Border = BoxBorder.Rounded,
-            BorderStyle = new Style(Color.Grey),
-            Expand = true,
-        };
-    }
-
     private Panel CreateIssuesPanel(
         IReadOnlyList<QudiMissingRegistration> missing,
         IReadOnlyList<QudiCycle> cycles,
@@ -318,30 +284,6 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
     private static bool IsEnabled(ConsoleDisplay display, ConsoleDisplay flag)
     {
         return (display & flag) == flag;
-    }
-
-    private static RegistrationListDisplay ResolveRegistrationListDisplay(ConsoleDisplay display)
-    {
-        if (IsEnabled(display, ConsoleDisplay.ListAlways))
-        {
-            return RegistrationListDisplay.On;
-        }
-        else if (IsEnabled(display, ConsoleDisplay.ListAuto))
-        {
-            return RegistrationListDisplay.Auto;
-        }
-        else
-        {
-            return RegistrationListDisplay.Off;
-        }
-    }
-
-    private enum RegistrationListDisplay
-    {
-        None,
-        Auto,
-        On,
-        Off,
     }
 
     private Panel CreateWarningsPanel(IReadOnlyList<string> warnings)
