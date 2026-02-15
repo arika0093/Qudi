@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -38,14 +39,36 @@ public sealed class ConstrainedGenericRegistrationTests
         single.Validate(batteryComponent).ShouldBeFalse();
 
         var all = provider.GetServices<IComponentValidator<Battery>>().ToList();
-        all.Count.ShouldBe(2);
+        all.Count.ShouldBe(1);
         all.Any(v => v.GetType() == typeof(BatteryValidator)).ShouldBeTrue();
-        all.Any(v => v.GetType() == typeof(NullComponentValidator<Battery>)).ShouldBeTrue();
+
+        var keyboardAll = provider.GetServices<IComponentValidator<Keyboard>>().ToList();
+        keyboardAll.Count.ShouldBe(1);
+        keyboardAll[0].GetType().ShouldBe(typeof(NullComponentValidator<Keyboard>));
 
         var screenComponent = new Screen();
         var screen = provider.GetRequiredService<IComponentValidator<Screen>>();
-        screen.GetType().ShouldBe(typeof(NullComponentValidator<Screen>));
-        screen.Validate(screenComponent).ShouldBeTrue();
+        screen.GetType().ShouldBe(typeof(ScreenValidator));
+        screen.Validate(screenComponent).ShouldBeFalse();
+    }
+
+    [Test]
+    public void MaterializesOpenGenericFallbackOnlyForTypesWithoutConcreteImplementation()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var consumer = provider.GetRequiredService<ComponentValidationConsumer>();
+
+        consumer.BatteryValidators.Count.ShouldBe(1);
+        consumer.BatteryValidators[0].GetType().ShouldBe(typeof(BatteryValidator));
+
+        consumer.ScreenValidators.Count.ShouldBe(1);
+        consumer.ScreenValidators[0].GetType().ShouldBe(typeof(ScreenValidator));
+
+        consumer.KeyboardValidators.Count.ShouldBe(1);
+        consumer.KeyboardValidators[0].GetType().ShouldBe(typeof(NullComponentValidator<Keyboard>));
     }
 
     public interface ISpecificInterface;
@@ -72,6 +95,8 @@ public sealed class ConstrainedGenericRegistrationTests
 
     public sealed class Screen : IComponent;
 
+    public sealed class Keyboard : IComponent;
+
     public interface IComponentValidator<T>
         where T : IComponent
     {
@@ -89,5 +114,28 @@ public sealed class ConstrainedGenericRegistrationTests
     public class BatteryValidator : IComponentValidator<Battery>
     {
         public bool Validate(Battery component) => false;
+    }
+
+    [DITransient]
+    public class ScreenValidator : IComponentValidator<Screen>
+    {
+        public bool Validate(Screen component) => false;
+    }
+
+    [DITransient]
+    public sealed class ComponentValidationConsumer(
+        IEnumerable<IComponentValidator<Battery>> batteryValidators,
+        IEnumerable<IComponentValidator<Screen>> screenValidators,
+        IEnumerable<IComponentValidator<Keyboard>> keyboardValidators
+    )
+    {
+        public List<IComponentValidator<Battery>> BatteryValidators { get; } =
+            batteryValidators.ToList();
+
+        public List<IComponentValidator<Screen>> ScreenValidators { get; } =
+            screenValidators.ToList();
+
+        public List<IComponentValidator<Keyboard>> KeyboardValidators { get; } =
+            keyboardValidators.ToList();
     }
 }
