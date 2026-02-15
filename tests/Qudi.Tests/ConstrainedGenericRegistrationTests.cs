@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -48,6 +49,25 @@ public sealed class ConstrainedGenericRegistrationTests
         screen.Validate(screenComponent).ShouldBeTrue();
     }
 
+    [Test]
+    public void MaterializesOpenGenericFallbackOnlyForTypesWithoutConcreteImplementation()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var consumer = provider.GetRequiredService<ComponentValidationConsumer>();
+
+        consumer.BatteryValidators.Count.ShouldBe(1);
+        consumer.BatteryValidators[0].GetType().ShouldBe(typeof(BatteryValidator));
+
+        consumer.ScreenValidators.Count.ShouldBe(1);
+        consumer.ScreenValidators[0].GetType().ShouldBe(typeof(ScreenValidator));
+
+        consumer.KeyboardValidators.Count.ShouldBe(1);
+        consumer.KeyboardValidators[0].GetType().ShouldBe(typeof(NullComponentValidator<Keyboard>));
+    }
+
     public interface ISpecificInterface;
 
     public sealed class SpecificModel : ISpecificInterface;
@@ -72,6 +92,8 @@ public sealed class ConstrainedGenericRegistrationTests
 
     public sealed class Screen : IComponent;
 
+    public sealed class Keyboard : IComponent;
+
     public interface IComponentValidator<T>
         where T : IComponent
     {
@@ -89,5 +111,28 @@ public sealed class ConstrainedGenericRegistrationTests
     public class BatteryValidator : IComponentValidator<Battery>
     {
         public bool Validate(Battery component) => false;
+    }
+
+    [DITransient]
+    public class ScreenValidator : IComponentValidator<Screen>
+    {
+        public bool Validate(Screen component) => false;
+    }
+
+    [DITransient]
+    public sealed class ComponentValidationConsumer(
+        IEnumerable<IComponentValidator<Battery>> batteryValidators,
+        IEnumerable<IComponentValidator<Screen>> screenValidators,
+        IEnumerable<IComponentValidator<Keyboard>> keyboardValidators
+    )
+    {
+        public List<IComponentValidator<Battery>> BatteryValidators { get; } =
+            batteryValidators.ToList();
+
+        public List<IComponentValidator<Screen>> ScreenValidators { get; } =
+            screenValidators.ToList();
+
+        public List<IComponentValidator<Keyboard>> KeyboardValidators { get; } =
+            keyboardValidators.ToList();
     }
 }

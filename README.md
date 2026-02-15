@@ -349,12 +349,15 @@ public interface IComponentValidator<T> where T : IComponent
 }
 
 // -----------
-// default(fallback) implementation
-[DITransient]
+// default(fallback) implementation (not directly registered)
 public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
 {
     public bool Validate(T component) => true; // always valid
 }
+
+// register fallback only for types with no specialized implementation
+[DITransient]
+public class KeyboardFallbackValidator : NullComponentValidator<Keyboard> { }
 
 // specialized implementation for Battery
 [DITransient]

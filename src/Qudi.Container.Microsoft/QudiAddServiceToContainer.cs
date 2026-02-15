@@ -50,6 +50,8 @@ public static class QudiAddServiceToContainer
             .ThenBy(t => t.Order)
             .ToList();
 
+        applicable = MaterializeOpenGenericFallbacks(applicable);
+
         var registrations = applicable.Where(t => !t.MarkAsDecorator).ToList();
         var decorators = applicable.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
 
@@ -64,6 +66,123 @@ public static class QudiAddServiceToContainer
         }
 
         return services;
+    }
+
+    private static List<TypeRegistrationInfo> MaterializeOpenGenericFallbacks(
+        IReadOnlyCollection<TypeRegistrationInfo> registrations
+    )
+    {
+        var closedRegistrations = registrations
+            .SelectMany(r => r.AsTypes)
+            .Where(t => !t.IsGenericTypeDefinition)
+            .ToHashSet();
+
+        var requiredTypes = registrations
+            .SelectMany(r => r.RequiredTypes)
+            .SelectMany(CollectAllTypes)
+            .Where(t => t.IsConstructedGenericType)
+            .ToList();
+
+        var materialized = new List<TypeRegistrationInfo>();
+
+        foreach (var registration in registrations)
+        {
+            if (
+                registration.Key is not null
+                || !registration.Type.IsGenericTypeDefinition
+                || registration.AsTypes.Count == 0
+            )
+            {
+                materialized.Add(registration);
+                continue;
+            }
+
+            var genericAsTypes = registration
+                .AsTypes.Where(t => t.IsGenericTypeDefinition)
+                .Distinct()
+                .ToList();
+
+            if (genericAsTypes.Count == 0)
+            {
+                materialized.Add(registration);
+                continue;
+            }
+
+            var generated = false;
+
+            foreach (var genericAsType in genericAsTypes)
+            {
+                var candidates = requiredTypes
+                    .Where(t => t.GetGenericTypeDefinition() == genericAsType)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var candidate in candidates)
+                {
+                    if (closedRegistrations.Contains(candidate))
+                    {
+                        continue;
+                    }
+
+                    Type closedImplementation;
+                    try
+                    {
+                        closedImplementation = registration.Type.MakeGenericType(
+                            candidate.GetGenericArguments()
+                        );
+                    }
+                    catch (ArgumentException)
+                    {
+                        continue;
+                    }
+
+                    var closedAsTypes = registration
+                        .AsTypes.Select(t =>
+                            t.IsGenericTypeDefinition
+                                ? t.MakeGenericType(candidate.GetGenericArguments())
+                                : t
+                        )
+                        .Distinct()
+                        .ToList();
+
+                    materialized.Add(
+                        registration with
+                        {
+                            Type = closedImplementation,
+                            AsTypes = closedAsTypes,
+                        }
+                    );
+
+                    closedRegistrations.Add(candidate);
+                    generated = true;
+                }
+            }
+
+            if (!generated)
+            {
+                materialized.Add(registration);
+            }
+        }
+
+        return materialized;
+    }
+
+    private static IEnumerable<Type> CollectAllTypes(Type type)
+    {
+        yield return type;
+
+        if (!type.IsGenericType)
+        {
+            yield break;
+        }
+
+        foreach (var argument in type.GetGenericArguments())
+        {
+            foreach (var nested in CollectAllTypes(argument))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private static bool ShouldRegister(
