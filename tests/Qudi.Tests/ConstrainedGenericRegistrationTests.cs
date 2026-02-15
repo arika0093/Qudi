@@ -39,9 +39,12 @@ public sealed class ConstrainedGenericRegistrationTests
         single.Validate(batteryComponent).ShouldBeFalse();
 
         var all = provider.GetServices<IComponentValidator<Battery>>().ToList();
-        all.Count.ShouldBe(2);
+        all.Count.ShouldBe(1);
         all.Any(v => v.GetType() == typeof(BatteryValidator)).ShouldBeTrue();
-        all.Any(v => v.GetType() == typeof(NullComponentValidator<Battery>)).ShouldBeTrue();
+
+        var keyboardAll = provider.GetServices<IComponentValidator<Keyboard>>().ToList();
+        keyboardAll.Count.ShouldBe(1);
+        keyboardAll[0].GetType().ShouldBe(typeof(NullComponentValidator<Keyboard>));
 
         var screenComponent = new Screen();
         var screen = provider.GetRequiredService<IComponentValidator<Screen>>();
@@ -58,8 +61,6 @@ public sealed class ConstrainedGenericRegistrationTests
         var provider = services.BuildServiceProvider();
         var consumer = provider.GetRequiredService<ComponentValidationConsumer>();
 
-        // Constructor injection flows through FilteringServiceProvider, which trims fallback
-        // open-generic validators when a concrete closed validator exists.
         consumer.BatteryValidators.Count.ShouldBe(1);
         consumer.BatteryValidators[0].GetType().ShouldBe(typeof(BatteryValidator));
 
