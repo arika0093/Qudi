@@ -1,37 +1,89 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Qudi;
+using Qudi.Examples;
+using Qudi.Visualizer;
+using Spectre.Console;
 
 var services = new ServiceCollection();
+// Add logging
+services.AddLogging(builder =>
+{
+    builder.AddConsole();
+    builder.SetMinimumLevel(LogLevel.Information);
+});
 
 // ✅️ register services marked with Qudi attributes (see below)
-services.AddQudiServices();
+services.AddQudiServices(conf =>
+{
+    conf.EnableVisualizationOutput(option =>
+    {
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.SetOutputDirectory(
+            "exported/",
+            [QudiVisualizationFormat.Markdown, QudiVisualizationFormat.Dot]
+        );
+    });
+});
 
 var provider = services.BuildServiceProvider();
-var pokemons = provider.GetServices<IPokemon>();
-foreach (var pokemon in pokemons)
+
+// Get all sample executors
+var executors = provider.GetServices<ISampleExecutor>().ToList();
+
+if (!executors.Any())
 {
-    pokemon.DisplayInfo();
+    AnsiConsole.MarkupLine("[red]No sample executors found![/]");
+    return;
 }
 
-// ------ Declare services ------
-public interface IPokemon
+// Display header
+AnsiConsole.Write(new FigletText("Qudi Examples").Centered().Color(Color.Blue));
+
+// Create selection prompt
+try
 {
-    string Name { get; }
-    IEnumerable<string> Types { get; }
-    public void DisplayInfo() =>
-        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+    var selection = AnsiConsole.Prompt(
+        new SelectionPrompt<ISampleExecutor>()
+            .Title("[green]Select a sample to run:[/]")
+            .PageSize(10)
+            .MoreChoicesText("[grey](Move up and down to reveal more samples)[/]")
+            .AddChoices(executors)
+            .UseConverter(executor => Markup.Escape($"{executor.Name} - {executor.Description}"))
+    );
+    SampleExecute(selection);
+}
+catch (NotSupportedException)
+{
+    // In non-interactive environments (e.g., during testing),
+    // the selection prompt is not available, so we execute all samples sequentially.
+    foreach (var executor in executors)
+    {
+        SampleExecute(executor);
+    }
 }
 
-[DISingleton] // ✅️ mark as singleton
-public class Altaria : IPokemon
-{
-    public string Name => "Altaria";
-    public IEnumerable<string> Types => ["Dragon", "Flying"];
-}
+// Display footer
+AnsiConsole.WriteLine();
+AnsiConsole.Write(new Rule("[grey]End of sample[/]").RuleStyle("grey").LeftJustified());
 
-[DITransient] // ✅️ mark as transient, too
-public class Abomasnow : IPokemon
+void SampleExecute(ISampleExecutor selection)
 {
-    public string Name => "Abomasnow";
-    public IEnumerable<string> Types => ["Grass", "Ice"];
+    // Display separator
+    AnsiConsole.WriteLine();
+    AnsiConsole.Write(
+        new Rule($"[yellow]{Markup.Escape(selection.Name)}[/]").RuleStyle("grey").LeftJustified()
+    );
+    AnsiConsole.WriteLine();
+
+    // Execute the selected sample
+    try
+    {
+        selection.Execute();
+    }
+    catch (Exception ex)
+    {
+        AnsiConsole.MarkupLine($"[red]Error executing sample: {Markup.Escape(ex.Message)}[/]");
+        AnsiConsole.WriteException(ex);
+    }
 }

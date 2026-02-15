@@ -94,4 +94,5 @@ jobs:
           cp -r examples/Qudi.Example.Readme/* tmp/Qudi.Example.Readme
           cd tmp/Qudi.Example.Readme
           dotnet add package Qudi --source ../../nupkg --prerelease
+          dotnet add package Qudi.Visualizer --source ../../nupkg --prerelease
           dotnet run

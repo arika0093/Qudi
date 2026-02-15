@@ -39,7 +39,9 @@ public sealed class CustomizationAddServiceTests
                 {
                     captured = config.Registrations;
                 })
-                .AddFilter(reg => reg.Namespace.Contains("Qudi.Tests.NotFiltered", StringComparison.Ordinal));
+                .AddFilter(reg =>
+                    reg.Namespace.Contains("Qudi.Tests.NotFiltered", StringComparison.Ordinal)
+                );
         });
 
         captured.ShouldNotBeNull();

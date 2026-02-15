@@ -4,6 +4,8 @@
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based **simple** dependency injection helper library.  
 Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 
+![Qudi - Quickly Dependency Injection](./assets/hero.png)
+
 ## Quick Start
 ### Overview
 Well, it's easier to show you than to explain it. 😉
@@ -415,10 +417,8 @@ You can easily register decorator classes using the `[QudiDecorator]` attribute.
 
 ```csharp
 [QudiDecorator]
-public class LoggingMessageServiceDecorator(
-    IMessageService innerService,
-    ILogger<LoggingMessageServiceDecorator> logger
-) : IMessageService
+public class LoggingMessageServiceDecorator(IMessageService innerService, ILogger<LoggingMessageServiceDecorator> logger)
+    : IMessageService
 {
     public void SendMessage(string message)
     {
@@ -429,9 +429,8 @@ public class LoggingMessageServiceDecorator(
 }
 
 [QudiDecorator(Order = 1)] // you can specify order
-public class CensorshipMessageServiceDecorator(
-    IMessageService innerService
-) : IMessageService
+public class CensorshipMessageServiceDecorator(IMessageService innerService)
+    : IMessageService
 {
     public void SendMessage(string message)
     {
@@ -465,7 +464,8 @@ To solve this, mark the decorator class as `partial` and implement only the meth
 ```csharp
 // when use QudiDecoratorAttribute, marked partial and implement single interface
 [QudiDecorator]
-public partial class SampleDecorator(IManyFeatureService innerService, ILogger<SampleDecorator> logger) : IManyFeatureService
+public partial class SampleDecorator(IManyFeatureService innerService, ILogger<SampleDecorator> logger)
+    : IManyFeatureService
 {
     // Only generate the methods you want to customize
     public void FeatureA()
@@ -528,7 +528,8 @@ Set the UseIntercept property of the [QudiDecorator] attribute to true to use it
 
 ```csharp
 [QudiDecorator(UseIntercept = true)] // enable Intercept method
-public partial class SampleInterceptor(IManyFeatureService innerService, ILogger<SampleInterceptor> logger) : IManyFeatureService
+public partial class SampleInterceptor(IManyFeatureService innerService, ILogger<SampleInterceptor> logger)
+    : IManyFeatureService
 {
     // you can implement the Intercept method to add common behavior
     public IEnumerable<bool> Intercept(string methodName, object?[] args)
@@ -631,8 +632,8 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
-### Visualize Registration
-#### Overview
+## Visualize Registration
+### Setup
 Qudi collects registration information and generates code.
 Therefore, it is possible to visualize the registration status and dependencies based on the collected information.
 
@@ -645,27 +646,89 @@ When visualization is needed, add the package reference as follows in your proje
   </ItemGroup>
 </Project>
 ```
+
+Then, call `EnableVisualizationOutput`.
+
+```csharp
+services.AddQudiServices(conf => {
+#if DEBUG
+    conf.EnableVisualizationOutput();
+#endif
+});
+```
+
 > [!TIP]
 > Since visualization is mainly needed during development, it is recommended to enable it only for DEBUG builds.
 
-> [!NOTE]
-> Visualize registrations are detected only for interface types included in project dependencies.
-> This is a limitation of Qudi's scanning approach, but it should be sufficient for most cases.
+### Registration Status Visualization
+When visualization is enabled, visual runtime errors will be output when there are issues in the registration, such as missing registrations or circular dependencies. This helps you identify and resolve problems in your registration.
 
-#### (TODO) Report Missing Registrations
-When registrations are missing for interfaces in your project, a visual runtime error like the following is output:
+#### Missing Registrations
+When registrations are missing for interfaces in your project, a visual error like the following is output:
 
+![Missing registration error visualization](./assets/missing.png)
+
+#### Detect Circular Dependencies
+When circular dependencies exist in your project, a visual error like the following is output:
+
+![Circular dependency error visualization](./assets/circular.png)
+
+#### Lifetime Warnings
+When there are potential lifetime issues in your registrations, such as a singleton depending on a transient service, a warning like the following is output:
+
+![Lifetime warning visualization](./assets/lifetime-warning.png)
+
+### Customize Output
+By default, statistical information, lists (only when the count is small), and warnings are output. You can specify options as an argument of `EnableVisualizationOutput` to customize it.
+
+```csharp
+services.AddQudiServices(conf => {
+    conf.EnableVisualizationOutput(option => {
+        // Summary + Issues
+        option.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.Issues;
+        // Always output list, even if the count is large
+        option.ConsoleOutput = ConsoleDisplay.All;
+        // No output to console
+        option.ConsoleOutput = ConsoleDisplay.None;
+        // Output to Logger
+        option.LoggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
+    });
+});
 ```
-TODO
-```
 
-#### (TODO) Generate Registration Diagram
+### Export Registration Diagram
 By adding the following call when calling `AddQudiServices`, a diagram showing the registration status will be generated.
 
 ```csharp
 services.AddQudiServices(conf => {
-    conf.EnableVisualizationOutput("qudi-registrations.svg");
+    conf.EnableVisualizationOutput(option => {
+        // Output the registration status of the entire project
+        option.AddOutput("assets/output.json");
+        option.AddOutput("assets/output.dot");
+        option.AddOutput("assets/output.mermaid");
+        // or output with `Export=true` to a specific folder
+        option.SetOutputDirectory("assets/exported", QudiVisualizationFormat.Markdown);
+    });
 });
+```
+
+Currently, the following outputs are supported.
+* Json: Contains detailed information about registrations and dependencies.
+* Dot: Can be visualized using Graphviz.
+* Mermaid: Useful for quick visualization.
+* Markdown: Mermaid format wrapped in Markdown, which can be easily viewed in GitHub, VSCode, etc.
+* SVG (requires Graphviz/dot): Converted from DOT format, can be viewed in browsers and image viewers.
+
+By default, the graph of all dependencies of the project is output. For projects other than small ones, it is obviously hard to see, so you can also output starting from a specific class.
+
+```csharp
+// specify on attribute side
+[DITransient(Export = true)]
+public class YourClass : IYourService { /* ... */ }
 ```
 
 ## Customization
@@ -689,7 +752,9 @@ Are you a customization nerd? You can customize various registration settings us
     // Are you concerned about the order of registration? (default is 0, high value means later registration)
     Order = 0,
     // Set true if you want to register as a decorator
-    MarkAsDecorator = false
+    MarkAsDecorator = false,
+    // Export visualization data to a specific folder when visualization is enabled. (see Visualize Registration section)
+    Export = false
 )]
 public class YourClass : IYourService, IYourOtherService { /* ... */ }
 

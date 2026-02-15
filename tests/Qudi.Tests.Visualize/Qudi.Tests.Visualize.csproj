@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Qudi.Tests\Qudi.Tests.csproj" />
+    <ProjectReference Include="..\..\src\Qudi.Visualizer\Qudi.Visualizer.csproj" />
+  </ItemGroup>
+</Project>

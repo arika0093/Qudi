@@ -4,7 +4,9 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/examples/" />
+  <Folder Name="/examples/">
+    <File Path="examples/Directory.Build.props" />
+  </Folder>
   <Folder Name="/examples/readme/">
     <Project
       Path="examples/Qudi.Example.Readme/Qudi.Example.Readme.csproj"
@@ -26,11 +28,13 @@
     <Project Path="src/Qudi.Container.Microsoft/Qudi.Container.Microsoft.csproj" />
     <Project Path="src/Qudi.Core/Qudi.Core.csproj" />
     <Project Path="src/Qudi.Generator/Qudi.Generator.csproj" />
+    <Project Path="src/Qudi.Visualizer/Qudi.Visualizer.csproj" />
     <Project Path="src/Qudi/Qudi.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests/Directory.Build.props" />
     <Project Path="tests/Qudi.Tests.Deps/Qudi.Tests.Deps.csproj" />
     <Project Path="tests/Qudi.Tests/Qudi.Tests.csproj" />
+    <Project Path="tests/Qudi.Tests.Visualize/Qudi.Tests.Visualize.csproj" />
   </Folder>
 </Solution>
