@@ -632,6 +632,105 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
+### Composite Pattern (TODO)
+#### Overview
+The composite pattern is a design pattern that allows you to treat individual objects and compositions of objects uniformly. You can easily register composite classes using the `[QudiComposite]` attribute.
+
+```csharp
+// some message services
+[DITransient] 
+public class EmailMessageService : IMessageService { /* ... */ }
+
+[DITransient]
+public class SmsMessageService : IMessageService { /* ... */ }
+
+// -------------------
+// composite service that combines multiple IMessageService implementations
+[QudiComposite]
+public class CompositeMessageService(IEnumerable<IMessageService> innerServices)
+    : IMessageService
+{
+    // innerServices will automatically contain all registered IMessageService implementations.
+    public void SendMessage(string message)
+    {
+        foreach (var service in innerServices)
+        {
+            service.SendMessage(message);
+        }
+    }
+}
+
+// usage
+[DITransient]
+public class MessageSender(IMessageService messageService)
+{
+    // here, CompositeMessageService will be injected, which automatically applies all IMessageService implementations registered in the container.
+    public void Send(string message) => messageService.SendMessage(message);
+}
+```
+
+#### Combining Decorator and Composite
+By combining the decorator pattern and the composite pattern, you can create powerful and flexible service compositions.  
+For example, you can create a logging decorator that wraps around a composite service to log messages before and after sending them.
+
+```csharp
+[QudiDecorator]
+public class LoggingMessageServiceDecorator(IMessageService innerService, ILogger<LoggingMessageServiceDecorator> logger)
+    : IMessageService
+{
+    public void SendMessage(string message)
+    {
+        logger.LogTrace("Sending message: {Message}", message);
+        innerService.SendMessage(message);
+    }
+}
+
+[QudiComposite]
+public class CompositeMessageService(IEnumerable<IMessageService> innerServices)
+    : IMessageService
+{
+    public void SendMessage(string message)
+    {
+        foreach (var service in innerServices)
+        {
+            service.SendMessage(message);
+        }
+    }
+}
+
+// In this case,
+// MessageSender -> LoggingMessageServiceDecorator -> CompositeMessageService -> [EmailMessageService, SmsMessageService]
+```
+
+#### Auto Implementation for Composite
+you can also use auto implementation for composite classes to avoid boilerplate code when the target interface has many members.
+Unlike the decorator pattern, you need to explicitly specify how to handle the results of the combined implementations.
+
+```csharp
+[QudiComposite]
+public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
+    : ISomeService
+{
+    [CompositeMethod] // -> Fire-and-forget style
+    [CompositeMethod(Result = CompositeResult.Forget)] // same as above, explicitly specify to ignore results
+    public partial void FeatureA();
+
+    [CompositeMethod(Result = CompositeResult.All)] // -> return a && b && c && ...;
+    public partial bool FeatureB();
+
+    [CompositeMethod(Result = CompositeResult.Any)] // -> return Task.WhenAny(a,b,c,...);
+    public partial Task FeatureC(int val);
+
+    [CompositeMethod(ResultHandler = nameof(AggregateEnumValue))] // -> use custom result handler to aggregate results
+    public partial MyEnumValue FeatureE(string msg);
+
+    // custom result handler example
+    // such as result.Aggregate((a,b) => AggregateEnumValue(a,b));
+    private MyEnumValue AggregateEnumValue(MyEnumValue original, MyEnumValue result)
+        => original | result; // example: bitwise OR to combine enum values
+}
+```
+
 ## Visualize Registration
 ### Setup
 Qudi collects registration information and generates code.
