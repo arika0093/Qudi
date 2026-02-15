@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
+using Qudi.Visualizer;
 using Shouldly;
 using TUnit;
 
