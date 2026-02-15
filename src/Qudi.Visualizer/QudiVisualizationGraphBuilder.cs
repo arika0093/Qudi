@@ -321,14 +321,6 @@ internal static class QudiVisualizationGraphBuilder
             )
             .ToList();
 
-        System.Diagnostics.Debug.WriteLine(
-            $"Found {openGenericImplementations.Count} open generic implementations"
-        );
-        foreach (var og in openGenericImplementations)
-        {
-            System.Diagnostics.Debug.WriteLine($"  - {og.Registration.Type.Name}");
-        }
-
         // Find all generic service nodes and connect them to open generic implementations
         var candidateServiceTypes = new HashSet<Type>();
         foreach (var view in registrationViews)
@@ -366,50 +358,46 @@ internal static class QudiVisualizationGraphBuilder
             }
 
             var genericTypeDef = nodeType.GetGenericTypeDefinition();
-            var typeArgs = nodeType.GetGenericArguments();
-
             foreach (var openGenericView in openGenericImplementations)
             {
                 var openGenericType = openGenericView.Registration.Type;
 
-                try
+                var declaredServiceTypes =
+                    openGenericView.ServiceTypes.Count > 0
+                        ? openGenericView.ServiceTypes
+                        : [openGenericType];
+
+                var hasMatchingServiceType = declaredServiceTypes.Any(serviceType =>
+                    serviceType.IsGenericType
+                    && !serviceType.IsGenericTypeDefinition
+                    && serviceType.GetGenericTypeDefinition() == genericTypeDef
+                );
+
+                if (!hasMatchingServiceType)
                 {
-                    var implementedInterfaces = openGenericType.GetInterfaces();
-                    var matchingInterface = implementedInterfaces.FirstOrDefault(i =>
-                        i.IsGenericType && i.GetGenericTypeDefinition() == genericTypeDef
-                    );
-
-                    if (matchingInterface == null)
-                    {
-                        continue;
-                    }
-
-                    var openImplId = QudiVisualizationAnalyzer.ToFullDisplayName(openGenericType);
-
-                    AddNode(nodes, openGenericType, "implementation", true, false);
-
-                    var keyValue = openGenericView.Registration.Key?.ToString();
-                    edges.Add(
-                        new QudiVisualizationEdge(
-                            node.Id,
-                            openImplId,
-                            "registration",
-                            openGenericView.Condition,
-                            keyValue,
-                            openGenericView.Registration.Order
-                        )
-                    );
+                    continue;
                 }
-                catch (ArgumentException)
-                {
-                    // MakeGenericType can throw if type arguments don't satisfy constraints
-                    // Skip this implementation
-                }
+
+                var openImplId = QudiVisualizationAnalyzer.ToFullDisplayName(openGenericType);
+
+                AddNode(nodes, openGenericType, "implementation", true, false);
+
+                var keyValue = openGenericView.Registration.Key?.ToString();
+                edges.Add(
+                    new QudiVisualizationEdge(
+                        node.Id,
+                        openImplId,
+                        "registration",
+                        openGenericView.Condition,
+                        keyValue,
+                        openGenericView.Registration.Order
+                    )
+                );
             }
         }
 
         var distinctEdges = edges
-            .DistinctBy(e => $"{e.From}|{e.To}|{e.Kind}|{e.Condition ?? ""}")
+            .DistinctBy(e => $"{e.From}|{e.To}|{e.Kind}|{e.Condition ?? ""}|{e.Key ?? ""}|{e.Order}")
             .ToList();
 
         return new QudiVisualizationGraph(nodes.Values.ToList(), distinctEdges);

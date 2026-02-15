@@ -39,11 +39,11 @@ internal static class DotOutputWriter
             return node.Kind switch
             {
                 "missing" => ", style=dashed, color=red",
-                "decorator" => ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#9c27b0\"",
+                "decorator" => ", style=\"filled,dashed\", fillcolor=\"#f5f5f5\", color=\"#9c27b0\"",
                 _ when node.IsInterface =>
-                    ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#4caf50\"",
+                    ", style=\"filled,dashed\", fillcolor=\"#f5f5f5\", color=\"#4caf50\"",
                 _ when !node.IsInterface =>
-                    ", style=dashed, fillcolor=\"#f5f5f5\", color=\"#2196f3\"",
+                    ", style=\"filled,dashed\", fillcolor=\"#f5f5f5\", color=\"#2196f3\"",
                 _ => ", style=\"filled,dashed\", fillcolor=lightgray, color=gray",
             };
         }

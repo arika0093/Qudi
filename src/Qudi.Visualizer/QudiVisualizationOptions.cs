@@ -153,9 +153,9 @@ public sealed class QudiVisualizationOptions
         }
 
         var normalized = Path.GetFullPath(filePath);
-        var ext = VisualizeFormatConvertExtensions.DetermineFromFilePath(normalized);
+        var outputFormat = format ?? VisualizeFormatConvertExtensions.DetermineFromFilePath(normalized);
 
-        _outputs.Add(new QudiVisualizationFileOutput(normalized, format ?? ext));
+        _outputs.Add(new QudiVisualizationFileOutput(normalized, outputFormat));
         return this;
     }
 
@@ -217,7 +217,7 @@ public sealed class QudiVisualizationOptions
         }
         else
         {
-            // Default to all formats if none specified
+            // Default to Mermaid format if none specified
             _outputFormats.Add(QudiVisualizationFormat.Mermaid);
         }
         return this;

@@ -4,7 +4,7 @@
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based **simple** dependency injection helper library.  
 Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 
-![](./assets/hero.png)
+![Qudi - Quickly Dependency Injection](./assets/hero.png)
 
 ## Quick Start
 ### Overview
@@ -666,17 +666,17 @@ When visualization is enabled, visual runtime errors will be output when there a
 #### Missing Registrations
 When registrations are missing for interfaces in your project, a visual error like the following is output:
 
-![](./assets/missing.png)
+![Missing registration error visualization](./assets/missing.png)
 
 #### Detect Circular Dependencies
 When circular dependencies exist in your project, a visual error like the following is output:
 
-![](./assets/circular.png)
+![Circular dependency error visualization](./assets/circular.png)
 
 #### Lifetime Warnings
 When there are potential lifetime issues in your registrations, such as a singleton depending on a transient service, a warning like the following is output:
 
-![](./assets/lifetime-warning.png)
+![Lifetime warning visualization](./assets/lifetime-warning.png)
 
 ### Customize Output
 By default, statistical information, lists (only when the count is small), and warnings are output. You can specify options as an argument of `EnableVisualizationOutput` to customize it.
@@ -720,8 +720,8 @@ Currently, the following outputs are supported.
 * Json: Contains detailed information about registrations and dependencies.
 * Dot: Can be visualized using Graphviz.
 * Mermaid: Useful for quick visualization.
-* Markdown: mermaid format wrapped in markdown, which can be easily viewed in GitHub, VSCode, etc.
-* SVG(required dot): Converted from Dot format, can be viewed in browsers and image viewers.
+* Markdown: Mermaid format wrapped in Markdown, which can be easily viewed in GitHub, VSCode, etc.
+* SVG (requires Graphviz/dot): Converted from DOT format, can be viewed in browsers and image viewers.
 
 By default, the graph of all dependencies of the project is output. For projects other than small ones, it is obviously hard to see, so you can also output starting from a specific class.
 

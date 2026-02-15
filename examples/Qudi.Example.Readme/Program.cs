@@ -6,7 +6,6 @@ using Qudi.Visualizer;
 using Spectre.Console;
 
 var services = new ServiceCollection();
-
 // Add logging
 services.AddLogging(builder =>
 {
@@ -20,11 +19,6 @@ services.AddQudiServices(conf =>
     conf.EnableVisualizationOutput(option =>
     {
         option.ConsoleOutput = ConsoleDisplay.All;
-        option.LoggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddConsole();
-            builder.SetMinimumLevel(LogLevel.Information);
-        });
         option.SetOutputDirectory(
             "exported/",
             [QudiVisualizationFormat.Markdown, QudiVisualizationFormat.Dot]
@@ -87,7 +81,7 @@ void SampleExecute(ISampleExecutor selection)
     }
     catch (Exception ex)
     {
-        AnsiConsole.MarkupLine($"[red]Error executing sample: {ex.Message}[/]");
+        AnsiConsole.MarkupLine($"[red]Error executing sample: {Markup.Escape(ex.Message)}[/]");
         AnsiConsole.WriteException(ex);
     }
 }

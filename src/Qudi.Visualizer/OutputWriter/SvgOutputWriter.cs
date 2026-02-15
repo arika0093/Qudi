@@ -10,10 +10,10 @@ internal static class SvgOutputWriter
     {
         var dot = DotOutputWriter.Generate(graph);
         var dotPath = Path.ChangeExtension(filePath, ".dot");
-        File.WriteAllText(dotPath, dot);
 
         try
         {
+            File.WriteAllText(dotPath, dot);
             var startInfo = new ProcessStartInfo
             {
                 FileName = "dot",
@@ -30,11 +30,29 @@ internal static class SvgOutputWriter
                 return $"Unable to start 'dot' to render SVG. Wrote DOT to {dotPath}.";
             }
 
-            process.WaitForExit(5000);
+            var standardOutput = process.StandardOutput.ReadToEnd();
+            var standardError = process.StandardError.ReadToEnd();
+
+            var exited = process.WaitForExit(5000);
+            if (!exited)
+            {
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit();
+                }
+                catch
+                {
+                    // Best-effort cleanup.
+                }
+
+                return $"Graphviz 'dot' timed out rendering SVG. Wrote DOT to {dotPath}.";
+            }
+
             if (process.ExitCode != 0)
             {
-                var error = process.StandardError.ReadToEnd();
-                return $"Graphviz 'dot' failed to render SVG. Wrote DOT to {dotPath}. {error}";
+                return
+                    $"Graphviz 'dot' failed to render SVG. Wrote DOT to {dotPath}. {standardError} {standardOutput}";
             }
 
             return null;

@@ -124,8 +124,6 @@ internal static class QudiVisualizationAnalyzer
             .ThenBy(r => r.ImplementationDisplay, StringComparer.Ordinal)
             .ToList();
 
-        var allRegistrations = applicable.Concat(nonApplicable).ToList();
-
         var serviceMap = new Dictionary<Type, List<RegistrationView>>();
         var implementationMap = new Dictionary<Type, List<RegistrationView>>();
 
@@ -153,7 +151,7 @@ internal static class QudiVisualizationAnalyzer
 
         return new VisualizationContext(
             configuration,
-            allRegistrations,
+            applicable,
             serviceMap,
             implementationMap
         );

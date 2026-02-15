@@ -250,7 +250,7 @@ internal static class MermaidOutputWriter
 
     private static string EscapeMermaidLabel(string value)
     {
-        return value.Replace("\"", "\\\"").Replace("<", "#lt;").Replace(">", "#gt;");
+        return value.Replace("\"", "\\\"").Replace("<", "#lt;").Replace(">", "#gt;").Replace("|", "#124;");
     }
 
     private static string SanitizeMermaidId(string value)

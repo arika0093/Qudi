@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Qudi;
 using Spectre.Console;
 
 namespace Qudi.Visualizer;
@@ -60,7 +61,10 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
         var errorCount = report.MissingRegistrations.Count + report.Cycles.Count;
         var warningCount = report.LifetimeWarnings.Count + warnings.Count;
-        AskContinue(errorCount, warningCount);
+        if (!AskContinue(errorCount, warningCount))
+        {
+            throw new OperationCanceledException("Visualization was canceled by user.");
+        }
     }
 
     private Panel CreateSummaryPanel(QudiVisualizationSummary summary)
@@ -128,9 +132,9 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         {
             var lifetimeIcon = row.Lifetime switch
             {
-                "Singleton" => "🔒",
-                "Scoped" => "📦",
-                "Transient" => "⚡",
+                Lifetime.Singleton => "🔒",
+                Lifetime.Scoped => "📦",
+                Lifetime.Transient => "⚡",
                 _ => row.Lifetime,
             };
 
@@ -269,7 +273,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             grid.AddRow(
                 new Panel(warningTable)
                 {
-                    Header = new PanelHeader("[bold]🔍 Resolution Traces[/]", Justify.Left),
+                    Header = new PanelHeader($"[bold orange1]💡 Lifetime Warnings ({lifetimeWarnings.Count})[/]", Justify.Left),
                     Border = BoxBorder.None,
                 }
             );
@@ -339,7 +343,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 );
                 if (!isContinue)
                 {
-                    Environment.Exit(1);
+                    return false;
                 }
             }
             if (warningCount > 0)
@@ -350,7 +354,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 );
                 if (!isContinue)
                 {
-                    Environment.Exit(1);
+                    return false;
                 }
             }
             return true;
