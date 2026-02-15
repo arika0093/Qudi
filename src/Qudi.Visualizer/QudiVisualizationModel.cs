@@ -64,29 +64,6 @@ internal sealed record QudiVisualizationReport(
     [property: JsonIgnore] IReadOnlyList<Type> ExportedTypes
 );
 
-internal sealed record QudiVisualizationNode(
-    string Id,
-    string Label,
-    string Kind,
-    bool IsConditionMatched = true,
-    bool IsExternal = false,
-    bool IsInterface = false
-);
-
-internal sealed record QudiVisualizationEdge(
-    string From,
-    string To,
-    string Kind,
-    string? Condition = null,
-    string? Key = null,
-    int Order = 0
-);
-
-internal sealed record QudiVisualizationGraph(
-    IReadOnlyList<QudiVisualizationNode> Nodes,
-    IReadOnlyList<QudiVisualizationEdge> Edges
-);
-
 internal sealed record VisualizationContext(
     QudiConfiguration Configuration,
     IReadOnlyList<RegistrationView> Applicable,

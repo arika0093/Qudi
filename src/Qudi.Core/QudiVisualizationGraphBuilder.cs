@@ -2,10 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Qudi.Visualizer;
+namespace Qudi;
 
-internal static class QudiVisualizationGraphBuilder
+/// <summary>
+/// Builds dependency graphs from Qudi registrations.
+/// </summary>
+public static class QudiVisualizationGraphBuilder
 {
+    /// <summary>
+    /// Build a graph from all registrations.
+    /// </summary>
     public static QudiVisualizationGraph Build(QudiConfiguration configuration)
     {
         var allRegistrations = configuration.Registrations.ToList();
@@ -13,14 +19,12 @@ internal static class QudiVisualizationGraphBuilder
         var edges = new List<QudiVisualizationEdge>();
         var registeredTypes = new HashSet<Type>();
 
-        // Build internal assemblies set
         var internalAssemblies = allRegistrations
             .Select(r => r.AssemblyName)
             .Where(name => !string.IsNullOrEmpty(name))
             .Distinct()
             .ToHashSet(StringComparer.Ordinal);
 
-        // Build a map of registrations for easy access
         var registrationViews = allRegistrations
             .Select(registration =>
             {
@@ -47,7 +51,6 @@ internal static class QudiVisualizationGraphBuilder
             })
             .ToList();
 
-        // Collect all registered types
         foreach (var view in registrationViews.Where(v => v.IsMatched))
         {
             registeredTypes.Add(view.Registration.Type);
@@ -57,7 +60,6 @@ internal static class QudiVisualizationGraphBuilder
             }
         }
 
-        // Group decorators by service type
         var decoratorsByService = registrationViews
             .Where(v => v.Registration.MarkAsDecorator && v.IsMatched)
             .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
@@ -67,7 +69,6 @@ internal static class QudiVisualizationGraphBuilder
                 g => g.OrderBy(x => x.View.Registration.Order).Select(x => x.View).ToList()
             );
 
-        // Build a map of implementations by service type
         var implementationsByService = registrationViews
             .Where(v => !v.Registration.MarkAsDecorator && v.IsMatched)
             .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
@@ -78,45 +79,38 @@ internal static class QudiVisualizationGraphBuilder
         {
             var registration = view.Registration;
             var implType = registration.Type;
-            var implId = QudiVisualizationAnalyzer.ToFullDisplayName(implType);
+            var implId = ToFullDisplayName(implType);
             var isDecorator = registration.MarkAsDecorator;
             var isMatched = view.IsMatched;
 
-            // Skip self-registration (AddSingleton<Service> pattern)
             var isSelfRegistration =
                 view.ServiceTypes.Count == 1 && view.ServiceTypes[0] == implType;
             if (isSelfRegistration && !isDecorator)
             {
-                // For self-registration, only create a node for the type (as both service and implementation)
                 AddNode(nodes, implType, "service", isMatched, false);
             }
             else
             {
-                // Add implementation node
-                if (isDecorator)
-                {
-                    AddNode(nodes, implType, "decorator", isMatched, false);
-                }
-                else
-                {
-                    AddNode(nodes, implType, "implementation", isMatched, false);
-                }
+                AddNode(
+                    nodes,
+                    implType,
+                    isDecorator ? "decorator" : "implementation",
+                    isMatched,
+                    false
+                );
 
-                // Add service nodes and edges (if it's a decorator, we will connect it to the decorated service later in the dependencies section)
                 foreach (var serviceType in view.ServiceTypes)
                 {
-                    var serviceId = QudiVisualizationAnalyzer.ToFullDisplayName(serviceType);
+                    var serviceId = ToFullDisplayName(serviceType);
                     AddNode(nodes, serviceType, "service", isMatched, false);
 
                     if (isDecorator)
                     {
-                        // For decorators: Service -> Decorator only for the first decorator (lowest Order)
                         if (decoratorsByService.TryGetValue(serviceType, out var decorators))
                         {
                             var firstDecorator = decorators.FirstOrDefault();
                             if (firstDecorator?.Registration.Type == implType)
                             {
-                                // This is the first decorator, add edge from service
                                 var keyValue = registration.Key?.ToString();
                                 edges.Add(
                                     new QudiVisualizationEdge(
@@ -133,9 +127,6 @@ internal static class QudiVisualizationGraphBuilder
                     }
                     else
                     {
-                        // Normal registration: Service -> Implementation (with condition)
-                        // If a decorator exists for this service, we will connect the decorator to the service instead of the implementation,
-                        // so we skip adding this edge here. The connection from the decorator to the implementation will be handled in the dependencies section.
                         var hasDecorator = decoratorsByService.ContainsKey(serviceType);
                         if (!hasDecorator)
                         {
@@ -155,19 +146,13 @@ internal static class QudiVisualizationGraphBuilder
                 }
             }
 
-            // Process dependencies
             foreach (var required in registration.RequiredTypes.Distinct())
             {
-                // Check if this is a collection type (IEnumerable<T>, IList<T>, etc.)
                 var elementType = TryGetCollectionElementType(required);
                 if (elementType != null)
                 {
-                    // For collection types, create a 1:many relationship to the element type
-                    var elementId = QudiVisualizationAnalyzer.ToFullDisplayName(elementType);
-                    var isExternal = QudiVisualizationAnalyzer.IsExternalType(
-                        elementType,
-                        internalAssemblies
-                    );
+                    var elementId = ToFullDisplayName(elementType);
+                    var isExternal = IsExternalType(elementType, internalAssemblies);
                     var isMissing = !isExternal && !registeredTypes.Contains(elementType);
                     AddNode(
                         nodes,
@@ -176,35 +161,24 @@ internal static class QudiVisualizationGraphBuilder
                         isMatched,
                         isExternal
                     );
-                    edges.Add(
-                        new QudiVisualizationEdge(implId, elementId, "collection", null, null, 0)
-                    );
+                    edges.Add(new QudiVisualizationEdge(implId, elementId, "collection", null, null, 0));
                 }
                 else
                 {
-                    var requiredId = QudiVisualizationAnalyzer.ToFullDisplayName(required);
-                    var isExternal = QudiVisualizationAnalyzer.IsExternalType(
-                        required,
-                        internalAssemblies
-                    );
+                    var requiredId = ToFullDisplayName(required);
+                    var isExternal = IsExternalType(required, internalAssemblies);
 
-                    // For decorators, connect to the decorated service through decorator chain
                     if (isDecorator && view.ServiceTypes.Any(s => s == required))
                     {
-                        // Find decorators for this service
                         if (decoratorsByService.TryGetValue(required, out var decorators))
                         {
-                            // Find current decorator's position
                             var currentIndex = decorators.FindIndex(d =>
                                 d.Registration.Type == implType
                             );
                             if (currentIndex >= 0 && currentIndex < decorators.Count - 1)
                             {
-                                // Connect to next decorator (normal edge)
                                 var nextDecorator = decorators[currentIndex + 1];
-                                var nextId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                    nextDecorator.Registration.Type
-                                );
+                                var nextId = ToFullDisplayName(nextDecorator.Registration.Type);
                                 AddNode(
                                     nodes,
                                     nextDecorator.Registration.Type,
@@ -224,18 +198,12 @@ internal static class QudiVisualizationGraphBuilder
                                 );
                             }
                             else if (
-                                implementationsByService.TryGetValue(
-                                    required,
-                                    out var implementations
-                                )
+                                implementationsByService.TryGetValue(required, out var implementations)
                             )
                             {
-                                // Connect to final implementation(s)
                                 foreach (var impl in implementations)
                                 {
-                                    var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                        impl.Registration.Type
-                                    );
+                                    var implImplId = ToFullDisplayName(impl.Registration.Type);
                                     AddNode(
                                         nodes,
                                         impl.Registration.Type,
@@ -260,12 +228,9 @@ internal static class QudiVisualizationGraphBuilder
                             implementationsByService.TryGetValue(required, out var implementations)
                         )
                         {
-                            // No other decorators, connect directly to implementation(s)
                             foreach (var impl in implementations)
                             {
-                                var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                    impl.Registration.Type
-                                );
+                                var implImplId = ToFullDisplayName(impl.Registration.Type);
                                 AddNode(
                                     nodes,
                                     impl.Registration.Type,
@@ -288,7 +253,6 @@ internal static class QudiVisualizationGraphBuilder
                     }
                     else
                     {
-                        // Normal dependency
                         var isMissing = !isExternal && !registeredTypes.Contains(required);
                         AddNode(
                             nodes,
@@ -297,22 +261,12 @@ internal static class QudiVisualizationGraphBuilder
                             isMatched,
                             isExternal
                         );
-                        edges.Add(
-                            new QudiVisualizationEdge(
-                                implId,
-                                requiredId,
-                                "dependency",
-                                null,
-                                null,
-                                0
-                            )
-                        );
+                        edges.Add(new QudiVisualizationEdge(implId, requiredId, "dependency", null, null, 0));
                     }
                 }
             }
         }
 
-        // Handle open generic types (e.g., NullComponentValidator<T>) for generic services
         var openGenericImplementations = registrationViews
             .Where(v =>
                 !v.Registration.MarkAsDecorator
@@ -321,7 +275,6 @@ internal static class QudiVisualizationGraphBuilder
             )
             .ToList();
 
-        // Find all generic service nodes and connect them to open generic implementations
         var candidateServiceTypes = new HashSet<Type>();
         foreach (var view in registrationViews)
         {
@@ -378,7 +331,7 @@ internal static class QudiVisualizationGraphBuilder
                     continue;
                 }
 
-                var openImplId = QudiVisualizationAnalyzer.ToFullDisplayName(openGenericType);
+                var openImplId = ToFullDisplayName(openGenericType);
 
                 AddNode(nodes, openGenericType, "implementation", true, false);
 
@@ -403,22 +356,62 @@ internal static class QudiVisualizationGraphBuilder
         return new QudiVisualizationGraph(nodes.Values.ToList(), distinctEdges);
     }
 
+    /// <summary>
+    /// Build a subgraph starting from a specific root type.
+    /// </summary>
+    public static QudiVisualizationGraph BuildFromRoot(QudiConfiguration configuration, Type rootType)
+    {
+        var fullGraph = Build(configuration);
+        var rootId = ToFullDisplayName(rootType);
+        var reachableNodeIds = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<string>();
+
+        if (fullGraph.Nodes.Any(n => n.Id == rootId))
+        {
+            queue.Enqueue(rootId);
+            reachableNodeIds.Add(rootId);
+        }
+        else
+        {
+            return new QudiVisualizationGraph([], []);
+        }
+
+        while (queue.Count > 0)
+        {
+            var currentId = queue.Dequeue();
+            foreach (var edge in fullGraph.Edges.Where(e => e.From == currentId))
+            {
+                if (!reachableNodeIds.Contains(edge.To))
+                {
+                    reachableNodeIds.Add(edge.To);
+                    queue.Enqueue(edge.To);
+                }
+            }
+        }
+
+        var filteredNodes = fullGraph.Nodes.Where(n => reachableNodeIds.Contains(n.Id)).ToList();
+        var filteredEdges = fullGraph
+            .Edges.Where(e => reachableNodeIds.Contains(e.From) && reachableNodeIds.Contains(e.To))
+            .ToList();
+
+        return new QudiVisualizationGraph(filteredNodes, filteredEdges);
+    }
+
     private static Type? FindTypeFromNodeId(
         string nodeId,
         IReadOnlyList<TypeRegistrationInfo> registrations
     )
     {
-        // Try to find the type from registrations
         foreach (var registration in registrations)
         {
-            if (QudiVisualizationAnalyzer.ToFullDisplayName(registration.Type) == nodeId)
+            if (ToFullDisplayName(registration.Type) == nodeId)
             {
                 return registration.Type;
             }
 
             foreach (var asType in registration.AsTypes)
             {
-                if (QudiVisualizationAnalyzer.ToFullDisplayName(asType) == nodeId)
+                if (ToFullDisplayName(asType) == nodeId)
                 {
                     return asType;
                 }
@@ -426,16 +419,13 @@ internal static class QudiVisualizationGraphBuilder
 
             foreach (var requiredType in registration.RequiredTypes)
             {
-                if (QudiVisualizationAnalyzer.ToFullDisplayName(requiredType) == nodeId)
+                if (ToFullDisplayName(requiredType) == nodeId)
                 {
                     return requiredType;
                 }
 
                 var requiredElementType = TryGetCollectionElementType(requiredType);
-                if (
-                    requiredElementType != null
-                    && QudiVisualizationAnalyzer.ToFullDisplayName(requiredElementType) == nodeId
-                )
+                if (requiredElementType != null && ToFullDisplayName(requiredElementType) == nodeId)
                 {
                     return requiredElementType;
                 }
@@ -453,13 +443,12 @@ internal static class QudiVisualizationGraphBuilder
         bool isExternal = false
     )
     {
-        var id = QudiVisualizationAnalyzer.ToFullDisplayName(type);
-        var label = QudiVisualizationAnalyzer.ToDisplayName(type);
+        var id = ToFullDisplayName(type);
+        var label = ToDisplayName(type);
         var isInterface = type.IsInterface;
 
         if (nodes.TryGetValue(id, out var existing))
         {
-            // Upgrade node kind if needed
             if (existing.Kind == "missing" && kind != "missing")
             {
                 nodes[id] = new QudiVisualizationNode(
@@ -506,10 +495,6 @@ internal static class QudiVisualizationGraphBuilder
         );
     }
 
-    /// <summary>
-    /// Check if the type is a collection type and extract the element type.
-    /// Returns null if the type is not a collection type.
-    /// </summary>
     private static Type? TryGetCollectionElementType(Type type)
     {
         if (!type.IsGenericType)
@@ -518,8 +503,6 @@ internal static class QudiVisualizationGraphBuilder
         }
 
         var genericTypeDef = type.GetGenericTypeDefinition();
-
-        // Check for common collection interfaces
         if (
             genericTypeDef == typeof(IEnumerable<>)
             || genericTypeDef == typeof(IList<>)
@@ -534,57 +517,56 @@ internal static class QudiVisualizationGraphBuilder
         return null;
     }
 
-    /// <summary>
-    /// Build a subgraph starting from a specific root type.
-    /// Only includes nodes reachable from the root.
-    /// </summary>
-    public static QudiVisualizationGraph BuildFromRoot(
-        QudiConfiguration configuration,
-        Type rootType
-    )
+    private static string ToDisplayName(Type type)
     {
-        var fullGraph = Build(configuration);
-
-        // Find all reachable nodes from the root
-        var rootId = QudiVisualizationAnalyzer.ToFullDisplayName(rootType);
-        var reachableNodeIds = new HashSet<string>(StringComparer.Ordinal);
-        var queue = new Queue<string>();
-
-        // Start from root
-        if (fullGraph.Nodes.Any(n => n.Id == rootId))
+        if (!type.IsGenericType)
         {
-            queue.Enqueue(rootId);
-            reachableNodeIds.Add(rootId);
-        }
-        else
-        {
-            // Root not found, return empty graph
-            return new QudiVisualizationGraph([], []);
+            return type.Name;
         }
 
-        // BFS to find all reachable nodes
-        while (queue.Count > 0)
+        var genericName = type.Name;
+        var tick = genericName.IndexOf('`');
+        if (tick > 0)
         {
-            var currentId = queue.Dequeue();
-
-            // Find all outgoing edges from current node
-            foreach (var edge in fullGraph.Edges.Where(e => e.From == currentId))
-            {
-                if (!reachableNodeIds.Contains(edge.To))
-                {
-                    reachableNodeIds.Add(edge.To);
-                    queue.Enqueue(edge.To);
-                }
-            }
+            genericName = genericName.Substring(0, tick);
         }
 
-        // Filter nodes and edges
-        var filteredNodes = fullGraph.Nodes.Where(n => reachableNodeIds.Contains(n.Id)).ToList();
+        var args = type.GetGenericArguments().Select(ToDisplayName);
+        return genericName + "<" + string.Join(", ", args) + ">";
+    }
 
-        var filteredEdges = fullGraph
-            .Edges.Where(e => reachableNodeIds.Contains(e.From) && reachableNodeIds.Contains(e.To))
-            .ToList();
+    private static string ToFullDisplayName(Type type)
+    {
+        if (!type.IsGenericType)
+        {
+            return type.FullName ?? type.Name;
+        }
 
-        return new QudiVisualizationGraph(filteredNodes, filteredEdges);
+        var genericName = type.Name;
+        var tick = genericName.IndexOf('`');
+        if (tick > 0)
+        {
+            genericName = genericName.Substring(0, tick);
+        }
+
+        var args = type.GetGenericArguments().Select(ToFullDisplayName);
+        var prefix = type.Namespace is null ? string.Empty : type.Namespace + ".";
+        return prefix + genericName + "<" + string.Join(", ", args) + ">";
+    }
+
+    private static bool IsExternalType(Type type, HashSet<string> internalAssemblies)
+    {
+        if (type.Namespace == null)
+        {
+            return false;
+        }
+
+        var assemblyName = type.Assembly.GetName().Name;
+        if (string.IsNullOrEmpty(assemblyName))
+        {
+            return false;
+        }
+
+        return !internalAssemblies.Contains(assemblyName);
     }
 }
