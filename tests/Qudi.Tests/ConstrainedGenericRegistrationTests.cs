@@ -45,8 +45,8 @@ public sealed class ConstrainedGenericRegistrationTests
 
         var screenComponent = new Screen();
         var screen = provider.GetRequiredService<IComponentValidator<Screen>>();
-        screen.GetType().ShouldBe(typeof(NullComponentValidator<Screen>));
-        screen.Validate(screenComponent).ShouldBeTrue();
+        screen.GetType().ShouldBe(typeof(ScreenValidator));
+        screen.Validate(screenComponent).ShouldBeFalse();
     }
 
     [Test]

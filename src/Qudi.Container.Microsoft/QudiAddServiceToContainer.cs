@@ -50,14 +50,14 @@ public static class QudiAddServiceToContainer
             .ThenBy(t => t.Order)
             .ToList();
 
-        applicable = MaterializeOpenGenericFallbacks(applicable);
+        var openGenericFallbacks = BuildOpenGenericFallbackMap(applicable);
 
         var registrations = applicable.Where(t => !t.MarkAsDecorator).ToList();
         var decorators = applicable.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
 
         foreach (var registration in registrations)
         {
-            RegisterService(services, registration);
+            RegisterService(services, registration, openGenericFallbacks);
         }
 
         foreach (var decorator in decorators)
@@ -167,6 +167,46 @@ public static class QudiAddServiceToContainer
         return materialized;
     }
 
+    private static IReadOnlyDictionary<Type, HashSet<Type>> BuildOpenGenericFallbackMap(
+        IReadOnlyCollection<TypeRegistrationInfo> registrations
+    )
+    {
+        var result = new Dictionary<Type, HashSet<Type>>();
+
+        foreach (var registration in registrations)
+        {
+            if (
+                registration.Key is not null
+                || registration.MarkAsDecorator
+                || !registration.Type.IsGenericTypeDefinition
+            )
+            {
+                continue;
+            }
+
+            var asTypes =
+                registration.AsTypes.Count > 0 ? registration.AsTypes : new[] { registration.Type };
+
+            foreach (var asType in asTypes)
+            {
+                if (!asType.IsGenericTypeDefinition)
+                {
+                    continue;
+                }
+
+                if (!result.TryGetValue(asType, out var implementations))
+                {
+                    implementations = new HashSet<Type>();
+                    result[asType] = implementations;
+                }
+
+                implementations.Add(registration.Type);
+            }
+        }
+
+        return result;
+    }
+
     private static IEnumerable<Type> CollectAllTypes(Type type)
     {
         yield return type;
@@ -210,22 +250,43 @@ public static class QudiAddServiceToContainer
 
     private static void RegisterService(
         IServiceCollection services,
-        TypeRegistrationInfo registration
+        TypeRegistrationInfo registration,
+        IReadOnlyDictionary<Type, HashSet<Type>> openGenericFallbacks
     )
     {
         // Register implementation first, then map interfaces to the same instance path.
         var lifetime = ConvertLifetime(registration.Lifetime);
         var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
 
+        object Factory(IServiceProvider sp) => CreateInstanceWithFiltering(
+            sp,
+            registration.Type,
+            openGenericFallbacks
+        );
+
         if (registration.AsTypes.Count == 0)
         {
-            services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
+            if (isOpenGeneric)
+            {
+                services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
+            }
+            else
+            {
+                services.Add(ServiceDescriptor.Describe(registration.Type, Factory, lifetime));
+            }
             return;
         }
 
         if (registration.Key is null)
         {
-            services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
+            if (isOpenGeneric)
+            {
+                services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
+            }
+            else
+            {
+                services.Add(ServiceDescriptor.Describe(registration.Type, Factory, lifetime));
+            }
 
             if (isOpenGeneric || registration.AsTypes.Any(t => t.IsGenericTypeDefinition))
             {
@@ -425,6 +486,21 @@ public static class QudiAddServiceToContainer
         );
     }
 
+    private static object CreateInstanceWithFiltering(
+        IServiceProvider provider,
+        Type implementationType,
+        IReadOnlyDictionary<Type, HashSet<Type>> openGenericFallbacks
+    )
+    {
+        if (openGenericFallbacks.Count == 0)
+        {
+            return ActivatorUtilities.CreateInstance(provider, implementationType);
+        }
+
+        var filteringProvider = new FilteringServiceProvider(provider, openGenericFallbacks);
+        return ActivatorUtilities.CreateInstance(filteringProvider, implementationType);
+    }
+
     private static object GetOrCreateSingleton(
         IServiceProvider provider,
         ServiceDescriptor descriptor,
@@ -477,6 +553,104 @@ public static class QudiAddServiceToContainer
         catch (ArgumentException)
         {
             return cache.TryGetValue(descriptor, out var raced) ? raced : created;
+        }
+    }
+
+    private sealed class FilteringServiceProvider : IServiceProvider, IServiceProviderIsService
+    {
+        private readonly IServiceProvider _inner;
+        private readonly IReadOnlyDictionary<Type, HashSet<Type>> _openGenericFallbacks;
+
+        public FilteringServiceProvider(
+            IServiceProvider inner,
+            IReadOnlyDictionary<Type, HashSet<Type>> openGenericFallbacks
+        )
+        {
+            _inner = inner;
+            _openGenericFallbacks = openGenericFallbacks;
+        }
+
+        public object? GetService(Type serviceType)
+        {
+            if (serviceType == typeof(IServiceProvider))
+            {
+                return _inner;
+            }
+
+            if (
+                serviceType.IsGenericType
+                && serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+            )
+            {
+                var elementType = serviceType.GetGenericArguments()[0];
+                var filtered = TryFilterEnumerable(elementType);
+                if (filtered is not null)
+                {
+                    return filtered;
+                }
+            }
+
+            return _inner.GetService(serviceType);
+        }
+
+        public bool IsService(Type serviceType)
+        {
+            if (_inner is IServiceProviderIsService isService)
+            {
+                return isService.IsService(serviceType);
+            }
+
+            return true;
+        }
+
+        private object? TryFilterEnumerable(Type elementType)
+        {
+            if (!elementType.IsGenericType)
+            {
+                return null;
+            }
+
+            var serviceTypeDefinition = elementType.GetGenericTypeDefinition();
+            if (
+                !_openGenericFallbacks.TryGetValue(serviceTypeDefinition, out var fallbackTypes)
+                || fallbackTypes.Count == 0
+            )
+            {
+                return null;
+            }
+
+            var all = ServiceProviderServiceExtensions
+                .GetServices(_inner, elementType)
+                .Cast<object>()
+                .ToList();
+
+            if (all.Count == 0)
+            {
+                return Array.CreateInstance(elementType, 0);
+            }
+
+            bool IsFallbackInstance(object instance)
+            {
+                var instanceType = instance.GetType();
+                if (!instanceType.IsGenericType)
+                {
+                    return false;
+                }
+
+                var instanceDefinition = instanceType.GetGenericTypeDefinition();
+                return fallbackTypes.Contains(instanceDefinition);
+            }
+
+            var hasConcrete = all.Any(service => !IsFallbackInstance(service));
+            var filtered = hasConcrete ? all.Where(service => !IsFallbackInstance(service)).ToList() : all;
+
+            var result = Array.CreateInstance(elementType, filtered.Count);
+            for (var i = 0; i < filtered.Count; i++)
+            {
+                result.SetValue(filtered[i], i);
+            }
+
+            return result;
         }
     }
 
