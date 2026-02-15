@@ -685,11 +685,11 @@ By default, statistical information, lists (only when the count is small), and w
 services.AddQudiServices(conf => {
     conf.EnableVisualizationOutput(option => {
         // Summary + Issues
-        options.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.Issues;
+        option.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.Issues;
         // Always output list, even if the count is large
-        options.ConsoleOutput = ConsoleDisplay.All;
+        option.ConsoleOutput = ConsoleDisplay.All;
         // No output to console
-        options.ConsoleOutput = ConsoleDisplay.None;
+        option.ConsoleOutput = ConsoleDisplay.None;
         // Output to Logger
         option.LoggerFactory = LoggerFactory.Create(builder =>
         {
