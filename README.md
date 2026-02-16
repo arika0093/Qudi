@@ -3,6 +3,7 @@
 
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is an attribute-based **simple** dependency injection helper library.  
 Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
+<br/>
 
 ![Qudi - Quickly Dependency Injection](./assets/hero.png)
 
@@ -80,6 +81,8 @@ public IServiceCollection AddQudiServices(this IServiceCollection services, Acti
 ```
 
 When you run the application in this state, a simple registration status viewer will be displayed 🎉
+<br/>
+
 ![getting start](assets/getting-start-list.png)
 
 A diagram showing the registration status is also output.
@@ -126,14 +129,11 @@ var displayService = provider.GetRequiredService<DisplayPokemonService>();
 displayService.DisplayAll();
 ```
 
-you will see the following warning ⚠️
+you will see the following warning.
 
 ![getting start with warning](assets/getting-start-warning.png)
 
 This library has a feature that provides clear warnings for common mistakes.
-
----
-
 Let's fix it by setting the correct lifetime.  [Source](./examples/Qudi.Example.Snippets/003_CorrectLifetime.cs)
 
 ```csharp
@@ -142,6 +142,8 @@ public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
 ```
 
 Now, the warning is gone and the application runs successfully 🎉
+<br/>
+
 ![correct lifetime](assets/getting-start-correct.png)
 
 Of course, the diagram will also be updated.
@@ -312,10 +314,10 @@ flowchart LR
     Abomasnow["Abomasnow"]
     PokemonDecorator["PokemonDecorator"]
     DisplayPokemonService["DisplayPokemonService"]
-    IPokemon -->|Order:1| PokemonDecorator
-    PokemonDecorator --> DisplayPokemonService
-    DisplayPokemonService -.->|"*"| Altaria
-    DisplayPokemonService -.->|"*"| Abomasnow
+    PokemonDecorator --> Altaria
+    PokemonDecorator --> Abomasnow
+    IPokemon --> DisplayPokemonService
+    DisplayPokemonService -.->|"*"| PokemonDecorator
     classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
     class IPokemon interface;
     classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
@@ -327,7 +329,6 @@ flowchart LR
     class DisplayPokemonService composite;
 
 ```
-
 
 
 ## Installation
@@ -353,13 +354,6 @@ dotnet add package Qudi.Generator
 # install container-specific package (here, Microsoft.Extensions.DependencyInjection)
 dotnet add package Qudi.Container.Microsoft
 ```
-
-### Benefits
-Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of this library are as follows:
-
-* **Explicit**: While this style depends on preference, I prefer explicit registration.
-* **No Assembly Scan**: No assembly scanning. It works in AOT environments and is very fast.
-* **Battery Included**: It has various built-in utility features (see Features section).
 
 ## Features
 
