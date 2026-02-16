@@ -63,7 +63,7 @@ internal static class HelperCodeGenerator
         HelperImplementingTarget target
     )
     {
-        var helperName = BuildHelperInterfaceName(target.InterfaceHelperName);
+        var helperName = BuildHelperInterfaceName(target.InterfaceHelperName, target.IsComposite);
         var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
             ? helperName
             : $"global::{target.InterfaceNamespace}.{helperName}";
@@ -158,7 +158,6 @@ internal static class HelperCodeGenerator
         var interfaceName = helper.InterfaceName;
         var interfaceHelperName = helper.InterfaceHelperName;
         var members = helper.Members.ToImmutableArray();
-        var helperName = BuildHelperInterfaceName(interfaceHelperName);
         var useIntercept = helper.UseIntercept;
         var isComposite = helper.IsComposite;
         var helperAccessor = useIntercept ? "__Base" : "__Inner";
@@ -166,6 +165,7 @@ internal static class HelperCodeGenerator
         {
             helperAccessor = "__InnerServices";
         }
+        var helperName = BuildHelperInterfaceName(interfaceHelperName, isComposite);
 
         // Generate interface
         builder.AppendLine(
@@ -717,9 +717,11 @@ internal static class HelperCodeGenerator
         return string.Join(", ", parts);
     }
 
-    private static string BuildHelperInterfaceName(string interfaceHelperName)
+    private static string BuildHelperInterfaceName(string interfaceHelperName, bool isComposite)
     {
-        return $"IDecoratorHelper_{interfaceHelperName}";
+        return isComposite
+            ? $"ICompositeHelper_{interfaceHelperName}"
+            : $"IDecoratorHelper_{interfaceHelperName}";
     }
 
     private static bool IsTaskLikeReturnType(string returnType)

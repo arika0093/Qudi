@@ -244,13 +244,14 @@ internal static class HelperTargetCollector
         var map = new Dictionary<string, HelperInterfaceTarget>(StringComparer.Ordinal);
         foreach (var target in targets)
         {
-            if (!map.TryGetValue(target.InterfaceName, out var existing))
+            var key = BuildInterfaceTargetKey(target);
+            if (!map.TryGetValue(key, out var existing))
             {
-                map[target.InterfaceName] = target;
+                map[key] = target;
                 continue;
             }
 
-            map[target.InterfaceName] = existing with
+            map[key] = existing with
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
                 IsComposite = existing.IsComposite || target.IsComposite,
@@ -262,6 +263,18 @@ internal static class HelperTargetCollector
             };
         }
         return map.Values.ToImmutableArray();
+    }
+
+    private static string BuildInterfaceTargetKey(HelperInterfaceTarget target)
+    {
+        // Separate helper interfaces for decorator vs composite to avoid name collisions.
+        return BuildInterfaceTargetKey(target.InterfaceName, target.IsComposite);
+    }
+
+    private static string BuildInterfaceTargetKey(string interfaceName, bool isComposite)
+    {
+        // Separate helper interfaces for decorator vs composite to avoid name collisions.
+        return $"{interfaceName}::{(isComposite ? "composite" : "decorator")}";
     }
 
     private static string MergeParameterName(string existing, string incoming)
@@ -294,7 +307,7 @@ internal static class HelperTargetCollector
         }
 
         var useInterceptByInterface = interfaceTargets.ToDictionary(
-            target => target.InterfaceName,
+            target => BuildInterfaceTargetKey(target),
             target => target.UseIntercept,
             StringComparer.Ordinal
         );
@@ -302,7 +315,7 @@ internal static class HelperTargetCollector
         foreach (var target in targets)
         {
             var useIntercept = useInterceptByInterface.TryGetValue(
-                target.InterfaceName,
+                BuildInterfaceTargetKey(target.InterfaceName, target.IsComposite),
                 out var use
             )
                 ? use
