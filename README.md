@@ -103,17 +103,22 @@ Compared to [Scrutor](https://github.com/khellang/Scrutor), the advantages of th
 
 ## Features
 
-* [Simple Usage](#simple-usage)
-* [In Multiple Projects](#in-multiple-projects)
-* [Control Registration Order](#control-registration-order)
-* [Keyed Registration](#keyed-registration)
-* [Conditional Registration](#conditional-registration)
-* [Generic Registration](#generic-registration)
-* [Decorator Pattern](#decorator-pattern)
-* [Visualize Registration](#visualize-registration)
-* [Customize Registration](#customize-registration)
-* [Filtering Registration](#filtering-registration)
-* [Use Collected Information Directly](#use-collected-information-directly)
+* **Basic**
+  * [Simple Usage](#simple-usage)
+  * [In Multiple Projects](#in-multiple-projects)
+  * [Control Registration Order](#control-registration-order)
+  * [Keyed Registration](#keyed-registration)
+  * [Conditional Registration](#conditional-registration)
+* **Advanced**
+  * [Generic Registration](#generic-registration)
+  * [Decorator Pattern](#decorator-pattern)
+  * [Composite Pattern](#composite-pattern)
+* **Visualization**
+  * [Visualize Registration](#visualize-registration)
+* **Customization**
+  * [Customize Registration](#customize-registration)
+  * [Filtering Registration](#filtering-registration)
+  * [Use Collected Information Directly](#use-collected-information-directly)
 
 ### Simple Usage
 Just mark your classes with the following attributes:
@@ -632,7 +637,7 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
-### Composite Pattern (TODO)
+### Composite Pattern
 #### Overview
 The composite pattern is a design pattern that allows you to treat individual objects and compositions of objects uniformly. You can easily register composite classes using the `[QudiComposite]` attribute.
 
