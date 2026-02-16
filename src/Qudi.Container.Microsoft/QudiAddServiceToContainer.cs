@@ -52,12 +52,20 @@ public static class QudiAddServiceToContainer
 
         var materialized = MaterializeOpenGenericFallbacks(applicable);
 
-        var registrations = materialized.Where(t => !t.MarkAsDecorator).ToList();
+        var registrations = materialized.Where(t => !t.MarkAsDecorator && !t.MarkAsComposite).ToList();
         var decorators = materialized.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
+        var composites = materialized.Where(t => t.MarkAsComposite).OrderBy(t => t.Order).ToList();
 
         foreach (var registration in registrations)
         {
             RegisterService(services, registration);
+        }
+
+        // Register composites - they need to be registered after regular services
+        // but before decorators, so they can collect all non-composite implementations
+        foreach (var composite in composites)
+        {
+            RegisterService(services, composite);
         }
 
         foreach (var decorator in decorators)

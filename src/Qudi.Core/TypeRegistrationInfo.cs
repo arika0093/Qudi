@@ -58,6 +58,11 @@ public sealed record TypeRegistrationInfo
     public bool MarkAsDecorator { get; init; }
 
     /// <summary>
+    /// Whether this registration is a composite.
+    /// </summary>
+    public bool MarkAsComposite { get; init; }
+
+    /// <summary>
     /// Whether to export this type for visualization.
     /// When true, generates a separate dependency graph starting from this type.
     /// </summary>
