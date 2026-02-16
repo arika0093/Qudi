@@ -123,21 +123,13 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             .Expand()
             .AddColumn(new TableColumn("[bold cyan]Service[/]"))
             .AddColumn(new TableColumn("[bold green]Implementation[/]"))
-            .AddColumn(new TableColumn("[bold yellow]Life[/]").Centered())
+            .AddColumn(new TableColumn("[bold yellow]Lifetime[/]"))
             .AddColumn(new TableColumn("[bold blue]Cond[/]"))
             .AddColumn(new TableColumn("[bold magenta]Key[/]"))
             .AddColumn(new TableColumn("[bold orange1]Order[/]"));
 
         foreach (var row in rows)
         {
-            var lifetimeIcon = row.Lifetime switch
-            {
-                Lifetime.Singleton => "🔒",
-                Lifetime.Scoped => "📦",
-                Lifetime.Transient => "⚡",
-                _ => row.Lifetime,
-            };
-
             // Combine condition info - keep it concise
             var condition = "";
             if (row.When == "*")
@@ -161,12 +153,15 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             };
 
             var serviceColor = row.Service == row.Implementation ? "green" : "cyan";
-            var implColor = row.Decorator ? "red" : row.Composite ? "magenta" : "green";
+            var implColor =
+                row.Decorator ? "DeepPink3_1"
+                : row.Composite ? "magenta"
+                : "green";
 
             table.AddRow(
                 $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",
                 $"[{implColor}]{Markup.Escape(row.Implementation)}[/]",
-                $"[yellow]{lifetimeIcon}[/]",
+                $"[yellow]{row.Lifetime}[/]",
                 condition,
                 key,
                 orderText
