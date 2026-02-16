@@ -68,20 +68,121 @@ public static class QudiAddServiceToContainer
             RegisterService(services, registration);
         }
 
-        foreach (var registration in layeredRegistrations)
-        {
-            if (registration.MarkAsComposite)
-            {
-                RegisterComposite(services, registration);
-            }
-
-            if (registration.MarkAsDecorator)
-            {
-                ApplyDecorator(services, registration);
-            }
-        }
+        ApplyLayeredRegistrations(services, layeredRegistrations);
 
         return services;
+    }
+
+    private static void ApplyLayeredRegistrations(
+        IServiceCollection services,
+        IReadOnlyList<TypeRegistrationInfo> layeredRegistrations
+    )
+    {
+        var byService = layeredRegistrations
+            .SelectMany(reg =>
+            {
+                var serviceTypes = reg.AsTypes.Count > 0 ? reg.AsTypes : [reg.Type];
+                return serviceTypes.Select(serviceType => (Service: serviceType, Reg: reg));
+            })
+            .GroupBy(x => x.Service)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => x.Reg)
+                    .OrderBy(r => r.Order)
+                    // Lower order is outer; for the same order, decorators wrap composites.
+                    .ThenBy(r => r.MarkAsComposite ? 1 : 0)
+                    .ToList()
+            );
+
+        foreach (var (serviceType, layers) in byService)
+        {
+            if (layers.Count == 0)
+            {
+                continue;
+            }
+
+            if (layers.Any(r => r.Key is not null))
+            {
+                // TODO: Keyed decorators/composites are not supported yet.
+                continue;
+            }
+
+            var descriptorIndexes = new List<int>();
+            for (var i = 0; i < services.Count; i++)
+            {
+                if (services[i].ServiceType == serviceType)
+                {
+                    descriptorIndexes.Add(i);
+                }
+            }
+
+            var currentDescriptors = descriptorIndexes.Select(i => services[i]).ToList();
+            if (descriptorIndexes.Count == 0)
+            {
+                if (!layers.Any(r => r.MarkAsComposite))
+                {
+                    continue;
+                }
+            }
+
+            for (var i = layers.Count - 1; i >= 0; i--)
+            {
+                var layer = layers[i];
+                if (layer.MarkAsDecorator)
+                {
+                    currentDescriptors = currentDescriptors
+                        .Select(d => DescribeDecoratedDescriptor(serviceType, d, layer))
+                        .ToList();
+                    continue;
+                }
+
+                if (layer.MarkAsComposite)
+                {
+                    currentDescriptors = [
+                        DescribeCompositeDescriptor(serviceType, layer, currentDescriptors),
+                    ];
+                }
+            }
+
+            // Remove existing descriptors for this service type (from last to first index)
+            for (var i = descriptorIndexes.Count - 1; i >= 0; i--)
+            {
+                services.RemoveAt(descriptorIndexes[i]);
+            }
+
+            foreach (var descriptor in currentDescriptors)
+            {
+                services.Add(descriptor);
+            }
+        }
+    }
+
+    private static ServiceDescriptor DescribeCompositeDescriptor(
+        Type serviceType,
+        TypeRegistrationInfo composite,
+        IReadOnlyList<ServiceDescriptor> innerDescriptors
+    )
+    {
+        return ServiceDescriptor.Describe(
+            serviceType,
+            sp =>
+            {
+                var innerServices = new object?[innerDescriptors.Count];
+                for (var i = 0; i < innerDescriptors.Count; i++)
+                {
+                    innerServices[i] = CreateFromDescriptor(sp, innerDescriptors[i]);
+                }
+
+                var serviceArray = Array.CreateInstance(serviceType, innerServices.Length);
+                for (var i = 0; i < innerServices.Length; i++)
+                {
+                    serviceArray.SetValue(innerServices[i], i);
+                }
+
+                return ActivatorUtilities.CreateInstance(sp, composite.Type, serviceArray);
+            },
+            ServiceLifetime.Transient
+        );
     }
 
     private static List<TypeRegistrationInfo> MaterializeOpenGenericFallbacks(

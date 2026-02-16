@@ -28,8 +28,24 @@ internal static class DotOutputWriter
             );
         }
 
+        var nodesById = graph.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
+        var collectionPairs = graph.Edges
+            .Where(e => e.Kind == "collection")
+            .Select(e => (From: e.From, To: e.To))
+            .ToHashSet();
         foreach (var edge in graph.Edges)
         {
+            if (
+                nodesById.TryGetValue(edge.From, out var fromNode)
+                && nodesById.TryGetValue(edge.To, out var toNode)
+                && fromNode.Kind == "decorator"
+                && toNode.Kind == "composite"
+                && collectionPairs.Contains((From: edge.To, To: edge.From))
+            )
+            {
+                continue;
+            }
+
             var edgeStyle = BuildEdgeStyle(edge);
             sb.AppendLine($"  \"{EscapeDot(edge.From)}\" -> \"{EscapeDot(edge.To)}\"{edgeStyle};");
         }

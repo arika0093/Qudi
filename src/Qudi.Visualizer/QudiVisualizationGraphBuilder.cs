@@ -57,6 +57,11 @@ internal static class QudiVisualizationGraphBuilder
             }
         }
 
+        var compositeTypes = registrationViews
+            .Where(v => v.Registration.MarkAsComposite && v.IsMatched)
+            .Select(v => v.Registration.Type)
+            .ToHashSet();
+
         // Group decorators and composites by service type in application order (outer -> inner).
         var layersByService = registrationViews
             .Where(v =>
@@ -66,8 +71,8 @@ internal static class QudiVisualizationGraphBuilder
             .GroupBy(x => x.Service)
             .ToDictionary(
                 g => g.Key,
-                g => g.OrderByDescending(x => x.View.Registration.Order)
-                    // For the same Order, decorators wrap composites (outer first).
+                g => g.OrderBy(x => x.View.Registration.Order)
+                    // Lower order is outer; for the same order, decorators wrap composites.
                     .ThenBy(x => x.View.Registration.MarkAsComposite ? 1 : 0)
                     .ThenBy(x => x.View.Registration.Type.FullName, StringComparer.Ordinal)
                     .Select(x => x.View)
@@ -196,17 +201,22 @@ internal static class QudiVisualizationGraphBuilder
                     {
                         // Prefer the next inner layer (by Order) if it exists; otherwise connect to base implementations.
                         var handled = false;
-                        if (
-                            layersByService.TryGetValue(elementType, out var layers)
-                            && layers.Count > 0
-                        )
+                        if (layersByService.TryGetValue(elementType, out var layers))
                         {
-                            var index = layers.FindIndex(l =>
-                                l.Registration.Type == registration.Type
-                            );
-                            if (index >= 0 && index < layers.Count - 1)
+                            var nextLayer = layers
+                                .Where(l =>
+                                    l.Registration.Type != registration.Type
+                                    && l.Registration.Order > registration.Order
+                                )
+                                .OrderBy(l => l.Registration.Order)
+                                .ThenBy(l => l.Registration.MarkAsComposite ? 1 : 0)
+                                .ThenBy(
+                                    l => l.Registration.Type.FullName,
+                                    StringComparer.Ordinal
+                                )
+                                .FirstOrDefault();
+                            if (nextLayer is not null)
                             {
-                                var nextLayer = layers[index + 1];
                                 var nextType = nextLayer.Registration.Type;
                                 var nextId = QudiVisualizationAnalyzer.ToFullDisplayName(nextType);
                                 AddNode(
@@ -311,14 +321,34 @@ internal static class QudiVisualizationGraphBuilder
                         // Find decorators for this service
                         if (layersByService.TryGetValue(required, out var layers))
                         {
-                            // Find current layer's position
-                            var currentIndex = layers.FindIndex(d =>
-                                d.Registration.Type == implType
-                            );
-                            if (currentIndex >= 0 && currentIndex < layers.Count - 1)
+                            var nextLayer = layers
+                                .Where(l =>
+                                    l.Registration.Type != implType
+                                    && (
+                                        l.Registration.Order > registration.Order
+                                        || (
+                                            l.Registration.Order == registration.Order
+                                            && registration.MarkAsDecorator
+                                            && l.Registration.MarkAsComposite
+                                        )
+                                    )
+                                )
+                                .OrderBy(l => l.Registration.Order)
+                                .ThenBy(l => l.Registration.MarkAsComposite ? 1 : 0)
+                                .ThenBy(
+                                    l => l.Registration.Type.FullName,
+                                    StringComparer.Ordinal
+                                )
+                                .FirstOrDefault();
+                            if (
+                                nextLayer is not null
+                                && !(
+                                    nextLayer.Registration.MarkAsComposite
+                                    && nextLayer.Registration.Order < registration.Order
+                                )
+                            )
                             {
                                 // Connect to next layer (decorator or composite)
-                                var nextLayer = layers[currentIndex + 1];
                                 var nextId = QudiVisualizationAnalyzer.ToFullDisplayName(
                                     nextLayer.Registration.Type
                                 );
@@ -343,14 +373,13 @@ internal static class QudiVisualizationGraphBuilder
                                 );
                             }
                             else if (
-                                implementationsByService.TryGetValue(
+                                baseImplementationsByService.TryGetValue(
                                     required,
                                     out var implementations
                                 )
                             )
                             {
-                                // Prefer composite as the final target when it exists
-                                // Connect to final implementation(s)
+                                // Connect to final base implementation(s) to avoid cycles with composites
                                 foreach (
                                     var implementationType in implementations.Select(impl =>
                                         impl.Registration.Type
@@ -382,10 +411,13 @@ internal static class QudiVisualizationGraphBuilder
                             }
                         }
                         else if (
-                            implementationsByService.TryGetValue(required, out var implementations)
+                            baseImplementationsByService.TryGetValue(
+                                required,
+                                out var implementations
+                            )
                         )
                         {
-                            // No other layers, connect directly to implementation(s)
+                            // No other layers, connect directly to base implementation(s)
                             foreach (
                                 var implementationType in implementations.Select(impl =>
                                     impl.Registration.Type
@@ -418,6 +450,10 @@ internal static class QudiVisualizationGraphBuilder
                     else
                     {
                         // Normal dependency
+                        if (isDecorator && compositeTypes.Contains(required))
+                        {
+                            continue;
+                        }
                         var isMissing = !isExternal && !registeredTypes.Contains(required);
                         AddNode(
                             nodes,
@@ -534,6 +570,14 @@ internal static class QudiVisualizationGraphBuilder
                 );
             }
         }
+
+        // Remove accidental cycles: Decorator -> Composite edges are never part of the intended chain.
+        edges.RemoveAll(e =>
+            nodes.TryGetValue(e.From, out var fromNode)
+            && nodes.TryGetValue(e.To, out var toNode)
+            && fromNode.Kind == "decorator"
+            && toNode.Kind == "composite"
+        );
 
         var distinctEdges = edges
             .DistinctBy(e =>
