@@ -91,6 +91,18 @@ internal static class HelperCodeGenerator
                     """
                 );
             }
+            else if (target.IsComposite)
+            {
+                builder.AppendLine(
+                    $$"""
+                    partial {{target.ImplementingTypeKeyword}} {{target.ImplementingTypeName}} : {{helperTypeName}}
+                    {
+                        {{CodeTemplateContents.EditorBrowsableAttribute}}
+                        global::System.Collections.Generic.IEnumerable<{{target.InterfaceName}}> {{helperTypeName}}.__InnerServices => {{target.BaseParameterName}};
+                    }
+                    """
+                );
+            }
             else
             {
                 builder.AppendLine(
@@ -139,7 +151,8 @@ internal static class HelperCodeGenerator
         var members = helper.Members.ToImmutableArray();
         var helperName = BuildHelperInterfaceName(interfaceHelperName);
         var useIntercept = helper.UseIntercept;
-        var helperAccessor = useIntercept ? "__Base" : "__Inner";
+        var isComposite = helper.IsComposite;
+        var helperAccessor = useIntercept ? "__Base" : (isComposite ? "__InnerServices" : "__Inner");
 
         // Generate interface
         builder.AppendLine(
@@ -155,11 +168,25 @@ internal static class HelperCodeGenerator
             {
                 if (member.Kind == HelperMemberKind.Method)
                 {
-                    AppendDecoratorMethod(builder, member, helperAccessor);
+                    if (isComposite)
+                    {
+                        AppendCompositeMethod(builder, member, helperAccessor);
+                    }
+                    else
+                    {
+                        AppendDecoratorMethod(builder, member, helperAccessor);
+                    }
                 }
                 else if (member.Kind == HelperMemberKind.Property)
                 {
-                    AppendDecoratorProperty(builder, member, helperAccessor);
+                    if (isComposite)
+                    {
+                        AppendCompositeProperty(builder, member, helperAccessor);
+                    }
+                    else
+                    {
+                        AppendDecoratorProperty(builder, member, helperAccessor);
+                    }
                 }
             }
             builder.AppendLine("");
@@ -195,6 +222,14 @@ internal static class HelperCodeGenerator
                         }
                     }
                 }
+            }
+            else if (isComposite)
+            {
+                builder.AppendLine(
+                    $$"""
+                    {{IEnumerable}}<{{interfaceName}}> {{helperAccessor}} { get; }
+                    """
+                );
             }
             else
             {
@@ -246,6 +281,72 @@ internal static class HelperCodeGenerator
         {
             builder.AppendLineIf(property.HasGetter, $"get => {getterAccess};");
             builder.AppendLineIf(property.HasSetter, $"set => {setterAccess} = value;");
+        }
+    }
+
+    private static void AppendCompositeMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor
+    )
+    {
+        var returnType = method.ReturnTypeName;
+        var parameters = BuildParameterList(method.Parameters);
+        var arguments = BuildArgumentList(method.Parameters);
+        var interfaceName = method.DeclaringInterfaceName;
+        
+        // For composite, we iterate over all inner services and call the method on each
+        builder.AppendLine($"{returnType} {interfaceName}.{method.Name}({parameters})");
+        using (builder.BeginScope())
+        {
+            // Simple fire-and-forget for void methods by default
+            builder.AppendLine($"foreach (var __service in {helperAccessor})");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__service.{method.Name}({arguments});");
+            }
+        }
+    }
+
+    private static void AppendCompositeProperty(
+        IndentedStringBuilder builder,
+        HelperMember property,
+        string helperAccessor
+    )
+    {
+        var typeName = property.ReturnTypeName;
+        var propertyName = property.IsIndexer ? "this" : property.Name;
+        var parameters = property.IsIndexer ? BuildParameterList(property.Parameters) : "";
+        var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : "";
+        var arguments = property.IsIndexer ? BuildArgumentList(property.Parameters) : "";
+        var interfaceName = property.DeclaringInterfaceName;
+
+        builder.AppendLine($"{typeName} {interfaceName}.{propertyName}{indexerSuffix}");
+        using (builder.BeginScope())
+        {
+            // For composite properties, we just return the first service's property value by default
+            if (property.HasGetter)
+            {
+                var access = property.IsIndexer
+                    ? $"{helperAccessor}.FirstOrDefault()?[{arguments}]"
+                    : $"{helperAccessor}.FirstOrDefault()?.{propertyName}";
+                builder.AppendLine($"get => {access} ?? default!;");
+            }
+            if (property.HasSetter)
+            {
+                builder.AppendLine("set");
+                using (builder.BeginScope())
+                {
+                    builder.AppendLine($"foreach (var __service in {helperAccessor})");
+                    using (builder.BeginScope())
+                    {
+                        var access = property.IsIndexer
+                            ? $"__service[{arguments}]"
+                            : $"__service.{propertyName}";
+                        builder.AppendLine($"{access} = value;");
+                    }
+                }
+            }
         }
     }
 

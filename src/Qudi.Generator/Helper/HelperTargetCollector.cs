@@ -609,8 +609,23 @@ internal static class HelperTargetCollector
             return true;
         }
 
+        // Check for IEnumerable<T> where T is assignable to the interface (for composites)
         if (parameterType is INamedTypeSymbol namedType)
         {
+            if (namedType.IsGenericType && namedType.ConstructedFrom.ToDisplayString().StartsWith("System.Collections.Generic.IEnumerable<"))
+            {
+                var elementType = namedType.TypeArguments.FirstOrDefault();
+                if (elementType is not null && (
+                    SymbolEqualityComparer.Default.Equals(elementType, interfaceSymbol) ||
+                    (elementType is INamedTypeSymbol elementNamedType && 
+                     elementNamedType.AllInterfaces.Any(iface =>
+                         SymbolEqualityComparer.Default.Equals(iface, interfaceSymbol)))
+                ))
+                {
+                    return true;
+                }
+            }
+
             return namedType.AllInterfaces.Any(iface =>
                 SymbolEqualityComparer.Default.Equals(iface, interfaceSymbol)
             );
