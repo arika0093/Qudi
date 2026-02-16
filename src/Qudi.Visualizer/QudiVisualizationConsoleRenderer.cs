@@ -123,28 +123,25 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             .Expand()
             .AddColumn(new TableColumn("[bold cyan]Service[/]"))
             .AddColumn(new TableColumn("[bold green]Implementation[/]"))
-            .AddColumn(new TableColumn("[bold yellow]Lifetime[/]"))
-            .AddColumn(new TableColumn("[bold blue]Cond[/]"))
-            .AddColumn(new TableColumn("[bold magenta]Key[/]"))
+            .AddColumn(new TableColumn("[bold yellow]Life[/]"))
+            .AddColumn(new TableColumn("[bold blue]Cond[/]|[bold magenta]Key[/]"))
             .AddColumn(new TableColumn("[bold orange1]Order[/]"));
 
         foreach (var row in rows)
         {
-            // Combine condition info - keep it concise
-            var condition = "";
-            if (row.When == "*")
+            // lifetime
+            var lifeTimeEmoji = row.Lifetime switch
             {
-                condition = Nothing;
-            }
-            else
-            {
-                // Shorten condition names
-                var whenText = row.When.Replace("Development", "Dev").Replace("Production", "Prod");
-                condition = $"[blue]{whenText}[/]";
-            }
+                "Transient" => "🔄",
+                "Scoped" => "📦",
+                "Singleton" => "🔒",
+                _ => "",
+            };
 
-            var key = row.Key != "-" ? $"[magenta]{row.Key}[/]" : Nothing;
+            // condition and key
+            var condKey = DetermineCondAndKey(row);
 
+            // order
             var orderText = row.Order switch
             {
                 < 0 => $"[red]{row.Order}[/]",
@@ -166,9 +163,8 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             table.AddRow(
                 $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",
                 $"[{implColor}]{Markup.Escape(row.Implementation)}[/]",
-                $"[yellow]{row.Lifetime}[/]",
-                condition,
-                key,
+                $"[yellow]{lifeTimeEmoji}[/]",
+                condKey,
                 orderText
             );
         }
@@ -183,6 +179,29 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             BorderStyle = new Style(Color.Green),
             Expand = true,
         };
+    }
+
+    private string DetermineCondAndKey(QudiRegistrationTableRow row)
+    {
+        var whenMissing = row.When == "*";
+        var keyMissing = row.Key == "-";
+        var whenText = row.When.Replace("Development", "Dev").Replace("Production", "Prod");
+        var whenMarkup = $"[magenta]{row.Key}[/]";
+        var keyMarkup = $"[blue]{whenText}[/]";
+
+        if (whenMissing && keyMissing)
+        {
+            return "[dim]*[/]";
+        }
+        else if (whenMissing)
+        {
+            return whenMarkup;
+        }
+        else if (keyMissing)
+        {
+            return keyMarkup;
+        }
+        return $"{whenMarkup}|{keyMarkup}";
     }
 
     private Panel CreateIssuesPanel(
