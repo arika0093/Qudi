@@ -317,7 +317,9 @@ internal static class QudiVisualizationAnalyzer
             var fromLifetime = NormalizeLifetime(registration.Lifetime);
             foreach (var required in registration.Registration.RequiredTypes.Distinct())
             {
-                foreach (var candidate in ResolveImplementationCandidates(context, required))
+                var elementType = TryGetCollectionElementType(required);
+                var candidateType = elementType ?? required;
+                foreach (var candidate in ResolveImplementationCandidates(context, candidateType))
                 {
                     var toLifetime = NormalizeLifetime(candidate.Lifetime);
                     if (fromLifetime == "singleton" && toLifetime != "singleton")
@@ -453,6 +455,34 @@ internal static class QudiVisualizationAnalyzer
         }
 
         return [];
+    }
+
+    /// <summary>
+    /// Check if the type is a collection type and extract the element type.
+    /// Returns null if the type is not a collection type.
+    /// </summary>
+    private static Type? TryGetCollectionElementType(Type type)
+    {
+        if (!type.IsGenericType)
+        {
+            return null;
+        }
+
+        var genericTypeDef = type.GetGenericTypeDefinition();
+
+        // Check for common collection interfaces
+        if (
+            genericTypeDef == typeof(IEnumerable<>)
+            || genericTypeDef == typeof(IList<>)
+            || genericTypeDef == typeof(ICollection<>)
+            || genericTypeDef == typeof(IReadOnlyList<>)
+            || genericTypeDef == typeof(IReadOnlyCollection<>)
+        )
+        {
+            return type.GetGenericArguments()[0];
+        }
+
+        return null;
     }
 
     internal static bool IsApplicable(
