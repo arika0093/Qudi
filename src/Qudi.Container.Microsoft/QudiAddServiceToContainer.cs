@@ -360,11 +360,21 @@ public static class QudiAddServiceToContainer
                             }
                         }
                         
+                        // Create a strongly-typed array so IEnumerable<T> constructors match
+                        var serviceArray = Array.CreateInstance(
+                            capturedAsType,
+                            nonCompositeServices.Count
+                        );
+                        for (var i = 0; i < nonCompositeServices.Count; i++)
+                        {
+                            serviceArray.SetValue(nonCompositeServices[i], i);
+                        }
+
                         // Create the composite using the non-composite services
                         return ActivatorUtilities.CreateInstance(
                             sp,
                             composite.Type,
-                            nonCompositeServices.ToArray()
+                            serviceArray
                         );
                     },
                     lifetime
