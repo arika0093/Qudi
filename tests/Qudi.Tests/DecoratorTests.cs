@@ -15,7 +15,7 @@ public sealed class DecoratorTests
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IMessageService>();
 
-        service.Send("hello").ShouldBe("D1(D2(hello))");
+        service.Send("hello").ShouldBe("D2(D1(hello))");
     }
 
     [Test]

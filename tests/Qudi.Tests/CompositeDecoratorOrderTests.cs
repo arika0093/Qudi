@@ -15,7 +15,7 @@ public sealed class CompositeDecoratorOrderTests
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IOrderedCompositeDecoratorServiceA>();
 
-        service.Get().ShouldBe("D(A1)|D(A2)");
+        service.Get().ShouldBe("D(A1|A2)");
     }
 
     [Test]
@@ -27,6 +27,6 @@ public sealed class CompositeDecoratorOrderTests
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IOrderedCompositeDecoratorServiceB>();
 
-        service.Get().ShouldBe("D(B1|B2)");
+        service.Get().ShouldBe("D(B1)|D(B2)");
     }
 }

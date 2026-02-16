@@ -66,8 +66,8 @@ internal static class QudiVisualizationGraphBuilder
             .GroupBy(x => x.Service)
             .ToDictionary(
                 g => g.Key,
-                g => g.OrderBy(x => x.View.Registration.Order)
-                    // For the same Order, decorators wrap composites.
+                g => g.OrderByDescending(x => x.View.Registration.Order)
+                    // For the same Order, decorators wrap composites (outer first).
                     .ThenBy(x => x.View.Registration.MarkAsComposite ? 1 : 0)
                     .ThenBy(x => x.View.Registration.Type.FullName, StringComparer.Ordinal)
                     .Select(x => x.View)
@@ -603,7 +603,10 @@ internal static class QudiVisualizationGraphBuilder
         if (nodes.TryGetValue(id, out var existing))
         {
             // Upgrade node kind if needed
-            if (existing.Kind == "missing" && kind != "missing")
+            if (
+                (existing.Kind == "missing" && kind != "missing")
+                || IsUpgradeKind(existing.Kind, kind)
+            )
             {
                 nodes[id] = new QudiVisualizationNode(
                     id,
@@ -647,6 +650,18 @@ internal static class QudiVisualizationGraphBuilder
             isExternal,
             isInterface
         );
+    }
+
+    private static bool IsUpgradeKind(string existingKind, string newKind)
+    {
+        // Ensure composites/decorators keep their visual style even if they were added earlier
+        // as generic implementations.
+        if ((newKind == "composite" || newKind == "decorator") && existingKind == "implementation")
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>

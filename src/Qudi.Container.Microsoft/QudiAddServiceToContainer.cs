@@ -57,8 +57,8 @@ public static class QudiAddServiceToContainer
             .ToList();
         var layeredRegistrations = materialized
             .Where(t => t.MarkAsDecorator || t.MarkAsComposite)
-            // Higher order is applied later (closer to implementation), so process higher first.
-            .OrderByDescending(t => t.Order)
+            // Higher order is applied later (outer), so process lower order first.
+            .OrderBy(t => t.Order)
             // Keep composites ahead of decorators when Order is the same so decorators wrap composites.
             .ThenBy(t => t.MarkAsComposite ? 0 : 1)
             .ToList();
