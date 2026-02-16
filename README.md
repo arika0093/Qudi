@@ -10,6 +10,7 @@ Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 ## Getting Started
 ### First Step
 Well, it's easier to show you than to explain it. 😉
+If you are using .NET 10 or later, just paste the following code into a file and run `dotnet file.cs`.
 
 <details>
 <summary>Code Example</summary>
@@ -171,7 +172,7 @@ flowchart LR
 
 ```
 
-### Decorator and Compposit
+### Decorator and Composit
 You can easily implement the Decorator and Composite patterns using Qudi’s features. First, let’s take a look at the Decorator pattern.
 
 A decorator is a design pattern that adds functionality to an existing service without modifying its code.
