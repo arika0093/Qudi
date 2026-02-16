@@ -12,6 +12,7 @@ namespace Qudi.Generator.Helper;
 internal static class HelperTargetCollector
 {
     private const string QudiDecoratorAttribute = "Qudi.QudiDecoratorAttribute";
+    private const string QudiCompositeAttribute = "Qudi.QudiCompositeAttribute";
 
     public static IncrementalValueProvider<HelperGenerationInput> CollectTargets(
         IncrementalGeneratorInitializationContext context
@@ -21,10 +22,20 @@ internal static class HelperTargetCollector
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) => CreateTargets(ctx, isDecorator: true)
+                static (ctx, _) => CreateTargets(ctx, isDecorator: true, isComposite: false)
             )
             .Select(static (targets, _) => targets);
-        return decoratorTargets.Collect().Select(static (targets, _) => MergeTargets(targets));
+        var compositeTargets = context
+            .SyntaxProvider.ForAttributeWithMetadataName(
+                QudiCompositeAttribute,
+                static (node, _) => IsPartialClass(node),
+                static (ctx, _) => CreateTargets(ctx, isDecorator: false, isComposite: true)
+            )
+            .Select(static (targets, _) => targets);
+        return decoratorTargets
+            .Collect()
+            .Combine(compositeTargets.Collect())
+            .Select(static (targets, _) => MergeTargets(targets.Left.Concat(targets.Right).ToImmutableArray()));
     }
 
     // Check if the syntax node is a partial class declaration
@@ -36,7 +47,8 @@ internal static class HelperTargetCollector
 
     private static HelperGenerationInput CreateTargets(
         GeneratorAttributeSyntaxContext context,
-        bool isDecorator
+        bool isDecorator,
+        bool isComposite
     )
     {
         var blankInput = new HelperGenerationInput
@@ -54,16 +66,17 @@ internal static class HelperTargetCollector
             return blankInput;
         }
 
+        var attributeName = isDecorator ? QudiDecoratorAttribute : QudiCompositeAttribute;
         var attribute = context
             .Attributes.Where(attr =>
                 SymbolEqualityComparer.Default.Equals(
                     attr.AttributeClass,
-                    context.SemanticModel.Compilation.GetTypeByMetadataName(QudiDecoratorAttribute)
+                    context.SemanticModel.Compilation.GetTypeByMetadataName(attributeName)
                 )
             )
             .FirstOrDefault();
         var asTypes = GetExplicitAsTypes(attribute);
-        var useIntercept = SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false;
+        var useIntercept = isDecorator && (SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false);
 
         // Collect nested class information (from innermost to outermost)
         var containingTypesList = new List<ContainingTypeInfo>();
@@ -161,6 +174,7 @@ internal static class HelperTargetCollector
                 typeSymbol,
                 iface,
                 isDecorator,
+                isComposite,
                 useIntercept,
                 containingTypesList
             );
@@ -182,6 +196,7 @@ internal static class HelperTargetCollector
                 DecoratorParameterName = decoratorParameterName,
                 Members = new EquatableArray<HelperMember>(members),
                 IsDecorator = isDecorator,
+                IsComposite = isComposite,
                 UseIntercept = useIntercept,
             };
             interfaceTargets.Add(target);
@@ -234,6 +249,7 @@ internal static class HelperTargetCollector
             map[target.InterfaceName] = existing with
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
+                IsComposite = existing.IsComposite || target.IsComposite,
                 DecoratorParameterName = MergeParameterName(
                     existing.DecoratorParameterName,
                     target.DecoratorParameterName
@@ -497,6 +513,7 @@ internal static class HelperTargetCollector
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol interfaceSymbol,
         bool isDecorator,
+        bool isComposite,
         bool useIntercept,
         List<ContainingTypeInfo> containingTypes
     )
@@ -559,6 +576,7 @@ internal static class HelperTargetCollector
             ConstructorParameters = new EquatableArray<HelperParameter>(constructorParameters),
             BaseParameterName = baseParameter.Name,
             IsDecorator = isDecorator,
+            IsComposite = isComposite,
             UseIntercept = useIntercept,
         };
     }

@@ -16,6 +16,7 @@ internal static class RegistrationAttrParser
     private const string QudiScopedAttribute = $"Qudi.DIScopedAttribute";
     private const string QudiTransientAttribute = $"Qudi.DITransientAttribute";
     private const string QudiDecoratorAttribute = $"Qudi.QudiDecoratorAttribute";
+    private const string QudiCompositeAttribute = $"Qudi.QudiCompositeAttribute";
 
     public static IncrementalValueProvider<
         ImmutableArray<RegistrationSpec?>
@@ -46,17 +47,24 @@ internal static class RegistrationAttrParser
             static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, asDecorator: true)
         );
+        var compositeProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
+            QudiCompositeAttribute,
+            static (node, _) => true,
+            static (context, _) => CreateFromAttribute(context, asComposite: true)
+        );
 
         var qudiRegistrations = qudiProvider.Collect();
         var singletonCollections = singletonProvider.Collect();
         var transientCollections = transientProvider.Collect();
         var scopedCollections = scopedProvider.Collect();
         var decoratorCollections = decoratorProvider.Collect();
+        var compositeCollections = compositeProvider.Collect();
         return qudiRegistrations
             .CombineAndMerge(singletonCollections)
             .CombineAndMerge(transientCollections)
             .CombineAndMerge(scopedCollections)
-            .CombineAndMerge(decoratorCollections);
+            .CombineAndMerge(decoratorCollections)
+            .CombineAndMerge(compositeCollections);
     }
 
     /// <summary>
@@ -65,7 +73,8 @@ internal static class RegistrationAttrParser
     public static RegistrationSpec? CreateFromAttribute(
         GeneratorAttributeSyntaxContext context,
         string? lifetime = null,
-        bool asDecorator = false
+        bool asDecorator = false,
+        bool asComposite = false
     )
     {
         // filter some invalid cases
@@ -78,7 +87,7 @@ internal static class RegistrationAttrParser
             return null;
         }
 
-        if (asDecorator && typeSymbol.TypeParameters.Length > 0)
+        if ((asDecorator || asComposite) && typeSymbol.TypeParameters.Length > 0)
         {
             return null;
         }
@@ -116,6 +125,7 @@ internal static class RegistrationAttrParser
             AsTypes = spec.AsTypes.Count > 0 ? spec.AsTypes : defaultAsTypes,
             Lifetime = lifetime ?? spec.Lifetime,
             MarkAsDecorator = asDecorator || spec.MarkAsDecorator,
+            MarkAsComposite = asComposite || spec.MarkAsComposite,
         };
     }
 
@@ -134,6 +144,7 @@ internal static class RegistrationAttrParser
             KeyLiteral = SGAttributeParser.GetValueAsLiteral(attr, "Key"),
             Order = SGAttributeParser.GetValue<int?>(attr, "Order") ?? 0,
             MarkAsDecorator = SGAttributeParser.GetValue<bool?>(attr, "MarkAsDecorator") ?? false,
+            MarkAsComposite = SGAttributeParser.GetValue<bool?>(attr, "MarkAsComposite") ?? false,
             Export = SGAttributeParser.GetValue<bool?>(attr, "Export") ?? false,
         };
     }
