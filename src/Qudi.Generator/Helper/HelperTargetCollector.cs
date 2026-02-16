@@ -612,7 +612,9 @@ internal static class HelperTargetCollector
         // Check for IEnumerable<T> where T is assignable to the interface (for composites)
         if (parameterType is INamedTypeSymbol namedType)
         {
-            if (namedType.IsGenericType && namedType.ConstructedFrom.ToDisplayString().StartsWith("System.Collections.Generic.IEnumerable<"))
+            // Check if this is IEnumerable<T> by comparing the original definition
+            if (namedType.IsGenericType && 
+                namedType.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>")
             {
                 var elementType = namedType.TypeArguments.FirstOrDefault();
                 if (elementType is not null && (
