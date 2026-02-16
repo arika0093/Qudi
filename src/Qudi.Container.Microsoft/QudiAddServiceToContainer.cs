@@ -55,24 +55,29 @@ public static class QudiAddServiceToContainer
         var registrations = materialized
             .Where(t => !t.MarkAsDecorator && !t.MarkAsComposite)
             .ToList();
-        var decorators = materialized.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
-        var composites = materialized.Where(t => t.MarkAsComposite).OrderBy(t => t.Order).ToList();
+        var layeredRegistrations = materialized
+            .Where(t => t.MarkAsDecorator || t.MarkAsComposite)
+            .OrderBy(t => t.Order)
+            // Keep composites ahead of decorators when Order is the same to match legacy behavior.
+            .ThenBy(t => t.MarkAsComposite ? 0 : 1)
+            .ToList();
 
         foreach (var registration in registrations)
         {
             RegisterService(services, registration);
         }
 
-        // Register composites - they need to be registered after regular services
-        // but before decorators, so they can collect all non-composite implementations
-        foreach (var composite in composites)
+        foreach (var registration in layeredRegistrations)
         {
-            RegisterComposite(services, composite);
-        }
+            if (registration.MarkAsComposite)
+            {
+                RegisterComposite(services, registration);
+            }
 
-        foreach (var decorator in decorators)
-        {
-            ApplyDecorator(services, decorator);
+            if (registration.MarkAsDecorator)
+            {
+                ApplyDecorator(services, registration);
+            }
         }
 
         return services;
