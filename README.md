@@ -1077,23 +1077,27 @@ Unlike the decorator pattern, you need to explicitly specify how to handle the r
 public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     : ISomeService
 {
-    [CompositeMethod] // -> Fire-and-forget style
-    [CompositeMethod(Result = CompositeResult.Forget)] // same as above, explicitly specify to ignore results
+    // in void methods, just execute all implementations
     public partial void FeatureA();
 
+    // in IEnumerable/ICollection methods, combine results and return as a single collection
+    public partial IEnumerable<string> FeatureB();
+
+    // in boolean methods, you can specify how to combine results using CompositeMethod attribute
     [CompositeMethod(Result = CompositeResult.All)] // -> return a && b && c && ...;
-    public partial bool FeatureB();
+    [CompositeMethod(Result = CompositeResult.Any)] // -> return a || b || c || ...;
+    public partial bool FeatureC();
 
+    // in Task methods, you can also specify how to combine results using CompositeMethod attribute
+    [CompositeMethod(Result = CompositeResult.All)] // -> return Task.WhenAll(a,b,c,...);
     [CompositeMethod(Result = CompositeResult.Any)] // -> return Task.WhenAny(a,b,c,...);
-    public partial Task FeatureC(int val);
+    [CompositeMethod(Result = CompositeResult.Forget)] // -> execute all and return completed task immediately without waiting for results;
+    public partial Task FeatureD(int val);
 
-    [CompositeMethod(Result = CompositeResult.Concat)] // -> concatenate results like [..a, ..b, ..c, ...]
-    public partial IEnumerable<string> FeatureD();
-
-    [CompositeMethod(ResultHandler = nameof(AggregateEnumValue))] // -> use custom result handler to aggregate results
+    // in other cases, you can use a custom result handler to specify how to combine results.
+    [CompositeMethod(ResultHandler = nameof(AggregateEnumValue))] 
     public partial MyEnumValue FeatureE(string msg);
 
-    // custom result handler example
     // such as result.Aggregate((a,b) => AggregateEnumValue(a,b));
     private MyEnumValue AggregateEnumValue(MyEnumValue original, MyEnumValue result)
         => original | result; // example: bitwise OR to combine enum values
@@ -1104,6 +1108,9 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
         // you can also implement methods without using auto implementation,
         // and call inner services manually if you need more control.
     }
+
+    // Behavior for properties is not guaranteed,
+    // so it is recommended to implement them manually or avoid using properties.
 }
 ```
 
@@ -1122,9 +1129,7 @@ Then, call `EnableVisualizationOutput` in the configuration of `AddQudiServices`
 
 ```csharp
 services.AddQudiServices(conf => {
-#if DEBUG
     conf.EnableVisualizationOutput();
-#endif
 });
 ```
 
@@ -1136,7 +1141,7 @@ Since visualization is mainly needed during development, it is recommended to en
 ```xml
 <Project>
   <ItemGroup>
-    <PackageReference Include="Qudi.Visualizer" Version="*" />
+    <PackageReference Include="Qudi.Visualizer" Version="*" Condition="'$(Configuration)' == 'Debug'" />
   </ItemGroup>
 </Project>
 ```
