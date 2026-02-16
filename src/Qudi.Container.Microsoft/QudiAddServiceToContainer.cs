@@ -348,12 +348,19 @@ public static class QudiAddServiceToContainer
                         var nonCompositeServices = new List<object>();
                         foreach (var descriptor in existingDescriptors)
                         {
-                            var service =
-                                descriptor.ImplementationType != null
-                                    ? sp.GetRequiredService(descriptor.ImplementationType)
-                                : descriptor.ImplementationFactory != null
-                                    ? descriptor.ImplementationFactory(sp)
-                                : descriptor.ImplementationInstance;
+                            object? service = null;
+                            if (descriptor.ImplementationType != null)
+                            {
+                                service = sp.GetRequiredService(descriptor.ImplementationType);
+                            }
+                            else if (descriptor.ImplementationFactory != null)
+                            {
+                                service = descriptor.ImplementationFactory(sp);
+                            }
+                            else
+                            {
+                                service = descriptor.ImplementationInstance;
+                            }
 
                             if (service != null)
                             {

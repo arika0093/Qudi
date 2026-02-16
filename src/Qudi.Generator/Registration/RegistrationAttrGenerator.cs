@@ -155,6 +155,7 @@ internal static class RegistrationAttrGenerator
             /// <summary>
             /// Defines how a composite method should handle results from multiple implementations.
             /// </summary>
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
             public enum CompositeResult
             {
                 /// <summary>

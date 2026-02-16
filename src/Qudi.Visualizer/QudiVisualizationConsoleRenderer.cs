@@ -153,10 +153,15 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             };
 
             var serviceColor = row.Service == row.Implementation ? "green" : "cyan";
-            var implColor =
-                row.Decorator ? "DeepPink3_1"
-                : row.Composite ? "magenta"
-                : "green";
+            var implColor = "green";
+            if (row.Decorator)
+            {
+                implColor = "DeepPink3_1";
+            }
+            else if (row.Composite)
+            {
+                implColor = "magenta";
+            }
 
             table.AddRow(
                 $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",

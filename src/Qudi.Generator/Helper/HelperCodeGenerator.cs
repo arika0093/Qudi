@@ -159,9 +159,11 @@ internal static class HelperCodeGenerator
         var helperName = BuildHelperInterfaceName(interfaceHelperName);
         var useIntercept = helper.UseIntercept;
         var isComposite = helper.IsComposite;
-        var helperAccessor = useIntercept
-            ? "__Base"
-            : (isComposite ? "__InnerServices" : "__Inner");
+        var helperAccessor = useIntercept ? "__Base" : "__Inner";
+        if (!useIntercept && isComposite)
+        {
+            helperAccessor = "__InnerServices";
+        }
 
         // Generate interface
         builder.AppendLine(
@@ -444,16 +446,8 @@ internal static class HelperCodeGenerator
 
         if (useWhenAll)
         {
-            // CompositeResult.All or default - use WhenAll
-            if (returnType == "global::System.Threading.Tasks.Task")
-            {
-                builder.AppendLine($"return global::System.Threading.Tasks.Task.WhenAll(__tasks);");
-            }
-            else
-            {
-                // Task<T> - return Task.WhenAll which returns T[]
-                builder.AppendLine($"return global::System.Threading.Tasks.Task.WhenAll(__tasks);");
-            }
+            // CompositeResult.All or default - use WhenAll (works for Task and Task<T>)
+            builder.AppendLine($"return global::System.Threading.Tasks.Task.WhenAll(__tasks);");
         }
         else
         {

@@ -314,14 +314,14 @@ internal static class QudiVisualizationGraphBuilder
                                     )
                                 )
                                 {
-                                    foreach (var composite in composites)
+                                    foreach (var compositeType in composites.Select(c => c.Registration.Type))
                                     {
                                         var compositeId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                            composite.Registration.Type
+                                            compositeType
                                         );
                                         AddNode(
                                             nodes,
-                                            composite.Registration.Type,
+                                            compositeType,
                                             "composite",
                                             isMatched,
                                             false
@@ -380,14 +380,14 @@ internal static class QudiVisualizationGraphBuilder
                                 compositesByService.TryGetValue(required, out var composites)
                             )
                             {
-                                foreach (var composite in composites)
+                                foreach (var compositeType in composites.Select(c => c.Registration.Type))
                                 {
                                     var compositeId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                        composite.Registration.Type
+                                        compositeType
                                     );
                                     AddNode(
                                         nodes,
-                                        composite.Registration.Type,
+                                        compositeType,
                                         "composite",
                                         isMatched,
                                         false
