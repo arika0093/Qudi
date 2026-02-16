@@ -523,10 +523,11 @@ internal static class QudiVisualizationGraphBuilder
                     continue;
                 }
 
-                var hasClosedImplementation = implementationsByService.TryGetValue(
-                    nodeType,
-                    out var closedImplementations
-                ) && closedImplementations.Any(impl => !impl.Registration.Type.IsGenericTypeDefinition);
+                var hasClosedImplementation =
+                    implementationsByService.TryGetValue(nodeType, out var closedImplementations)
+                    && closedImplementations.Any(impl =>
+                        !impl.Registration.Type.IsGenericTypeDefinition
+                    );
                 if (hasClosedImplementation)
                 {
                     continue;

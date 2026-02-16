@@ -181,7 +181,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         };
     }
 
-    private string DetermineCondAndKey(QudiRegistrationTableRow row)
+    private static string DetermineCondAndKey(QudiRegistrationTableRow row)
     {
         var whenMissing = row.When == "*";
         var keyMissing = row.Key == "-";

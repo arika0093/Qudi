@@ -119,7 +119,8 @@ internal static class RegistrationAttrParser
 
         var isDecorator = asDecorator || spec.MarkAsDecorator;
         var isComposite = asComposite || spec.MarkAsComposite;
-        var effectiveLifetime = (isDecorator || isComposite) ? "Transient" : lifetime ?? spec.Lifetime;
+        var effectiveLifetime =
+            (isDecorator || isComposite) ? "Transient" : lifetime ?? spec.Lifetime;
 
         return spec with
         {
