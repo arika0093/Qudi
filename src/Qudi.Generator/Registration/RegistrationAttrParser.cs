@@ -117,15 +117,19 @@ internal static class RegistrationAttrParser
             typeSymbol.AllInterfaces.Select(CodeGenerationUtility.ToTypeOfLiteral)
         );
 
+        var isDecorator = asDecorator || spec.MarkAsDecorator;
+        var isComposite = asComposite || spec.MarkAsComposite;
+        var effectiveLifetime = (isDecorator || isComposite) ? "Transient" : lifetime ?? spec.Lifetime;
+
         return spec with
         {
             TypeName = typeFullName,
             Namespace = DetermineNamespace(typeSymbol),
             RequiredTypes = requiredTypes,
             AsTypes = spec.AsTypes.Count > 0 ? spec.AsTypes : defaultAsTypes,
-            Lifetime = lifetime ?? spec.Lifetime,
-            MarkAsDecorator = asDecorator || spec.MarkAsDecorator,
-            MarkAsComposite = asComposite || spec.MarkAsComposite,
+            Lifetime = effectiveLifetime,
+            MarkAsDecorator = isDecorator,
+            MarkAsComposite = isComposite,
         };
     }
 

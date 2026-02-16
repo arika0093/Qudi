@@ -309,7 +309,7 @@ public static class QudiAddServiceToContainer
     {
         // Composites need special handling to avoid circular dependencies.
         // Strategy: Manually resolve all non-composite implementations and pass them to the composite
-        var lifetime = ConvertLifetime(composite.Lifetime);
+        var lifetime = ServiceLifetime.Transient;
 
         if (composite.AsTypes.Count == 0)
         {
