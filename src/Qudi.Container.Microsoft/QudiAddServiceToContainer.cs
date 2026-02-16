@@ -65,7 +65,7 @@ public static class QudiAddServiceToContainer
         // but before decorators, so they can collect all non-composite implementations
         foreach (var composite in composites)
         {
-            RegisterService(services, composite);
+            RegisterComposite(services, composite);
         }
 
         foreach (var decorator in decorators)
@@ -299,6 +299,72 @@ public static class QudiAddServiceToContainer
         foreach (var asType in registration.AsTypes)
         {
             AddKeyedService(services, asType, registration.Type, registration.Key, lifetime);
+        }
+    }
+
+    private static void RegisterComposite(
+        IServiceCollection services,
+        TypeRegistrationInfo composite
+    )
+    {
+        // Composites need special handling to avoid circular dependencies.
+        // Strategy: Register the composite with a factory that gets all NON-composite implementations
+        var lifetime = ConvertLifetime(composite.Lifetime);
+        
+        if (composite.AsTypes.Count == 0)
+        {
+            // Register without interface - just the composite itself
+            services.Add(ServiceDescriptor.Describe(
+                composite.Type,
+                sp => ActivatorUtilities.CreateInstance(sp, composite.Type),
+                lifetime
+            ));
+            return;
+        }
+
+        // For composites, we need to:
+        // 1. NOT register the composite as the interface in a way that makes it appear in IEnumerable<T>
+        // 2. Create a factory that gets all services of the interface type registered BEFORE the composite
+        
+        // Count how many services are already registered for each interface
+        var existingCounts = new Dictionary<Type, int>();
+        foreach (var asType in composite.AsTypes)
+        {
+            existingCounts[asType] = services.Count(d => d.ServiceType == asType);
+        }
+
+        // Register the composite with a factory that explicitly constructs it
+        // This factory will be called when someone requests the interface directly
+        foreach (var asType in composite.AsTypes)
+        {
+            if (asType == composite.Type)
+            {
+                continue;
+            }
+
+            var capturedAsType = asType; // Capture for closure
+            var existingCount = existingCounts[asType];
+            
+            services.Add(
+                ServiceDescriptor.Describe(
+                    asType,
+                    sp =>
+                    {
+                        // Get all existing implementations of this interface type
+                        // but only the ones that were registered BEFORE the composite
+                        var allServices = sp.GetServices(capturedAsType);
+                        var nonCompositeServices = allServices.Take(existingCount);
+                        
+                        // Create the composite using the non-composite services
+                        return ActivatorUtilities.CreateInstance(
+                            sp,
+                            composite.Type,
+                            nonCompositeServices
+                        );
+                    },
+                    lifetime
+                )
+            );
         }
     }
 
