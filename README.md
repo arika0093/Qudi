@@ -699,7 +699,10 @@ public class CompositeMessageService(IEnumerable<IMessageService> innerServices)
 }
 
 // In this case,
-// MessageSender -> LoggingMessageServiceDecorator -> CompositeMessageService -> [EmailMessageService, SmsMessageService]
+// MessageSender
+// -> LoggingMessageServiceDecorator
+// -> CompositeMessageService
+// -> [EmailMessageService, SmsMessageService]
 ```
 
 #### Auto Implementation for Composite
@@ -721,6 +724,9 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     [CompositeMethod(Result = CompositeResult.Any)] // -> return Task.WhenAny(a,b,c,...);
     public partial Task FeatureC(int val);
 
+    [CompositeMethod(Result = CompositeResult.Concat)] // -> concatenate results like [..a, ..b, ..c, ...]
+    public partial IEnumerable<string> FeatureD();
+
     [CompositeMethod(ResultHandler = nameof(AggregateEnumValue))] // -> use custom result handler to aggregate results
     public partial MyEnumValue FeatureE(string msg);
 
@@ -728,6 +734,13 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     // such as result.Aggregate((a,b) => AggregateEnumValue(a,b));
     private MyEnumValue AggregateEnumValue(MyEnumValue original, MyEnumValue result)
         => original | result; // example: bitwise OR to combine enum values
+
+    // if you want to handle results manually, you can implement it as a normal method without using auto implementation.
+    public void FeatureF()
+    {
+        // you can also implement methods without using auto implementation,
+        // and call inner services manually if you need more control.
+    }
 }
 ```
 
