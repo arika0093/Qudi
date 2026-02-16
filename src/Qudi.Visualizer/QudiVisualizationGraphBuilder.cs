@@ -67,9 +67,26 @@ internal static class QudiVisualizationGraphBuilder
                 g => g.OrderBy(x => x.View.Registration.Order).Select(x => x.View).ToList()
             );
 
+        // Group composites by service type
+        var compositesByService = registrationViews
+            .Where(v => v.Registration.MarkAsComposite && v.IsMatched)
+            .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
+            .GroupBy(x => x.Service)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderBy(x => x.View.Registration.Order).Select(x => x.View).ToList()
+            );
+
         // Build a map of implementations by service type
         var implementationsByService = registrationViews
             .Where(v => !v.Registration.MarkAsDecorator && v.IsMatched)
+            .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
+            .GroupBy(x => x.Service)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.View).ToList());
+
+        // Non-decorator, non-composite implementations (used for composite inner services)
+        var baseImplementationsByService = registrationViews
+            .Where(v => !v.Registration.MarkAsDecorator && !v.Registration.MarkAsComposite && v.IsMatched)
             .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
             .GroupBy(x => x.Service)
             .ToDictionary(g => g.Key, g => g.Select(x => x.View).ToList());
@@ -80,6 +97,7 @@ internal static class QudiVisualizationGraphBuilder
             var implType = registration.Type;
             var implId = QudiVisualizationAnalyzer.ToFullDisplayName(implType);
             var isDecorator = registration.MarkAsDecorator;
+            var isComposite = registration.MarkAsComposite;
             var isMatched = view.IsMatched;
 
             // Skip self-registration (AddSingleton<Service> pattern)
@@ -96,6 +114,10 @@ internal static class QudiVisualizationGraphBuilder
                 if (isDecorator)
                 {
                     AddNode(nodes, implType, "decorator", isMatched, false);
+                }
+                else if (isComposite)
+                {
+                    AddNode(nodes, implType, "composite", isMatched, false);
                 }
                 else
                 {
@@ -137,8 +159,14 @@ internal static class QudiVisualizationGraphBuilder
                         // If a decorator exists for this service, we will connect the decorator to the service instead of the implementation,
                         // so we skip adding this edge here. The connection from the decorator to the implementation will be handled in the dependencies section.
                         var hasDecorator = decoratorsByService.ContainsKey(serviceType);
+                        var hasComposite = compositesByService.ContainsKey(serviceType);
                         if (!hasDecorator)
                         {
+                            // If a composite exists, only show Service -> Composite (hide direct links to base implementations)
+                            if (hasComposite && !registration.MarkAsComposite)
+                            {
+                                continue;
+                            }
                             var keyValue = registration.Key?.ToString();
                             edges.Add(
                                 new QudiVisualizationEdge(
@@ -162,23 +190,71 @@ internal static class QudiVisualizationGraphBuilder
                 var elementType = TryGetCollectionElementType(required);
                 if (elementType != null)
                 {
-                    // For collection types, create a 1:many relationship to the element type
-                    var elementId = QudiVisualizationAnalyzer.ToFullDisplayName(elementType);
-                    var isExternal = QudiVisualizationAnalyzer.IsExternalType(
-                        elementType,
-                        internalAssemblies
-                    );
-                    var isMissing = !isExternal && !registeredTypes.Contains(elementType);
-                    AddNode(
-                        nodes,
-                        elementType,
-                        isMissing ? "missing" : "service",
-                        isMatched,
-                        isExternal
-                    );
-                    edges.Add(
-                        new QudiVisualizationEdge(implId, elementId, "collection", null, null, 0)
-                    );
+                    // For composite collections that represent the composite's own service type,
+                    // connect to the underlying implementations instead of the service interface.
+                    var isCompositeCollection =
+                        registration.MarkAsComposite && view.ServiceTypes.Contains(elementType);
+
+                    if (
+                        isCompositeCollection
+                        && baseImplementationsByService.TryGetValue(
+                            elementType,
+                            out var baseImplementations
+                        )
+                    )
+                    {
+                        foreach (var implementationType in baseImplementations.Select(impl =>
+                                     impl.Registration.Type))
+                        {
+                            var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
+                                implementationType
+                            );
+                            AddNode(
+                                nodes,
+                                implementationType,
+                                "implementation",
+                                isMatched,
+                                false
+                            );
+                            edges.Add(
+                                new QudiVisualizationEdge(
+                                    implId,
+                                    implImplId,
+                                    "collection",
+                                    null,
+                                    null,
+                                    0
+                                )
+                            );
+                        }
+                    }
+                    else
+                    {
+                        // For collection types, create a 1:many relationship to the element type
+                        var elementId = QudiVisualizationAnalyzer.ToFullDisplayName(elementType);
+                        var isExternal = QudiVisualizationAnalyzer.IsExternalType(
+                            elementType,
+                            internalAssemblies
+                        );
+                        var isMissing = !isExternal && !registeredTypes.Contains(elementType);
+                        AddNode(
+                            nodes,
+                            elementType,
+                            isMissing ? "missing" : "service",
+                            isMatched,
+                            isExternal
+                        );
+                        edges.Add(
+                            new QudiVisualizationEdge(
+                                implId,
+                                elementId,
+                                "collection",
+                                null,
+                                null,
+                                0
+                            )
+                        );
+                    }
                 }
                 else
                 {
@@ -230,7 +306,107 @@ internal static class QudiVisualizationGraphBuilder
                                 )
                             )
                             {
-                                // Connect to final implementation(s)
+                                // Prefer composite as the final target when it exists
+                                if (
+                                    compositesByService.TryGetValue(
+                                        required,
+                                        out var composites
+                                    )
+                                )
+                                {
+                                    foreach (var composite in composites)
+                                    {
+                                        var compositeId = QudiVisualizationAnalyzer.ToFullDisplayName(
+                                            composite.Registration.Type
+                                        );
+                                        AddNode(
+                                            nodes,
+                                            composite.Registration.Type,
+                                            "composite",
+                                            isMatched,
+                                            false
+                                        );
+                                        edges.Add(
+                                            new QudiVisualizationEdge(
+                                                implId,
+                                                compositeId,
+                                                "registration",
+                                                null,
+                                                null,
+                                                0
+                                            )
+                                        );
+                                    }
+                                }
+                                else
+                                {
+                                    // Connect to final implementation(s)
+                                    foreach (
+                                        var implementationType in implementations.Select(impl =>
+                                            impl.Registration.Type
+                                        )
+                                    )
+                                    {
+                                        var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
+                                            implementationType
+                                        );
+                                        AddNode(
+                                            nodes,
+                                            implementationType,
+                                            "implementation",
+                                            isMatched,
+                                            false
+                                        );
+                                        edges.Add(
+                                            new QudiVisualizationEdge(
+                                                implId,
+                                                implImplId,
+                                                "registration",
+                                                null,
+                                                null,
+                                                0
+                                            )
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        else if (
+                            implementationsByService.TryGetValue(required, out var implementations)
+                        )
+                        {
+                            // No other decorators, connect to composite if it exists, otherwise to implementations
+                            if (
+                                compositesByService.TryGetValue(required, out var composites)
+                            )
+                            {
+                                foreach (var composite in composites)
+                                {
+                                    var compositeId = QudiVisualizationAnalyzer.ToFullDisplayName(
+                                        composite.Registration.Type
+                                    );
+                                    AddNode(
+                                        nodes,
+                                        composite.Registration.Type,
+                                        "composite",
+                                        isMatched,
+                                        false
+                                    );
+                                    edges.Add(
+                                        new QudiVisualizationEdge(
+                                            implId,
+                                            compositeId,
+                                            "registration",
+                                            null,
+                                            null,
+                                            0
+                                        )
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                // No other decorators, connect directly to implementation(s)
                                 foreach (
                                     var implementationType in implementations.Select(impl =>
                                         impl.Registration.Type
@@ -258,39 +434,6 @@ internal static class QudiVisualizationGraphBuilder
                                         )
                                     );
                                 }
-                            }
-                        }
-                        else if (
-                            implementationsByService.TryGetValue(required, out var implementations)
-                        )
-                        {
-                            // No other decorators, connect directly to implementation(s)
-                            foreach (
-                                var implementationType in implementations.Select(impl =>
-                                    impl.Registration.Type
-                                )
-                            )
-                            {
-                                var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                    implementationType
-                                );
-                                AddNode(
-                                    nodes,
-                                    implementationType,
-                                    "implementation",
-                                    isMatched,
-                                    false
-                                );
-                                edges.Add(
-                                    new QudiVisualizationEdge(
-                                        implId,
-                                        implImplId,
-                                        "registration",
-                                        null,
-                                        null,
-                                        0
-                                    )
-                                );
                             }
                         }
                     }
