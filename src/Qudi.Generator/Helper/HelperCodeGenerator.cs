@@ -448,30 +448,32 @@ internal static class HelperCodeGenerator
     )
     {
         // For ValueTask/ValueTask<T>, convert to Task and use WhenAll
-        builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<global::System.Threading.Tasks.Task>();");
-        builder.AppendLine($"foreach (var __service in {helperAccessor})");
-        using (builder.BeginScope())
-        {
-            if (returnType == "global::System.Threading.Tasks.ValueTask")
-            {
-                builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}).AsTask());");
-            }
-            else
-            {
-                builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}).AsTask());");
-            }
-        }
-        
         if (returnType == "global::System.Threading.Tasks.ValueTask")
         {
+            // ValueTask (no result)
+            builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<global::System.Threading.Tasks.Task>();");
+            builder.AppendLine($"foreach (var __service in {helperAccessor})");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}).AsTask());");
+            }
             builder.AppendLine($"await global::System.Threading.Tasks.Task.WhenAll(__tasks);");
         }
         else
         {
-            // ValueTask<T> - need to extract generic type and convert properly
-            var taskType = returnType.Replace("ValueTask", "Task");
-            builder.AppendLine($"var __results = await global::System.Threading.Tasks.Task.WhenAll(__tasks.Cast<{taskType}>());");
-            builder.AppendLine($"return new {returnType}(__results);");
+            // ValueTask<T> - need to collect results
+            // Extract the T from ValueTask<T>
+            var taskTypeWithT = returnType.Replace("global::System.Threading.Tasks.ValueTask<", "global::System.Threading.Tasks.Task<");
+            builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{taskTypeWithT}>();");
+            builder.AppendLine($"foreach (var __service in {helperAccessor})");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}).AsTask());");
+            }
+            // WhenAll returns T[], but we need to return just one value (first one)
+            // For composites with ValueTask<T>, we return the first result
+            builder.AppendLine($"var __results = await global::System.Threading.Tasks.Task.WhenAll(__tasks);");
+            builder.AppendLine($"return __results.Length > 0 ? __results[0] : default!;");
         }
     }
 

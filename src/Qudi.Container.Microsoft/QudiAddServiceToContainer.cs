@@ -308,7 +308,7 @@ public static class QudiAddServiceToContainer
     )
     {
         // Composites need special handling to avoid circular dependencies.
-        // Strategy: Register the composite with a factory that gets all NON-composite implementations
+        // Strategy: Manually resolve all non-composite implementations and pass them to the composite
         var lifetime = ConvertLifetime(composite.Lifetime);
         
         if (composite.AsTypes.Count == 0)
@@ -322,19 +322,9 @@ public static class QudiAddServiceToContainer
             return;
         }
 
-        // For composites, we need to:
-        // 1. NOT register the composite as the interface in a way that makes it appear in IEnumerable<T>
-        // 2. Create a factory that gets all services of the interface type registered BEFORE the composite
+        // For composites, we need to avoid circular dependency by providing
+        // a factory that gets all existing implementations except the composite itself
         
-        // Count how many services are already registered for each interface
-        var existingCounts = new Dictionary<Type, int>();
-        foreach (var asType in composite.AsTypes)
-        {
-            existingCounts[asType] = services.Count(d => d.ServiceType == asType);
-        }
-
-        // Register the composite with a factory that explicitly constructs it
-        // This factory will be called when someone requests the interface directly
         foreach (var asType in composite.AsTypes)
         {
             if (asType == composite.Type)
@@ -343,23 +333,38 @@ public static class QudiAddServiceToContainer
             }
 
             var capturedAsType = asType; // Capture for closure
-            var existingCount = existingCounts[asType];
+            
+            // Collect all existing service descriptors for this type (before adding the composite)
+            var existingDescriptors = services
+                .Where(d => d.ServiceType == capturedAsType)
+                .ToList();
             
             services.Add(
                 ServiceDescriptor.Describe(
                     asType,
                     sp =>
                     {
-                        // Get all existing implementations of this interface type
-                        // but only the ones that were registered BEFORE the composite
-                        var allServices = sp.GetServices(capturedAsType);
-                        var nonCompositeServices = allServices.Take(existingCount);
+                        // Manually resolve all the existing (non-composite) implementations
+                        var nonCompositeServices = new List<object>();
+                        foreach (var descriptor in existingDescriptors)
+                        {
+                            var service = descriptor.ImplementationType != null
+                                ? sp.GetRequiredService(descriptor.ImplementationType)
+                                : descriptor.ImplementationFactory != null
+                                    ? descriptor.ImplementationFactory(sp)
+                                    : descriptor.ImplementationInstance;
+                            
+                            if (service != null)
+                            {
+                                nonCompositeServices.Add(service);
+                            }
+                        }
                         
                         // Create the composite using the non-composite services
                         return ActivatorUtilities.CreateInstance(
                             sp,
                             composite.Type,
-                            nonCompositeServices
+                            nonCompositeServices.Cast<object>().ToArray()
                         );
                     },
                     lifetime
