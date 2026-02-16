@@ -138,7 +138,7 @@ you will see the following warning.
 
 ![getting start with warning](assets/getting-start-warning.png)
 
-This library has a feature that provides clear warnings for common mistakes.
+This library has a feature that provides clear [warnings for common mistakes](#registration-status-visualization).
 Let's fix it by setting the correct lifetime.  [Source](./examples/Qudi.Example.Snippets/003_CorrectLifetime.cs)
 
 ```csharp
