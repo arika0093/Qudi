@@ -51,6 +51,18 @@ public class CompositeMessageService(IEnumerable<IMessageService> innerServices)
     }
 }
 
+// Decorator that wraps the composite to add logging
+[QudiDecorator]
+public class LoggingMessageServiceDecorator(IMessageService innerService) : IMessageService
+{
+    public void SendMessage(string message)
+    {
+        Console.WriteLine("📋 Logging: Starting broadcast...");
+        innerService.SendMessage(message);
+        Console.WriteLine("📋 Logging: Broadcast completed");
+    }
+}
+
 [DITransient(Export = true)]
 public class CompositePatternExecutor(IMessageService messageService) : ISampleExecutor
 {
