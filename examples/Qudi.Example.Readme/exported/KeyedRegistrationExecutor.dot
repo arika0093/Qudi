@@ -1,6 +1,6 @@
 digraph Qudi {
   rankdir=LR;
-  node [shape=box, fontname="Arial"];
+node [shape=box, fontname="Consolas"];
   "Qudi.Examples.KeyedRegistration.EmailNotificationService" [label="EmailNotificationService", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.KeyedRegistration.INotificationService" [label="INotificationService", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
   "Qudi.Examples.KeyedRegistration.KeyedRegistrationExecutor" [label="KeyedRegistrationExecutor", shape=box, style=filled, fillcolor="#bbdefb"];

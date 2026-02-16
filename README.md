@@ -285,6 +285,23 @@ public class RealPaymentService : IPaymentService
 // [DITransient(When = ["testing"])]
 ```
 
+```mermaid
+flowchart LR
+    Qudi_Examples_ConditionalRegistration_MockPaymentService["MockPaymentService"]
+    Qudi_Examples_ConditionalRegistration_IPaymentService["IPaymentService"]
+    Qudi_Examples_ConditionalRegistration_RealPaymentService["RealPaymentService"]
+    Qudi_Examples_ConditionalRegistration_IPaymentService -->|Development| Qudi_Examples_ConditionalRegistration_MockPaymentService
+    Qudi_Examples_ConditionalRegistration_IPaymentService -->|Production| Qudi_Examples_ConditionalRegistration_RealPaymentService
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class Qudi_Examples_ConditionalRegistration_IPaymentService interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Qudi_Examples_ConditionalRegistration_MockPaymentService cls;
+    class Qudi_Examples_ConditionalRegistration_ConditionalRegistrationExecutor cls;
+    classDef unmatchedCls fill:#f5f5f5,stroke:#2196f3,stroke-width:1px,stroke-dasharray:3 3,color:#999;
+    class Qudi_Examples_ConditionalRegistration_RealPaymentService unmatchedCls;
+
+```
+
 then, specify the rules to apply each condition as an argument of the `AddQudiServices` method.
 
 ```csharp
@@ -415,6 +432,37 @@ public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validator
 }
 ```
 
+```mermaid
+flowchart LR
+    Qudi_Examples_GenericRegistration_NullComponentValidator_T_["NullComponentValidator#lt;T#gt;"]
+    Qudi_Examples_GenericRegistration_BatteryValidator["BatteryValidator"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_["IComponentValidator#lt;Battery#gt;"]
+    Qudi_Examples_GenericRegistration_BatteryAnotherValidator["BatteryAnotherValidator"]
+    Qudi_Examples_GenericRegistration_ScreenValidator["ScreenValidator"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_["IComponentValidator#lt;Screen#gt;"]
+    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor["GenericRegistrationExecutor"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_["IComponentValidator#lt;Keyboard#gt;"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryValidator
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryAnotherValidator
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ --> Qudi_Examples_GenericRegistration_ScreenValidator
+    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_
+    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_
+    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ --> Qudi_Examples_GenericRegistration_NullComponentValidator_T_
+    classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;
+    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ missing;
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ interface;
+    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Qudi_Examples_GenericRegistration_NullComponentValidator_T_ cls;
+    class Qudi_Examples_GenericRegistration_BatteryValidator cls;
+    class Qudi_Examples_GenericRegistration_BatteryAnotherValidator cls;
+    class Qudi_Examples_GenericRegistration_ScreenValidator cls;
+    class Qudi_Examples_GenericRegistration_GenericRegistrationExecutor cls;
+
+```
+
 ### Decorator Pattern
 #### Overview
 Decorator pattern is a useful technique to add functionality to existing services without modifying their code.
@@ -455,6 +503,30 @@ public interface IMessageService
 {
     void SendMessage(string message);
 }
+```
+
+```mermaid
+flowchart LR
+    Qudi_Examples_DecoratorPattern_MessageService["MessageService"]
+    Qudi_Examples_DecoratorPattern_IMessageService["IMessageService"]
+    Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator["LoggingMessageServiceDecorator"]
+    Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator["CensorshipMessageServiceDecorator"]
+    Microsoft_Extensions_Logging_ILogger_Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator_["ILogger#lt;LoggingMessageServiceDecorator#gt;"]
+    Qudi_Examples_DecoratorPattern_IMessageService --> Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator
+    Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator --> Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator
+    Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator --> Microsoft_Extensions_Logging_ILogger_Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator_
+    Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator --> Qudi_Examples_DecoratorPattern_MessageService
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class Qudi_Examples_DecoratorPattern_IMessageService interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Qudi_Examples_DecoratorPattern_MessageService cls;
+    class Qudi_Examples_DecoratorPattern_DecoratorPatternExecutor cls;
+    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;
+    class Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator decorator;
+    class Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator decorator;
+    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;
+    class Microsoft_Extensions_Logging_ILogger_Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator_ external;
+
 ```
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
@@ -708,6 +780,33 @@ public class CompositeMessageService(IEnumerable<IMessageService> innerServices)
 // -> LoggingMessageServiceDecorator
 // -> CompositeMessageService
 // -> [EmailMessageService, SmsMessageService]
+```
+
+```mermaid
+flowchart LR
+    Qudi_Examples_CompositePattern_EmailMessageService["EmailMessageService"]
+    Qudi_Examples_CompositePattern_IMessageService["IMessageService"]
+    Qudi_Examples_CompositePattern_SmsMessageService["SmsMessageService"]
+    Qudi_Examples_CompositePattern_PushNotificationService["PushNotificationService"]
+    Qudi_Examples_CompositePattern_LoggingMessageServiceDecorator["LoggingMessageServiceDecorator"]
+    Qudi_Examples_CompositePattern_CompositeMessageService["CompositeMessageService"]
+    Qudi_Examples_CompositePattern_IMessageService --> Qudi_Examples_CompositePattern_LoggingMessageServiceDecorator
+    Qudi_Examples_CompositePattern_LoggingMessageServiceDecorator --> Qudi_Examples_CompositePattern_CompositeMessageService
+    Qudi_Examples_CompositePattern_CompositeMessageService -.->|"*"| Qudi_Examples_CompositePattern_EmailMessageService
+    Qudi_Examples_CompositePattern_CompositeMessageService -.->|"*"| Qudi_Examples_CompositePattern_SmsMessageService
+    Qudi_Examples_CompositePattern_CompositeMessageService -.->|"*"| Qudi_Examples_CompositePattern_PushNotificationService
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class Qudi_Examples_CompositePattern_IMessageService interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Qudi_Examples_CompositePattern_EmailMessageService cls;
+    class Qudi_Examples_CompositePattern_SmsMessageService cls;
+    class Qudi_Examples_CompositePattern_PushNotificationService cls;
+    class Qudi_Examples_CompositePattern_CompositePatternExecutor cls;
+    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;
+    class Qudi_Examples_CompositePattern_LoggingMessageServiceDecorator decorator;
+    classDef composite fill:#f8d7da,stroke:#c62828,stroke-width:2px,color:#000;
+    class Qudi_Examples_CompositePattern_CompositeMessageService composite;
+
 ```
 
 #### Auto Implementation for Composite

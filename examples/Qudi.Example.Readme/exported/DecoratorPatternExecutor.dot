@@ -1,6 +1,6 @@
 digraph Qudi {
   rankdir=LR;
-  node [shape=box, fontname="Arial"];
+node [shape=box, fontname="Consolas"];
   "Qudi.Examples.DecoratorPattern.CensorshipMessageServiceDecorator" [label="CensorshipMessageServiceDecorator", shape=box, style=filled, fillcolor="#e1bee7"];
   "Qudi.Examples.DecoratorPattern.DecoratorPatternExecutor" [label="DecoratorPatternExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
   "Microsoft.Extensions.Logging.ILogger<Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator>" [label="ILogger<LoggingMessageServiceDecorator>", shape=ellipse, style=dashed, fillcolor="#ffe0b2", color="#ff9800"];

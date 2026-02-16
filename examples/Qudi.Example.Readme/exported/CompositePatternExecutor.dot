@@ -1,6 +1,6 @@
 digraph Qudi {
   rankdir=LR;
-  node [shape=box, fontname="Arial"];
+node [shape=box, fontname="Consolas"];
   "Qudi.Examples.CompositePattern.CompositeMessageService" [label="CompositeMessageService", shape=box, style=filled, fillcolor="#f8d7da", color="#c62828"];
   "Qudi.Examples.CompositePattern.CompositePatternExecutor" [label="CompositePatternExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.CompositePattern.EmailMessageService" [label="EmailMessageService", shape=box, style=filled, fillcolor="#bbdefb"];

@@ -6,12 +6,18 @@ namespace Qudi.Visualizer.OutputWriter;
 
 internal static class DotOutputWriter
 {
+    private const string FontName = "Consolas";
+
     public static string Generate(QudiVisualizationGraph graph)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("digraph Qudi {");
-        sb.AppendLine("  rankdir=LR;");
-        sb.AppendLine("  node [shape=box, fontname=\"Arial\"];");
+        sb.AppendLine(
+            $$"""
+            digraph Qudi {
+              rankdir=LR;
+            node [shape=box, fontname="{{FontName}}"];
+            """
+        );
 
         foreach (var node in graph.Nodes.OrderBy(n => n.Label, StringComparer.Ordinal))
         {

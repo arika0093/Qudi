@@ -14,8 +14,6 @@ flowchart LR
     Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_
     Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_
     Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_NullComponentValidator_T_
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ --> Qudi_Examples_GenericRegistration_NullComponentValidator_T_
     Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ --> Qudi_Examples_GenericRegistration_NullComponentValidator_T_
     classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;
     class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ missing;

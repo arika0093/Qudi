@@ -1,6 +1,6 @@
 digraph Qudi {
   rankdir=LR;
-  node [shape=box, fontname="Arial"];
+node [shape=box, fontname="Consolas"];
   "Qudi.Examples.SimpleUsage.Abomasnow" [label="Abomasnow", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.SimpleUsage.Altaria" [label="Altaria", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.SimpleUsage.Azumarill" [label="Azumarill", shape=box, style=filled, fillcolor="#bbdefb"];

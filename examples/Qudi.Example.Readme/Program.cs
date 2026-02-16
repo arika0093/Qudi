@@ -19,6 +19,7 @@ services.AddQudiServices(conf =>
 {
     conf.EnableVisualizationOutput(option =>
     {
+        option.AddOutput("exported/all.dot");
         option.ConsoleOutput = ConsoleDisplay.All;
         option.SetOutputDirectory(
             "exported/",

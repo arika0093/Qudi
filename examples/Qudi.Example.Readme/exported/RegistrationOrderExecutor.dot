@@ -1,6 +1,6 @@
 digraph Qudi {
   rankdir=LR;
-  node [shape=box, fontname="Arial"];
+node [shape=box, fontname="Consolas"];
   "Qudi.Examples.RegistrationOrder.FirstService" [label="FirstService", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.RegistrationOrder.IService" [label="IService", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
   "Qudi.Examples.RegistrationOrder.RegistrationOrderExecutor" [label="RegistrationOrderExecutor", shape=box, style=filled, fillcolor="#bbdefb"];

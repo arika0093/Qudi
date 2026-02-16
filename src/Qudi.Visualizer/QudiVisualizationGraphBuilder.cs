@@ -86,7 +86,9 @@ internal static class QudiVisualizationGraphBuilder
 
         // Non-decorator, non-composite implementations (used for composite inner services)
         var baseImplementationsByService = registrationViews
-            .Where(v => !v.Registration.MarkAsDecorator && !v.Registration.MarkAsComposite && v.IsMatched)
+            .Where(v =>
+                !v.Registration.MarkAsDecorator && !v.Registration.MarkAsComposite && v.IsMatched
+            )
             .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
             .GroupBy(x => x.Service)
             .ToDictionary(g => g.Key, g => g.Select(x => x.View).ToList());
@@ -203,19 +205,16 @@ internal static class QudiVisualizationGraphBuilder
                         )
                     )
                     {
-                        foreach (var implementationType in baseImplementations.Select(impl =>
-                                     impl.Registration.Type))
+                        foreach (
+                            var implementationType in baseImplementations.Select(impl =>
+                                impl.Registration.Type
+                            )
+                        )
                         {
                             var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
                                 implementationType
                             );
-                            AddNode(
-                                nodes,
-                                implementationType,
-                                "implementation",
-                                isMatched,
-                                false
-                            );
+                            AddNode(nodes, implementationType, "implementation", isMatched, false);
                             edges.Add(
                                 new QudiVisualizationEdge(
                                     implId,
@@ -307,18 +306,18 @@ internal static class QudiVisualizationGraphBuilder
                             )
                             {
                                 // Prefer composite as the final target when it exists
-                                if (
-                                    compositesByService.TryGetValue(
-                                        required,
-                                        out var composites
-                                    )
-                                )
+                                if (compositesByService.TryGetValue(required, out var composites))
                                 {
-                                    foreach (var compositeType in composites.Select(c => c.Registration.Type))
+                                    foreach (
+                                        var compositeType in composites.Select(c =>
+                                            c.Registration.Type
+                                        )
+                                    )
                                     {
-                                        var compositeId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                            compositeType
-                                        );
+                                        var compositeId =
+                                            QudiVisualizationAnalyzer.ToFullDisplayName(
+                                                compositeType
+                                            );
                                         AddNode(
                                             nodes,
                                             compositeType,
@@ -347,9 +346,10 @@ internal static class QudiVisualizationGraphBuilder
                                         )
                                     )
                                     {
-                                        var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
-                                            implementationType
-                                        );
+                                        var implImplId =
+                                            QudiVisualizationAnalyzer.ToFullDisplayName(
+                                                implementationType
+                                            );
                                         AddNode(
                                             nodes,
                                             implementationType,
@@ -376,22 +376,16 @@ internal static class QudiVisualizationGraphBuilder
                         )
                         {
                             // No other decorators, connect to composite if it exists, otherwise to implementations
-                            if (
-                                compositesByService.TryGetValue(required, out var composites)
-                            )
+                            if (compositesByService.TryGetValue(required, out var composites))
                             {
-                                foreach (var compositeType in composites.Select(c => c.Registration.Type))
+                                foreach (
+                                    var compositeType in composites.Select(c => c.Registration.Type)
+                                )
                                 {
                                     var compositeId = QudiVisualizationAnalyzer.ToFullDisplayName(
                                         compositeType
                                     );
-                                    AddNode(
-                                        nodes,
-                                        compositeType,
-                                        "composite",
-                                        isMatched,
-                                        false
-                                    );
+                                    AddNode(nodes, compositeType, "composite", isMatched, false);
                                     edges.Add(
                                         new QudiVisualizationEdge(
                                             implId,
@@ -525,6 +519,15 @@ internal static class QudiVisualizationGraphBuilder
                 );
 
                 if (!hasMatchingServiceType)
+                {
+                    continue;
+                }
+
+                var hasClosedImplementation = implementationsByService.TryGetValue(
+                    nodeType,
+                    out var closedImplementations
+                ) && closedImplementations.Any(impl => !impl.Registration.Type.IsGenericTypeDefinition);
+                if (hasClosedImplementation)
                 {
                     continue;
                 }

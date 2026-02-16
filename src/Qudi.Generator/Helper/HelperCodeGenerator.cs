@@ -12,6 +12,8 @@ namespace Qudi.Generator.Helper;
 internal static class HelperCodeGenerator
 {
     private const string IEnumerable = "global::System.Collections.Generic.IEnumerable";
+    private const string Task = "global::System.Threading.Tasks.Task";
+    private const string ValueTask = "global::System.Threading.Tasks.ValueTask";
 
     // Static compiled regex for better performance
     private static readonly Regex EnumerableTypeExtractor = new Regex(
@@ -311,8 +313,7 @@ internal static class HelperCodeGenerator
         // but may need enhancement for edge cases with similar type names.
         var isVoid = returnType == "void";
         var isBool = returnType == "bool";
-        var isTask = returnType.StartsWith("global::System.Threading.Tasks.Task");
-        var isValueTask = returnType.StartsWith("global::System.Threading.Tasks.ValueTask");
+        var isTask = returnType.StartsWith(Task);
         var isIEnumerable =
             returnType.Contains("IEnumerable")
             || returnType.Contains("ICollection")
@@ -343,16 +344,6 @@ internal static class HelperCodeGenerator
                     arguments,
                     returnType,
                     useWhenAll: true
-                );
-            }
-            else if (isValueTask)
-            {
-                AppendCompositeValueTaskMethod(
-                    builder,
-                    method,
-                    helperAccessor,
-                    arguments,
-                    returnType
                 );
             }
             else if (isIEnumerable)
@@ -447,92 +438,21 @@ internal static class HelperCodeGenerator
         if (useWhenAll)
         {
             // CompositeResult.All or default - use WhenAll (works for Task and Task<T>)
-            builder.AppendLine($"return global::System.Threading.Tasks.Task.WhenAll(__tasks);");
+            builder.AppendLine($"return {Task}.WhenAll(__tasks);");
         }
         else
         {
             // CompositeResult.Any - use WhenAny
-            if (returnType == "global::System.Threading.Tasks.Task")
+            if (returnType == Task)
             {
-                builder.AppendLine($"return global::System.Threading.Tasks.Task.WhenAny(__tasks);");
+                builder.AppendLine($"return {Task}.WhenAny(__tasks);");
             }
             else
             {
                 // Task<T> - WhenAny returns Task<Task<T>>, so we need to unwrap
-                builder.AppendLine(
-                    $"var __firstCompleted = await global::System.Threading.Tasks.Task.WhenAny(__tasks);"
-                );
+                builder.AppendLine($"var __firstCompleted = await {Task}.WhenAny(__tasks);");
                 builder.AppendLine($"return await __firstCompleted;");
             }
-        }
-    }
-
-    private static void AppendCompositeValueTaskMethod(
-        IndentedStringBuilder builder,
-        HelperMember method,
-        string helperAccessor,
-        string arguments,
-        string returnType
-    )
-    {
-        // For ValueTask/ValueTask<T>, we need to handle them synchronously since
-        // default interface implementations can't easily use async
-        // Strategy: Convert to Task, create async lambda, and return as ValueTask
-        if (returnType == "global::System.Threading.Tasks.ValueTask")
-        {
-            // ValueTask (no result)
-            builder.AppendLine("return new global::System.Threading.Tasks.ValueTask(");
-            builder.IncreaseIndent();
-            builder.AppendLine("global::System.Threading.Tasks.Task.Run(async () =>");
-            using (builder.BeginScope())
-            {
-                builder.AppendLine(
-                    "var __tasks = new global::System.Collections.Generic.List<global::System.Threading.Tasks.Task>();"
-                );
-                builder.AppendLine($"foreach (var __service in {helperAccessor})");
-                using (builder.BeginScope())
-                {
-                    builder.AppendLine(
-                        $"__tasks.Add(__service.{method.Name}({arguments}).AsTask());"
-                    );
-                }
-                builder.AppendLine("await global::System.Threading.Tasks.Task.WhenAll(__tasks);");
-            }
-            builder.AppendLine(")");
-            builder.DecreaseIndent();
-            builder.AppendLine(");");
-        }
-        else
-        {
-            // ValueTask<T> - need to collect results
-            // Extract the T from ValueTask<T>
-            var taskTypeWithT = returnType.Replace(
-                "global::System.Threading.Tasks.ValueTask<",
-                "global::System.Threading.Tasks.Task<"
-            );
-            builder.AppendLine($"return new {returnType}(");
-            builder.IncreaseIndent();
-            builder.AppendLine("global::System.Threading.Tasks.Task.Run(async () =>");
-            using (builder.BeginScope())
-            {
-                builder.AppendLine(
-                    $"var __tasks = new global::System.Collections.Generic.List<{taskTypeWithT}>();"
-                );
-                builder.AppendLine($"foreach (var __service in {helperAccessor})");
-                using (builder.BeginScope())
-                {
-                    builder.AppendLine(
-                        $"__tasks.Add(__service.{method.Name}({arguments}).AsTask());"
-                    );
-                }
-                builder.AppendLine(
-                    "var __results = await global::System.Threading.Tasks.Task.WhenAll(__tasks);"
-                );
-                builder.AppendLine("return __results.Length > 0 ? __results[0] : default!;");
-            }
-            builder.AppendLine("})");
-            builder.DecreaseIndent();
-            builder.AppendLine(");");
         }
     }
 
@@ -805,13 +725,12 @@ internal static class HelperCodeGenerator
     private static bool IsTaskLikeReturnType(string returnType)
     {
         return IsTaskLikeNonGenericReturnType(returnType)
-            || returnType.StartsWith("global::System.Threading.Tasks.Task<")
-            || returnType.StartsWith("global::System.Threading.Tasks.ValueTask<");
+            || returnType.StartsWith($"{Task}<")
+            || returnType.StartsWith($"{ValueTask}<");
     }
 
     private static bool IsTaskLikeNonGenericReturnType(string returnType)
     {
-        return returnType == "global::System.Threading.Tasks.Task"
-            || returnType == "global::System.Threading.Tasks.ValueTask";
+        return returnType == $"{Task}" || returnType == $"{ValueTask}";
     }
 }

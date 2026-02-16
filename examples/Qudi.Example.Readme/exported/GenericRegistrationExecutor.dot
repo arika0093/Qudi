@@ -1,6 +1,6 @@
 digraph Qudi {
   rankdir=LR;
-  node [shape=box, fontname="Arial"];
+node [shape=box, fontname="Consolas"];
   "Qudi.Examples.GenericRegistration.BatteryAnotherValidator" [label="BatteryAnotherValidator", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.GenericRegistration.BatteryValidator" [label="BatteryValidator", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" [label="GenericRegistrationExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
@@ -15,7 +15,5 @@ digraph Qudi {
   "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" [label="*", style=dashed];
   "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" [label="*", style=dashed];
   "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" [label="*", style=dashed];
-  "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" -> "Qudi.Examples.GenericRegistration.NullComponentValidator<T>";
-  "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" -> "Qudi.Examples.GenericRegistration.NullComponentValidator<T>";
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" -> "Qudi.Examples.GenericRegistration.NullComponentValidator<T>";
 }
