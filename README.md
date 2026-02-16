@@ -6,19 +6,28 @@ Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 
 ![Qudi - Quickly Dependency Injection](./assets/hero.png)
 
-## Quick Start
-### Overview
+## Getting Started
+### First Step
 Well, it's easier to show you than to explain it. 😉
 
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*
+#:package Qudi.Visualizer@*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
+using Qudi.Visualizer;
 
 var services = new ServiceCollection();
-// ✅️ register services marked with Qudi attributes (see below)
-services.AddQudiServices();
+
+// ✅️ register services marked with Qudi attributes
+services.AddQudiServices(conf => {
+    // ✅️ enable visualization output to console and file
+    conf.EnableVisualizationOutput(option => {
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.AddOutput("summary.md");
+    });
+});
 
 var provider = services.BuildServiceProvider();
 var pokemons = provider.GetServices<IPokemon>();
@@ -49,10 +58,6 @@ public class Abomasnow : IPokemon
     public string Name => "Abomasnow";
     public IEnumerable<string> Types => ["Grass", "Ice"];
 }
-
-// Output:
-// > Altaria is a Dragon/Flying type Pokémon.
-// > Abomasnow is a Grass/Ice type Pokémon.
 ```
 
 As you can see, just these two steps. 
@@ -74,13 +79,268 @@ public IServiceCollection AddQudiServices(this IServiceCollection services, Acti
 }
 ```
 
-Want to know more about the internal behavior? See the [Architecture](#architecture) section.
+When you run the application in this state, a simple registration status viewer will be displayed 🎉
+![getting start](assets/getting-start-list.png)
 
-### Installation
+A diagram showing the registration status is also output.
+
+```mermaid
+flowchart LR
+    Altaria["Altaria"]
+    IPokemon["IPokemon"]
+    Abomasnow["Abomasnow"]
+    IPokemon --> Altaria
+    IPokemon --> Abomasnow
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IPokemon interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Altaria cls;
+    class Abomasnow cls;
+
+```
+
+### Analytics
+Let's add a class `DisplayPokemonService` to call the registered `IPokemon` together. [Source](./examples/Qudi.Example.Snippets/002_WrongLifetime.cs)
+
+```csharp
+[DISingleton] // WARN: this is wrong!
+public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
+{
+    public void DisplayAll()
+    {
+        foreach (var pokemon in pokemons)
+        {
+            pokemon.DisplayInfo();
+        }
+    }
+}
+```
+
+Note that it is registered as Singleton (by mistake). If it contains Transient services, it will cause issues with proper disposal.
+
+Let's run the application in this state.
+
+```csharp
+var provider = services.BuildServiceProvider();
+var displayService = provider.GetRequiredService<DisplayPokemonService>(); 
+displayService.DisplayAll();
+```
+
+you will see the following warning ⚠️
+
+![getting start with warning](assets/getting-start-warning.png)
+
+This library has a feature that provides clear warnings for common mistakes.
+
+---
+
+Let's fix it by setting the correct lifetime.  [Source](./examples/Qudi.Example.Snippets/003_CorrectLifetime.cs)
+
+```csharp
+[DITransient] // FIX: change to transient
+public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
+```
+
+Now, the warning is gone and the application runs successfully 🎉
+![correct lifetime](assets/getting-start-correct.png)
+
+Of course, the diagram will also be updated.
+
+```mermaid
+flowchart LR
+    Altaria["Altaria"]
+    IPokemon["IPokemon"]
+    Abomasnow["Abomasnow"]
+    DisplayPokemonService["DisplayPokemonService"]
+    IPokemon --> Altaria
+    IPokemon --> Abomasnow
+    DisplayPokemonService -.->|"*"| IPokemon
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IPokemon interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Altaria cls;
+    class Abomasnow cls;
+    class DisplayPokemonService cls;
+
+```
+
+### Decorator and Compposit
+You can easily implement the Decorator and Composite patterns using Qudi’s features. First, let’s take a look at the Decorator pattern.
+
+A decorator is a design pattern that adds functionality to an existing service without modifying its code.
+Here we’ll implement a decorator that adds decorative output before and after console output.
+Create a class that accepts `IPokemon` in the constructor and also implements `IPokemon`, like the following. [Source](./examples/Qudi.Example.Snippets/004_Decorator.cs)
+
+```csharp
+[QudiDecorator]
+public partial class PokemonDecorator(IPokemon decorated) : IPokemon
+{
+    public void DisplayInfo()
+    {
+        Console.WriteLine("=== Decorated Pokémon Info ===");
+        decorated.DisplayInfo();
+        Console.WriteLine("==============================");
+    }
+    // you don't need to implement Name and Types, they will be auto-implemented by generated code
+}
+```
+
+When you run this, you will see the following console output.
+
+```
+=== Decorated Pokémon Info ===
+Altaria is a Dragon/Flying type Pokémon.
+==============================
+=== Decorated Pokémon Info ===
+Abomasnow is a Grass/Ice type Pokémon.
+==============================
+```
+
+The generated diagram makes it easy to understand what is happening.
+That is, the `PokemonDecorator` is registered to be called before and after the actual implementations (`Altaria` and `Abomasnow`) are called.
+
+```mermaid
+flowchart LR
+    Altaria["Altaria"]
+    IPokemon["IPokemon"]
+    Abomasnow["Abomasnow"]
+    DisplayPokemonService["DisplayPokemonService"]
+    PokemonDecorator["PokemonDecorator"]
+    DisplayPokemonService -.->|"*"| IPokemon
+    IPokemon --> PokemonDecorator
+    PokemonDecorator --> Altaria
+    PokemonDecorator --> Abomasnow
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IPokemon interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Altaria cls;
+    class Abomasnow cls;
+    class DisplayPokemonService cls;
+    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;
+    class PokemonDecorator decorator;
+
+```
+
+---
+
+`DisplayPokemonService` is just a service that calls `IPokemon.DisplayInfo()` together.
+In this case, you want to be able to simply call `IPokemon` without being aware that multiple `IPokemon` are registered from the caller, and have all registered `IPokemon` called just by calling `IPokemon`.
+Such a service can be easily implemented using `[QudiComposite]`. [Source](./examples/Qudi.Example.Snippets/005_Composite.cs)
+
+```csharp
+var provider = services.BuildServiceProvider();
+// ✅️ resolve as IPokemon, not DisplayPokemonService
+var displayService = provider.GetRequiredService<IPokemon>();
+displayService.DisplayInfo();
+
+[QudiComposite]
+public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPokemon
+{
+    // all methods of IPokemon will be implemented
+    // to call the corresponding method of each IPokemon in pokemons.
+}
+```
+
+Note that we are resolving `IPokemon` instead of `DisplayPokemonService` with `RequiredService`.
+When you run the application in this state, the result will be as follows.
+
+```bash
+=== Decorated Pokémon Info ===
+Altaria is a Dragon/Flying type Pokémon.
+Abomasnow is a Grass/Ice type Pokémon.
+==============================
+```
+
+```mermaid
+flowchart LR
+    Altaria["Altaria"]
+    IPokemon["IPokemon"]
+    Abomasnow["Abomasnow"]
+    PokemonDecorator["PokemonDecorator"]
+    DisplayPokemonService["DisplayPokemonService"]
+    IPokemon --> PokemonDecorator
+    PokemonDecorator --> DisplayPokemonService
+    DisplayPokemonService -.->|"*"| Altaria
+    DisplayPokemonService -.->|"*"| Abomasnow
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IPokemon interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Altaria cls;
+    class Abomasnow cls;
+    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;
+    class PokemonDecorator decorator;
+    classDef composite fill:#f8d7da,stroke:#c62828,stroke-width:2px,color:#000;
+    class DisplayPokemonService composite;
+
+```
+
+By using `[QudiComposite]`, you can provide multiple implementations together as a single interface.
+
+If you want to control the order, you can specify the order of decorators and composites using the `Order` property. [Source](./examples/Qudi.Example.Snippets/006_Composit_order.cs)
+
+```csharp
+[QudiComposite(Order = 0)]
+public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPokemon { }
+
+[QudiDecorator(Order = 1)]
+public partial class PokemonDecorator(IPokemon decorated) : IPokemon
+{
+    public void DisplayInfo()
+    {
+        Console.WriteLine("=== Decorated Pokémon Info ===");
+        decorated.DisplayInfo();
+        Console.WriteLine("==============================");
+    }
+}
+```
+
+In this case, the output will be as follows.
+
+```
+=== Decorated Pokémon Info ===
+Altaria is a Dragon/Flying type Pokémon.
+==============================
+=== Decorated Pokémon Info ===
+Abomasnow is a Grass/Ice type Pokémon.
+==============================
+```
+
+```mermaid
+flowchart LR
+    Altaria["Altaria"]
+    IPokemon["IPokemon"]
+    Abomasnow["Abomasnow"]
+    PokemonDecorator["PokemonDecorator"]
+    DisplayPokemonService["DisplayPokemonService"]
+    IPokemon -->|Order:1| PokemonDecorator
+    PokemonDecorator --> DisplayPokemonService
+    DisplayPokemonService -.->|"*"| Altaria
+    DisplayPokemonService -.->|"*"| Abomasnow
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IPokemon interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Altaria cls;
+    class Abomasnow cls;
+    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;
+    class PokemonDecorator decorator;
+    classDef composite fill:#f8d7da,stroke:#c62828,stroke-width:2px,color:#000;
+    class DisplayPokemonService composite;
+
+```
+
+
+
+## Installation
 Install `Qudi` from NuGet.
 
 ```bash
 dotnet add package Qudi
+```
+
+If you want to use [visualization](#visualize-registration) support (useful during development), install `Qudi.Visualizer`.
+
+```bash
+dotnet add package Qudi.Visualizer
 ```
 
 Alternatively, you can install `Qudi.Core`, `Qudi.Generator` and `Qudi.Container.*` packages separately.
@@ -853,17 +1113,13 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
 Qudi collects registration information and generates code.
 Therefore, it is possible to visualize the registration status and dependencies based on the collected information.
 
-When visualization is needed, add the package reference as follows in your project file.
+When visualization is needed, add `Qudi.Visualizer` package to your project.
 
-```xml
-<Project>
-  <ItemGroup>
-    <PackageReference Include="Qudi.Visualizer" Version="*" Condition="'$(Configuration)' == 'Debug'" />
-  </ItemGroup>
-</Project>
+```bash
+dotnet add package Qudi.Visualizer
 ```
 
-Then, call `EnableVisualizationOutput`.
+Then, call `EnableVisualizationOutput` in the configuration of `AddQudiServices` to enable visualization output.
 
 ```csharp
 services.AddQudiServices(conf => {
@@ -873,8 +1129,29 @@ services.AddQudiServices(conf => {
 });
 ```
 
-> [!TIP]
-> Since visualization is mainly needed during development, it is recommended to enable it only for DEBUG builds.
+<details>
+<summary> Enable Visualization only for DEBUG Builds </summary>
+
+Since visualization is mainly needed during development, it is recommended to enable it only for DEBUG builds.
+
+```xml
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Qudi.Visualizer" Version="*" />
+  </ItemGroup>
+</Project>
+```
+```csharp
+services.AddQudiServices(conf => {
+#if DEBUG
+    conf.EnableVisualizationOutput(option => {
+        // customize visualization options here
+    });
+#endif
+});
+```
+
+</details>
 
 ### Registration Status Visualization
 When visualization is enabled, visual runtime errors will be output when there are issues in the registration, such as missing registrations or circular dependencies. This helps you identify and resolve problems in your registration.
@@ -895,23 +1172,17 @@ When there are potential lifetime issues in your registrations, such as a single
 ![Lifetime warning visualization](./assets/lifetime-warning.png)
 
 ### Customize Output
-By default, statistical information, lists (only when the count is small), and warnings are output. You can specify options as an argument of `EnableVisualizationOutput` to customize it.
+By default, statistical information and warnings are output. You can specify options as an argument of `EnableVisualizationOutput` to customize it.
 
 ```csharp
 services.AddQudiServices(conf => {
     conf.EnableVisualizationOutput(option => {
-        // Summary + Issues
+        // Summary + Issues (Default)
         option.ConsoleOutput = ConsoleDisplay.Summary | ConsoleDisplay.Issues;
         // Always output list, even if the count is large
         option.ConsoleOutput = ConsoleDisplay.All;
         // No output to console
         option.ConsoleOutput = ConsoleDisplay.None;
-        // Output to Logger
-        option.LoggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddConsole();
-            builder.SetMinimumLevel(LogLevel.Information);
-        });
     });
 });
 ```
