@@ -364,7 +364,7 @@ public static class QudiAddServiceToContainer
                         return ActivatorUtilities.CreateInstance(
                             sp,
                             composite.Type,
-                            nonCompositeServices.Cast<object>().ToArray()
+                            nonCompositeServices.ToArray()
                         );
                     },
                     lifetime
