@@ -11,6 +11,9 @@ Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 ### First Step
 Well, it's easier to show you than to explain it. 😉
 
+<details>
+<summary>Code Example</summary>
+
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*
@@ -60,6 +63,8 @@ public class Abomasnow : IPokemon
     public IEnumerable<string> Types => ["Grass", "Ice"];
 }
 ```
+
+</details>
 
 As you can see, just these two steps. 
 
