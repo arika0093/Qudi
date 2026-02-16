@@ -1,0 +1,13 @@
+digraph Qudi {
+  rankdir=LR;
+  node [shape=box, fontname="Arial"];
+  "Qudi.Examples.RegistrationOrder.FirstService" [label="FirstService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.RegistrationOrder.IService" [label="IService", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Examples.RegistrationOrder.RegistrationOrderExecutor" [label="RegistrationOrderExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.RegistrationOrder.SecondService" [label="SecondService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.RegistrationOrder.ThirdService" [label="ThirdService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.RegistrationOrder.IService" -> "Qudi.Examples.RegistrationOrder.FirstService";
+  "Qudi.Examples.RegistrationOrder.IService" -> "Qudi.Examples.RegistrationOrder.SecondService";
+  "Qudi.Examples.RegistrationOrder.IService" -> "Qudi.Examples.RegistrationOrder.ThirdService";
+  "Qudi.Examples.RegistrationOrder.RegistrationOrderExecutor" -> "Qudi.Examples.RegistrationOrder.IService" [label="*", style=dashed];
+}

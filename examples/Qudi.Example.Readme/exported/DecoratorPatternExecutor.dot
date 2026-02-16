@@ -1,0 +1,15 @@
+digraph Qudi {
+  rankdir=LR;
+  node [shape=box, fontname="Arial"];
+  "Qudi.Examples.DecoratorPattern.CensorshipMessageServiceDecorator" [label="CensorshipMessageServiceDecorator", shape=box, style=filled, fillcolor="#e1bee7"];
+  "Qudi.Examples.DecoratorPattern.DecoratorPatternExecutor" [label="DecoratorPatternExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Microsoft.Extensions.Logging.ILogger<Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator>" [label="ILogger<LoggingMessageServiceDecorator>", shape=ellipse, style=dashed, fillcolor="#ffe0b2", color="#ff9800"];
+  "Qudi.Examples.DecoratorPattern.IMessageService" [label="IMessageService", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator" [label="LoggingMessageServiceDecorator", shape=box, style=filled, fillcolor="#e1bee7"];
+  "Qudi.Examples.DecoratorPattern.MessageService" [label="MessageService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.DecoratorPattern.DecoratorPatternExecutor" -> "Qudi.Examples.DecoratorPattern.IMessageService";
+  "Qudi.Examples.DecoratorPattern.IMessageService" -> "Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator";
+  "Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator" -> "Qudi.Examples.DecoratorPattern.CensorshipMessageServiceDecorator";
+  "Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator" -> "Microsoft.Extensions.Logging.ILogger<Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator>";
+  "Qudi.Examples.DecoratorPattern.CensorshipMessageServiceDecorator" -> "Qudi.Examples.DecoratorPattern.MessageService";
+}

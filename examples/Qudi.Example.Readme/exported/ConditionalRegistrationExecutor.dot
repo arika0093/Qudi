@@ -1,0 +1,11 @@
+digraph Qudi {
+  rankdir=LR;
+  node [shape=box, fontname="Arial"];
+  "Qudi.Examples.ConditionalRegistration.ConditionalRegistrationExecutor" [label="ConditionalRegistrationExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.ConditionalRegistration.IPaymentService" [label="IPaymentService", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Examples.ConditionalRegistration.MockPaymentService" [label="MockPaymentService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.ConditionalRegistration.RealPaymentService" [label="RealPaymentService", shape=box, style="filled,dashed", fillcolor="#f5f5f5", color="#2196f3"];
+  "Qudi.Examples.ConditionalRegistration.IPaymentService" -> "Qudi.Examples.ConditionalRegistration.MockPaymentService" [label="Development"];
+  "Qudi.Examples.ConditionalRegistration.IPaymentService" -> "Qudi.Examples.ConditionalRegistration.RealPaymentService" [label="Production"];
+  "Qudi.Examples.ConditionalRegistration.ConditionalRegistrationExecutor" -> "Qudi.Examples.ConditionalRegistration.IPaymentService";
+}
