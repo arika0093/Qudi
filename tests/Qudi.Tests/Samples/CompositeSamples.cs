@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Qudi;
@@ -156,5 +157,5 @@ public sealed class AsyncServiceB : IAsyncService
 public sealed partial class CompositeAsyncService(IEnumerable<IAsyncService> innerServices)
     : IAsyncService
 {
-    public static readonly List<string> ProcessedItems = new();
+    public static readonly ConcurrentBag<string> ProcessedItems = new();
 }

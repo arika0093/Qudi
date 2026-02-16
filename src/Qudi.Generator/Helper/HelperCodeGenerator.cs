@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Qudi.Generator;
 using Qudi.Generator.Utility;
@@ -11,6 +12,12 @@ namespace Qudi.Generator.Helper;
 internal static class HelperCodeGenerator
 {
     private const string IEnumerable = "global::System.Collections.Generic.IEnumerable";
+    
+    // Static compiled regex for better performance
+    private static readonly Regex EnumerableTypeExtractor = new Regex(
+        @"<([^<>]+)>$",
+        RegexOptions.Compiled
+    );
 
     public static void GenerateHelpers(SourceProductionContext context, HelperGenerationInput input)
     {
@@ -296,6 +303,8 @@ internal static class HelperCodeGenerator
         var interfaceName = method.DeclaringInterfaceName;
         
         // Determine return type category
+        // Note: Using string-based detection for simplicity. This works for most common cases
+        // but may need enhancement for edge cases with similar type names.
         var isVoid = returnType == "void";
         var isBool = returnType == "bool";
         var isTask = returnType.StartsWith("global::System.Threading.Tasks.Task");
@@ -381,7 +390,8 @@ internal static class HelperCodeGenerator
     private static string ExtractEnumerableType(string enumerableType)
     {
         // Extract T from IEnumerable<T>, ICollection<T>, IList<T>, etc.
-        var match = System.Text.RegularExpressions.Regex.Match(enumerableType, @"<(.+)>$");
+        // Use the static compiled regex for better performance
+        var match = EnumerableTypeExtractor.Match(enumerableType);
         if (match.Success)
         {
             return match.Groups[1].Value;
