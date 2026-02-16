@@ -122,12 +122,7 @@ internal static class QudiVisualizationAnalyzer
             implList.Add(registration);
         }
 
-        return new VisualizationContext(
-            configuration,
-            applicable,
-            serviceMap,
-            implementationMap
-        );
+        return new VisualizationContext(configuration, applicable, serviceMap, implementationMap);
     }
 
     private static List<QudiMissingRegistration> DetectMissing(
@@ -268,7 +263,11 @@ internal static class QudiVisualizationAnalyzer
     {
         var edges = new Dictionary<Type, HashSet<Type>>();
 
-        foreach (var registration in context.Applicable.Where(r => !r.IsDecorator).Select(r => r.Registration))
+        foreach (
+            var registration in context
+                .Applicable.Where(r => !r.IsDecorator)
+                .Select(r => r.Registration)
+        )
         {
             var implType = registration.Type;
             if (!edges.TryGetValue(implType, out var targets))

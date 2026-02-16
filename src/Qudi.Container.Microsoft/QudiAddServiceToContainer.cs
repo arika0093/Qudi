@@ -52,7 +52,9 @@ public static class QudiAddServiceToContainer
 
         var materialized = MaterializeOpenGenericFallbacks(applicable);
 
-        var registrations = materialized.Where(t => !t.MarkAsDecorator && !t.MarkAsComposite).ToList();
+        var registrations = materialized
+            .Where(t => !t.MarkAsDecorator && !t.MarkAsComposite)
+            .ToList();
         var decorators = materialized.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
         var composites = materialized.Where(t => t.MarkAsComposite).OrderBy(t => t.Order).ToList();
 
@@ -233,10 +235,8 @@ public static class QudiAddServiceToContainer
         var lifetime = ConvertLifetime(registration.Lifetime);
         var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
 
-        object Factory(IServiceProvider sp) => ActivatorUtilities.CreateInstance(
-            sp,
-            registration.Type
-        );
+        object Factory(IServiceProvider sp) =>
+            ActivatorUtilities.CreateInstance(sp, registration.Type);
 
         if (registration.AsTypes.Count == 0)
         {
@@ -310,21 +310,23 @@ public static class QudiAddServiceToContainer
         // Composites need special handling to avoid circular dependencies.
         // Strategy: Manually resolve all non-composite implementations and pass them to the composite
         var lifetime = ConvertLifetime(composite.Lifetime);
-        
+
         if (composite.AsTypes.Count == 0)
         {
             // Register without interface - just the composite itself
-            services.Add(ServiceDescriptor.Describe(
-                composite.Type,
-                sp => ActivatorUtilities.CreateInstance(sp, composite.Type),
-                lifetime
-            ));
+            services.Add(
+                ServiceDescriptor.Describe(
+                    composite.Type,
+                    sp => ActivatorUtilities.CreateInstance(sp, composite.Type),
+                    lifetime
+                )
+            );
             return;
         }
 
         // For composites, we need to avoid circular dependency by providing
         // a factory that gets all existing implementations except the composite itself
-        
+
         foreach (var asType in composite.AsTypes)
         {
             if (asType == composite.Type)
@@ -333,12 +335,10 @@ public static class QudiAddServiceToContainer
             }
 
             var capturedAsType = asType; // Capture for closure
-            
+
             // Collect all existing service descriptors for this type (before adding the composite)
-            var existingDescriptors = services
-                .Where(d => d.ServiceType == capturedAsType)
-                .ToList();
-            
+            var existingDescriptors = services.Where(d => d.ServiceType == capturedAsType).ToList();
+
             services.Add(
                 ServiceDescriptor.Describe(
                     asType,
@@ -348,18 +348,19 @@ public static class QudiAddServiceToContainer
                         var nonCompositeServices = new List<object>();
                         foreach (var descriptor in existingDescriptors)
                         {
-                            var service = descriptor.ImplementationType != null
-                                ? sp.GetRequiredService(descriptor.ImplementationType)
+                            var service =
+                                descriptor.ImplementationType != null
+                                    ? sp.GetRequiredService(descriptor.ImplementationType)
                                 : descriptor.ImplementationFactory != null
                                     ? descriptor.ImplementationFactory(sp)
-                                    : descriptor.ImplementationInstance;
-                            
+                                : descriptor.ImplementationInstance;
+
                             if (service != null)
                             {
                                 nonCompositeServices.Add(service);
                             }
                         }
-                        
+
                         // Create a strongly-typed array so IEnumerable<T> constructors match
                         var serviceArray = Array.CreateInstance(
                             capturedAsType,
@@ -371,11 +372,7 @@ public static class QudiAddServiceToContainer
                         }
 
                         // Create the composite using the non-composite services
-                        return ActivatorUtilities.CreateInstance(
-                            sp,
-                            composite.Type,
-                            serviceArray
-                        );
+                        return ActivatorUtilities.CreateInstance(sp, composite.Type, serviceArray);
                     },
                     lifetime
                 )

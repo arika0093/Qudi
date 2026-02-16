@@ -231,7 +231,11 @@ internal static class QudiVisualizationGraphBuilder
                             )
                             {
                                 // Connect to final implementation(s)
-                                foreach (var implementationType in implementations.Select(impl => impl.Registration.Type))
+                                foreach (
+                                    var implementationType in implementations.Select(impl =>
+                                        impl.Registration.Type
+                                    )
+                                )
                                 {
                                     var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
                                         implementationType
@@ -261,7 +265,11 @@ internal static class QudiVisualizationGraphBuilder
                         )
                         {
                             // No other decorators, connect directly to implementation(s)
-                            foreach (var implementationType in implementations.Select(impl => impl.Registration.Type))
+                            foreach (
+                                var implementationType in implementations.Select(impl =>
+                                    impl.Registration.Type
+                                )
+                            )
                             {
                                 var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
                                     implementationType
@@ -397,7 +405,9 @@ internal static class QudiVisualizationGraphBuilder
         }
 
         var distinctEdges = edges
-            .DistinctBy(e => $"{e.From}|{e.To}|{e.Kind}|{e.Condition ?? ""}|{e.Key ?? ""}|{e.Order}")
+            .DistinctBy(e =>
+                $"{e.From}|{e.To}|{e.Kind}|{e.Condition ?? ""}|{e.Key ?? ""}|{e.Order}"
+            )
             .ToList();
 
         return new QudiVisualizationGraph(nodes.Values.ToList(), distinctEdges);
@@ -570,10 +580,12 @@ internal static class QudiVisualizationGraphBuilder
             var currentId = queue.Dequeue();
 
             // Find all outgoing edges from current node
-            foreach (var toId in fullGraph
-                .Edges.Where(e => e.From == currentId)
-                .Select(e => e.To)
-                .Where(toId => !reachableNodeIds.Contains(toId)))
+            foreach (
+                var toId in fullGraph
+                    .Edges.Where(e => e.From == currentId)
+                    .Select(e => e.To)
+                    .Where(toId => !reachableNodeIds.Contains(toId))
+            )
             {
                 reachableNodeIds.Add(toId);
                 queue.Enqueue(toId);

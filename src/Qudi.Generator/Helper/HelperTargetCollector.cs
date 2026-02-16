@@ -35,7 +35,10 @@ internal static class HelperTargetCollector
         return decoratorTargets
             .Collect()
             .Combine(compositeTargets.Collect())
-            .Select(static (targets, _) => MergeTargets(targets.Left.Concat(targets.Right).ToImmutableArray()));
+            .Select(
+                static (targets, _) =>
+                    MergeTargets(targets.Left.Concat(targets.Right).ToImmutableArray())
+            );
     }
 
     // Check if the syntax node is a partial class declaration
@@ -76,7 +79,8 @@ internal static class HelperTargetCollector
             )
             .FirstOrDefault();
         var asTypes = GetExplicitAsTypes(attribute);
-        var useIntercept = isDecorator && (SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false);
+        var useIntercept =
+            isDecorator && (SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false);
 
         // Collect nested class information (from innermost to outermost)
         var containingTypesList = new List<ContainingTypeInfo>();
@@ -613,16 +617,25 @@ internal static class HelperTargetCollector
         if (parameterType is INamedTypeSymbol namedType)
         {
             // Check if this is IEnumerable<T> by comparing the original definition
-            if (namedType.IsGenericType && 
-                namedType.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>")
+            if (
+                namedType.IsGenericType
+                && namedType.OriginalDefinition.ToDisplayString()
+                    == "System.Collections.Generic.IEnumerable<T>"
+            )
             {
                 var elementType = namedType.TypeArguments.FirstOrDefault();
-                if (elementType is not null && (
-                    SymbolEqualityComparer.Default.Equals(elementType, interfaceSymbol) ||
-                    (elementType is INamedTypeSymbol elementNamedType && 
-                     elementNamedType.AllInterfaces.Any(iface =>
-                         SymbolEqualityComparer.Default.Equals(iface, interfaceSymbol)))
-                ))
+                if (
+                    elementType is not null
+                    && (
+                        SymbolEqualityComparer.Default.Equals(elementType, interfaceSymbol)
+                        || (
+                            elementType is INamedTypeSymbol elementNamedType
+                            && elementNamedType.AllInterfaces.Any(iface =>
+                                SymbolEqualityComparer.Default.Equals(iface, interfaceSymbol)
+                            )
+                        )
+                    )
+                )
                 {
                     return true;
                 }

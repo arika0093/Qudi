@@ -1,8 +1,8 @@
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using TUnit;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Qudi.Tests;
 

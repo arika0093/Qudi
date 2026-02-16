@@ -12,7 +12,7 @@ namespace Qudi.Generator.Helper;
 internal static class HelperCodeGenerator
 {
     private const string IEnumerable = "global::System.Collections.Generic.IEnumerable";
-    
+
     // Static compiled regex for better performance
     private static readonly Regex EnumerableTypeExtractor = new Regex(
         @"<([^<>]+)>$",
@@ -159,7 +159,9 @@ internal static class HelperCodeGenerator
         var helperName = BuildHelperInterfaceName(interfaceHelperName);
         var useIntercept = helper.UseIntercept;
         var isComposite = helper.IsComposite;
-        var helperAccessor = useIntercept ? "__Base" : (isComposite ? "__InnerServices" : "__Inner");
+        var helperAccessor = useIntercept
+            ? "__Base"
+            : (isComposite ? "__InnerServices" : "__Inner");
 
         // Generate interface
         builder.AppendLine(
@@ -301,7 +303,7 @@ internal static class HelperCodeGenerator
         var parameters = BuildParameterList(method.Parameters);
         var arguments = BuildArgumentList(method.Parameters);
         var interfaceName = method.DeclaringInterfaceName;
-        
+
         // Determine return type category
         // Note: Using string-based detection for simplicity. This works for most common cases
         // but may need enhancement for edge cases with similar type names.
@@ -309,8 +311,11 @@ internal static class HelperCodeGenerator
         var isBool = returnType == "bool";
         var isTask = returnType.StartsWith("global::System.Threading.Tasks.Task");
         var isValueTask = returnType.StartsWith("global::System.Threading.Tasks.ValueTask");
-        var isIEnumerable = returnType.Contains("IEnumerable") || returnType.Contains("ICollection") || returnType.Contains("IList");
-        
+        var isIEnumerable =
+            returnType.Contains("IEnumerable")
+            || returnType.Contains("ICollection")
+            || returnType.Contains("IList");
+
         // For composite, we iterate over all inner services and call the method on each
         builder.AppendLine($"{returnType} {interfaceName}.{method.Name}({parameters})");
         using (builder.BeginScope())
@@ -329,19 +334,44 @@ internal static class HelperCodeGenerator
             {
                 // Default to Task.WhenAll
                 // TODO: Support CompositeMethod attribute to override this with WhenAny
-                AppendCompositeTaskMethod(builder, method, helperAccessor, arguments, returnType, useWhenAll: true);
+                AppendCompositeTaskMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType,
+                    useWhenAll: true
+                );
             }
             else if (isValueTask)
             {
-                AppendCompositeValueTaskMethod(builder, method, helperAccessor, arguments, returnType);
+                AppendCompositeValueTaskMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType
+                );
             }
             else if (isIEnumerable)
             {
-                AppendCompositeEnumerableMethod(builder, method, helperAccessor, arguments, returnType);
+                AppendCompositeEnumerableMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType
+                );
             }
             else
             {
-                AppendCompositeDefaultMethod(builder, method, helperAccessor, arguments, returnType);
+                AppendCompositeDefaultMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType
+                );
             }
         }
     }
@@ -403,13 +433,15 @@ internal static class HelperCodeGenerator
     )
     {
         // For Task/Task<T>, collect all tasks
-        builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{returnType}>();");
+        builder.AppendLine(
+            $"var __tasks = new global::System.Collections.Generic.List<{returnType}>();"
+        );
         builder.AppendLine($"foreach (var __service in {helperAccessor})");
         using (builder.BeginScope())
         {
             builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}));");
         }
-        
+
         if (useWhenAll)
         {
             // CompositeResult.All or default - use WhenAll
@@ -433,7 +465,9 @@ internal static class HelperCodeGenerator
             else
             {
                 // Task<T> - WhenAny returns Task<Task<T>>, so we need to unwrap
-                builder.AppendLine($"var __firstCompleted = await global::System.Threading.Tasks.Task.WhenAny(__tasks);");
+                builder.AppendLine(
+                    $"var __firstCompleted = await global::System.Threading.Tasks.Task.WhenAny(__tasks);"
+                );
                 builder.AppendLine($"return await __firstCompleted;");
             }
         }
@@ -458,11 +492,15 @@ internal static class HelperCodeGenerator
             builder.AppendLine("global::System.Threading.Tasks.Task.Run(async () =>");
             using (builder.BeginScope())
             {
-                builder.AppendLine("var __tasks = new global::System.Collections.Generic.List<global::System.Threading.Tasks.Task>();");
+                builder.AppendLine(
+                    "var __tasks = new global::System.Collections.Generic.List<global::System.Threading.Tasks.Task>();"
+                );
                 builder.AppendLine($"foreach (var __service in {helperAccessor})");
                 using (builder.BeginScope())
                 {
-                    builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}).AsTask());");
+                    builder.AppendLine(
+                        $"__tasks.Add(__service.{method.Name}({arguments}).AsTask());"
+                    );
                 }
                 builder.AppendLine("await global::System.Threading.Tasks.Task.WhenAll(__tasks);");
             }
@@ -474,19 +512,28 @@ internal static class HelperCodeGenerator
         {
             // ValueTask<T> - need to collect results
             // Extract the T from ValueTask<T>
-            var taskTypeWithT = returnType.Replace("global::System.Threading.Tasks.ValueTask<", "global::System.Threading.Tasks.Task<");
+            var taskTypeWithT = returnType.Replace(
+                "global::System.Threading.Tasks.ValueTask<",
+                "global::System.Threading.Tasks.Task<"
+            );
             builder.AppendLine($"return new {returnType}(");
             builder.IncreaseIndent();
             builder.AppendLine("global::System.Threading.Tasks.Task.Run(async () =>");
             using (builder.BeginScope())
             {
-                builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{taskTypeWithT}>();");
+                builder.AppendLine(
+                    $"var __tasks = new global::System.Collections.Generic.List<{taskTypeWithT}>();"
+                );
                 builder.AppendLine($"foreach (var __service in {helperAccessor})");
                 using (builder.BeginScope())
                 {
-                    builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}).AsTask());");
+                    builder.AppendLine(
+                        $"__tasks.Add(__service.{method.Name}({arguments}).AsTask());"
+                    );
                 }
-                builder.AppendLine("var __results = await global::System.Threading.Tasks.Task.WhenAll(__tasks);");
+                builder.AppendLine(
+                    "var __results = await global::System.Threading.Tasks.Task.WhenAll(__tasks);"
+                );
                 builder.AppendLine("return __results.Length > 0 ? __results[0] : default!;");
             }
             builder.AppendLine("})");
@@ -504,7 +551,9 @@ internal static class HelperCodeGenerator
     )
     {
         // For IEnumerable/ICollection/IList, concatenate all results
-        builder.AppendLine($"var __results = new global::System.Collections.Generic.List<{ExtractEnumerableType(returnType)}>();");
+        builder.AppendLine(
+            $"var __results = new global::System.Collections.Generic.List<{ExtractEnumerableType(returnType)}>();"
+        );
         builder.AppendLine($"foreach (var __service in {helperAccessor})");
         using (builder.BeginScope())
         {
@@ -531,7 +580,9 @@ internal static class HelperCodeGenerator
         using (builder.BeginScope())
         {
             builder.AppendLine($"var __result = __service.{method.Name}({arguments});");
-            builder.AppendLine($"if (!global::System.Collections.Generic.EqualityComparer<{returnType}>.Default.Equals(__result, default!))");
+            builder.AppendLine(
+                $"if (!global::System.Collections.Generic.EqualityComparer<{returnType}>.Default.Equals(__result, default!))"
+            );
             using (builder.BeginScope())
             {
                 builder.AppendLine($"return __result;");

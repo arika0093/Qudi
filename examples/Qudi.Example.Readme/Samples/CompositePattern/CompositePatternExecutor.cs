@@ -37,8 +37,7 @@ public class PushNotificationService : IMessageService
 
 // Composite service that combines multiple IMessageService implementations
 [QudiComposite]
-public class CompositeMessageService(IEnumerable<IMessageService> innerServices)
-    : IMessageService
+public class CompositeMessageService(IEnumerable<IMessageService> innerServices) : IMessageService
 {
     // innerServices will automatically contain all registered IMessageService implementations.
     public void SendMessage(string message)

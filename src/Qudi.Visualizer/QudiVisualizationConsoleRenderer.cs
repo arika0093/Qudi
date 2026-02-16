@@ -273,7 +273,10 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             grid.AddRow(
                 new Panel(warningTable)
                 {
-                    Header = new PanelHeader($"[bold orange1]💡 Lifetime Warnings ({lifetimeWarnings.Count})[/]", Justify.Left),
+                    Header = new PanelHeader(
+                        $"[bold orange1]💡 Lifetime Warnings ({lifetimeWarnings.Count})[/]",
+                        Justify.Left
+                    ),
                     Border = BoxBorder.None,
                 }
             );

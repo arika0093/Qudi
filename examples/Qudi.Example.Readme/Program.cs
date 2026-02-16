@@ -6,6 +6,7 @@ using Qudi.Visualizer;
 using Spectre.Console;
 
 var services = new ServiceCollection();
+
 // Add logging
 services.AddLogging(builder =>
 {

@@ -92,18 +92,21 @@ public sealed class AlphaValidator : IValidationService
 {
     public bool Validate(string input)
     {
-        if (string.IsNullOrEmpty(input)) return false;
+        if (string.IsNullOrEmpty(input))
+            return false;
         foreach (var c in input)
         {
-            if (!char.IsLetter(c)) return false;
+            if (!char.IsLetter(c))
+                return false;
         }
         return true;
     }
 }
 
 [QudiComposite]
-public sealed partial class CompositeValidationService(IEnumerable<IValidationService> innerServices)
-    : IValidationService;
+public sealed partial class CompositeValidationService(
+    IEnumerable<IValidationService> innerServices
+) : IValidationService;
 
 // Test result aggregation with IEnumerable return type
 public interface IDataProvider

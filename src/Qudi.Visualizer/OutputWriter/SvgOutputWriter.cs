@@ -51,8 +51,7 @@ internal static class SvgOutputWriter
 
             if (process.ExitCode != 0)
             {
-                return
-                    $"Graphviz 'dot' failed to render SVG. Wrote DOT to {dotPath}. {standardError} {standardOutput}";
+                return $"Graphviz 'dot' failed to render SVG. Wrote DOT to {dotPath}. {standardError} {standardOutput}";
             }
 
             return null;
