@@ -43,6 +43,11 @@ internal sealed record HelperInterfaceTarget
     public required bool IsDecorator { get; init; }
 
     /// <summary>
+    /// Whether the target type is a composite.
+    /// </summary>
+    public required bool IsComposite { get; init; }
+
+    /// <summary>
     /// Whether intercept-style helpers should be generated.
     /// </summary>
     public required bool UseIntercept { get; init; }
@@ -129,6 +134,11 @@ internal sealed record HelperImplementingTarget
     /// Whether the target type is a decorator.
     /// </summary>
     public required bool IsDecorator { get; init; }
+
+    /// <summary>
+    /// Whether the target type is a composite.
+    /// </summary>
+    public required bool IsComposite { get; init; }
 
     /// <summary>
     /// Whether intercept-style helpers should be generated.

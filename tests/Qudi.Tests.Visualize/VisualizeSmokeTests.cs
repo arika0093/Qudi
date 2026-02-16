@@ -68,7 +68,7 @@ public sealed class VisualizeSmokeTests
         // (either as the source for SVG generation, or as a fallback if graphviz is not available)
         var dotPath = Path.ChangeExtension(svgOutputPath, ".dot");
         File.Exists(dotPath).ShouldBeTrue();
-        
+
         // The .dot file should contain valid DOT format content
         var dotContent = File.ReadAllText(dotPath);
         dotContent.ShouldContain("digraph");

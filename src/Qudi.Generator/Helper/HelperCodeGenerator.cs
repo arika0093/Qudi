@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Qudi.Generator;
 using Qudi.Generator.Utility;
@@ -11,6 +12,12 @@ namespace Qudi.Generator.Helper;
 internal static class HelperCodeGenerator
 {
     private const string IEnumerable = "global::System.Collections.Generic.IEnumerable";
+
+    // Static compiled regex for better performance
+    private static readonly Regex EnumerableTypeExtractor = new Regex(
+        @"<([^<>]+)>$",
+        RegexOptions.Compiled
+    );
 
     public static void GenerateHelpers(SourceProductionContext context, HelperGenerationInput input)
     {
@@ -91,6 +98,18 @@ internal static class HelperCodeGenerator
                     """
                 );
             }
+            else if (target.IsComposite)
+            {
+                builder.AppendLine(
+                    $$"""
+                    partial {{target.ImplementingTypeKeyword}} {{target.ImplementingTypeName}} : {{helperTypeName}}
+                    {
+                        {{CodeTemplateContents.EditorBrowsableAttribute}}
+                        global::System.Collections.Generic.IEnumerable<{{target.InterfaceName}}> {{helperTypeName}}.__InnerServices => {{target.BaseParameterName}};
+                    }
+                    """
+                );
+            }
             else
             {
                 builder.AppendLine(
@@ -139,7 +158,12 @@ internal static class HelperCodeGenerator
         var members = helper.Members.ToImmutableArray();
         var helperName = BuildHelperInterfaceName(interfaceHelperName);
         var useIntercept = helper.UseIntercept;
+        var isComposite = helper.IsComposite;
         var helperAccessor = useIntercept ? "__Base" : "__Inner";
+        if (!useIntercept && isComposite)
+        {
+            helperAccessor = "__InnerServices";
+        }
 
         // Generate interface
         builder.AppendLine(
@@ -155,11 +179,25 @@ internal static class HelperCodeGenerator
             {
                 if (member.Kind == HelperMemberKind.Method)
                 {
-                    AppendDecoratorMethod(builder, member, helperAccessor);
+                    if (isComposite)
+                    {
+                        AppendCompositeMethod(builder, member, helperAccessor);
+                    }
+                    else
+                    {
+                        AppendDecoratorMethod(builder, member, helperAccessor);
+                    }
                 }
                 else if (member.Kind == HelperMemberKind.Property)
                 {
-                    AppendDecoratorProperty(builder, member, helperAccessor);
+                    if (isComposite)
+                    {
+                        AppendCompositeProperty(builder, member, helperAccessor);
+                    }
+                    else
+                    {
+                        AppendDecoratorProperty(builder, member, helperAccessor);
+                    }
                 }
             }
             builder.AppendLine("");
@@ -195,6 +233,14 @@ internal static class HelperCodeGenerator
                         }
                     }
                 }
+            }
+            else if (isComposite)
+            {
+                builder.AppendLine(
+                    $$"""
+                    {{IEnumerable}}<{{interfaceName}}> {{helperAccessor}} { get; }
+                    """
+                );
             }
             else
             {
@@ -246,6 +292,350 @@ internal static class HelperCodeGenerator
         {
             builder.AppendLineIf(property.HasGetter, $"get => {getterAccess};");
             builder.AppendLineIf(property.HasSetter, $"set => {setterAccess} = value;");
+        }
+    }
+
+    private static void AppendCompositeMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor
+    )
+    {
+        var returnType = method.ReturnTypeName;
+        var parameters = BuildParameterList(method.Parameters);
+        var arguments = BuildArgumentList(method.Parameters);
+        var interfaceName = method.DeclaringInterfaceName;
+
+        // Determine return type category
+        // Note: Using string-based detection for simplicity. This works for most common cases
+        // but may need enhancement for edge cases with similar type names.
+        var isVoid = returnType == "void";
+        var isBool = returnType == "bool";
+        var isTask = returnType.StartsWith("global::System.Threading.Tasks.Task");
+        var isValueTask = returnType.StartsWith("global::System.Threading.Tasks.ValueTask");
+        var isIEnumerable =
+            returnType.Contains("IEnumerable")
+            || returnType.Contains("ICollection")
+            || returnType.Contains("IList");
+
+        // For composite, we iterate over all inner services and call the method on each
+        builder.AppendLine($"{returnType} {interfaceName}.{method.Name}({parameters})");
+        using (builder.BeginScope())
+        {
+            if (isVoid)
+            {
+                AppendCompositeVoidMethod(builder, method, helperAccessor, arguments);
+            }
+            else if (isBool)
+            {
+                // Default to CompositeResult.All (logical AND) for bool
+                // TODO: Support CompositeMethod attribute to override this
+                AppendCompositeBoolMethod(builder, method, helperAccessor, arguments, useAnd: true);
+            }
+            else if (isTask)
+            {
+                // Default to Task.WhenAll
+                // TODO: Support CompositeMethod attribute to override this with WhenAny
+                AppendCompositeTaskMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType,
+                    useWhenAll: true
+                );
+            }
+            else if (isValueTask)
+            {
+                AppendCompositeValueTaskMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType
+                );
+            }
+            else if (isIEnumerable)
+            {
+                AppendCompositeEnumerableMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType
+                );
+            }
+            else
+            {
+                AppendCompositeDefaultMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType
+                );
+            }
+        }
+    }
+
+    private static void AppendCompositeVoidMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor,
+        string arguments
+    )
+    {
+        // Fire-and-forget for void methods
+        builder.AppendLine($"foreach (var __service in {helperAccessor})");
+        using (builder.BeginScope())
+        {
+            builder.AppendLine($"__service.{method.Name}({arguments});");
+        }
+    }
+
+    private static void AppendCompositeBoolMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor,
+        string arguments,
+        bool useAnd
+    )
+    {
+        if (useAnd)
+        {
+            // CompositeResult.All - logical AND
+            builder.AppendLine($"var __result = true;");
+            builder.AppendLine($"foreach (var __service in {helperAccessor})");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__result = __result && __service.{method.Name}({arguments});");
+            }
+            builder.AppendLine($"return __result;");
+        }
+        else
+        {
+            // CompositeResult.Any - logical OR
+            builder.AppendLine($"var __result = false;");
+            builder.AppendLine($"foreach (var __service in {helperAccessor})");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__result = __result || __service.{method.Name}({arguments});");
+            }
+            builder.AppendLine($"return __result;");
+        }
+    }
+
+    private static void AppendCompositeTaskMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor,
+        string arguments,
+        string returnType,
+        bool useWhenAll
+    )
+    {
+        // For Task/Task<T>, collect all tasks
+        builder.AppendLine(
+            $"var __tasks = new global::System.Collections.Generic.List<{returnType}>();"
+        );
+        builder.AppendLine($"foreach (var __service in {helperAccessor})");
+        using (builder.BeginScope())
+        {
+            builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}));");
+        }
+
+        if (useWhenAll)
+        {
+            // CompositeResult.All or default - use WhenAll (works for Task and Task<T>)
+            builder.AppendLine($"return global::System.Threading.Tasks.Task.WhenAll(__tasks);");
+        }
+        else
+        {
+            // CompositeResult.Any - use WhenAny
+            if (returnType == "global::System.Threading.Tasks.Task")
+            {
+                builder.AppendLine($"return global::System.Threading.Tasks.Task.WhenAny(__tasks);");
+            }
+            else
+            {
+                // Task<T> - WhenAny returns Task<Task<T>>, so we need to unwrap
+                builder.AppendLine(
+                    $"var __firstCompleted = await global::System.Threading.Tasks.Task.WhenAny(__tasks);"
+                );
+                builder.AppendLine($"return await __firstCompleted;");
+            }
+        }
+    }
+
+    private static void AppendCompositeValueTaskMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor,
+        string arguments,
+        string returnType
+    )
+    {
+        // For ValueTask/ValueTask<T>, we need to handle them synchronously since
+        // default interface implementations can't easily use async
+        // Strategy: Convert to Task, create async lambda, and return as ValueTask
+        if (returnType == "global::System.Threading.Tasks.ValueTask")
+        {
+            // ValueTask (no result)
+            builder.AppendLine("return new global::System.Threading.Tasks.ValueTask(");
+            builder.IncreaseIndent();
+            builder.AppendLine("global::System.Threading.Tasks.Task.Run(async () =>");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine(
+                    "var __tasks = new global::System.Collections.Generic.List<global::System.Threading.Tasks.Task>();"
+                );
+                builder.AppendLine($"foreach (var __service in {helperAccessor})");
+                using (builder.BeginScope())
+                {
+                    builder.AppendLine(
+                        $"__tasks.Add(__service.{method.Name}({arguments}).AsTask());"
+                    );
+                }
+                builder.AppendLine("await global::System.Threading.Tasks.Task.WhenAll(__tasks);");
+            }
+            builder.AppendLine(")");
+            builder.DecreaseIndent();
+            builder.AppendLine(");");
+        }
+        else
+        {
+            // ValueTask<T> - need to collect results
+            // Extract the T from ValueTask<T>
+            var taskTypeWithT = returnType.Replace(
+                "global::System.Threading.Tasks.ValueTask<",
+                "global::System.Threading.Tasks.Task<"
+            );
+            builder.AppendLine($"return new {returnType}(");
+            builder.IncreaseIndent();
+            builder.AppendLine("global::System.Threading.Tasks.Task.Run(async () =>");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine(
+                    $"var __tasks = new global::System.Collections.Generic.List<{taskTypeWithT}>();"
+                );
+                builder.AppendLine($"foreach (var __service in {helperAccessor})");
+                using (builder.BeginScope())
+                {
+                    builder.AppendLine(
+                        $"__tasks.Add(__service.{method.Name}({arguments}).AsTask());"
+                    );
+                }
+                builder.AppendLine(
+                    "var __results = await global::System.Threading.Tasks.Task.WhenAll(__tasks);"
+                );
+                builder.AppendLine("return __results.Length > 0 ? __results[0] : default!;");
+            }
+            builder.AppendLine("})");
+            builder.DecreaseIndent();
+            builder.AppendLine(");");
+        }
+    }
+
+    private static void AppendCompositeEnumerableMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor,
+        string arguments,
+        string returnType
+    )
+    {
+        // For IEnumerable/ICollection/IList, concatenate all results
+        builder.AppendLine(
+            $"var __results = new global::System.Collections.Generic.List<{ExtractEnumerableType(returnType)}>();"
+        );
+        builder.AppendLine($"foreach (var __service in {helperAccessor})");
+        using (builder.BeginScope())
+        {
+            builder.AppendLine($"var __serviceResult = __service.{method.Name}({arguments});");
+            builder.AppendLine($"if (__serviceResult != null)");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__results.AddRange(__serviceResult);");
+            }
+        }
+        builder.AppendLine($"return __results;");
+    }
+
+    private static void AppendCompositeDefaultMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor,
+        string arguments,
+        string returnType
+    )
+    {
+        // For other types, return the first non-null/non-default result
+        builder.AppendLine($"foreach (var __service in {helperAccessor})");
+        using (builder.BeginScope())
+        {
+            builder.AppendLine($"var __result = __service.{method.Name}({arguments});");
+            builder.AppendLine(
+                $"if (!global::System.Collections.Generic.EqualityComparer<{returnType}>.Default.Equals(__result, default!))"
+            );
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"return __result;");
+            }
+        }
+        builder.AppendLine($"return default!;");
+    }
+
+    private static string ExtractEnumerableType(string enumerableType)
+    {
+        // Extract T from IEnumerable<T>, ICollection<T>, IList<T>, etc.
+        // Use the static compiled regex for better performance
+        var match = EnumerableTypeExtractor.Match(enumerableType);
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+        return "object";
+    }
+
+    private static void AppendCompositeProperty(
+        IndentedStringBuilder builder,
+        HelperMember property,
+        string helperAccessor
+    )
+    {
+        var typeName = property.ReturnTypeName;
+        var propertyName = property.IsIndexer ? "this" : property.Name;
+        var parameters = property.IsIndexer ? BuildParameterList(property.Parameters) : "";
+        var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : "";
+        var arguments = property.IsIndexer ? BuildArgumentList(property.Parameters) : "";
+        var interfaceName = property.DeclaringInterfaceName;
+
+        builder.AppendLine($"{typeName} {interfaceName}.{propertyName}{indexerSuffix}");
+        using (builder.BeginScope())
+        {
+            // For composite properties, we just return the first service's property value by default
+            if (property.HasGetter)
+            {
+                var access = property.IsIndexer
+                    ? $"{helperAccessor}.FirstOrDefault()?[{arguments}]"
+                    : $"{helperAccessor}.FirstOrDefault()?.{propertyName}";
+                builder.AppendLine($"get => {access} ?? default!;");
+            }
+            if (property.HasSetter)
+            {
+                builder.AppendLine("set");
+                using (builder.BeginScope())
+                {
+                    builder.AppendLine($"foreach (var __service in {helperAccessor})");
+                    using (builder.BeginScope())
+                    {
+                        var access = property.IsIndexer
+                            ? $"__service[{arguments}]"
+                            : $"__service.{propertyName}";
+                        builder.AppendLine($"{access} = value;");
+                    }
+                }
+            }
         }
     }
 

@@ -35,7 +35,8 @@ internal static class QudiVisualizationAnalyzer
                     registration.Key,
                     registration.Conditions,
                     registration.Order,
-                    registration.IsDecorator
+                    registration.IsDecorator,
+                    registration.IsComposite
                 ))
             )
             .OrderBy(r => r.Service, StringComparer.Ordinal)
@@ -90,6 +91,7 @@ internal static class QudiVisualizationAnalyzer
                     registration.When.Count == 0 ? "*" : string.Join(", ", registration.When),
                     registration.Order,
                     registration.MarkAsDecorator,
+                    registration.MarkAsComposite,
                     IsConditionMatched: true
                 );
             })
@@ -122,12 +124,7 @@ internal static class QudiVisualizationAnalyzer
             implList.Add(registration);
         }
 
-        return new VisualizationContext(
-            configuration,
-            applicable,
-            serviceMap,
-            implementationMap
-        );
+        return new VisualizationContext(configuration, applicable, serviceMap, implementationMap);
     }
 
     private static List<QudiMissingRegistration> DetectMissing(
@@ -268,7 +265,11 @@ internal static class QudiVisualizationAnalyzer
     {
         var edges = new Dictionary<Type, HashSet<Type>>();
 
-        foreach (var registration in context.Applicable.Where(r => !r.IsDecorator).Select(r => r.Registration))
+        foreach (
+            var registration in context
+                .Applicable.Where(r => !r.IsDecorator)
+                .Select(r => r.Registration)
+        )
         {
             var implType = registration.Type;
             if (!edges.TryGetValue(implType, out var targets))

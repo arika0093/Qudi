@@ -52,12 +52,22 @@ public static class QudiAddServiceToContainer
 
         var materialized = MaterializeOpenGenericFallbacks(applicable);
 
-        var registrations = materialized.Where(t => !t.MarkAsDecorator).ToList();
+        var registrations = materialized
+            .Where(t => !t.MarkAsDecorator && !t.MarkAsComposite)
+            .ToList();
         var decorators = materialized.Where(t => t.MarkAsDecorator).OrderBy(t => t.Order).ToList();
+        var composites = materialized.Where(t => t.MarkAsComposite).OrderBy(t => t.Order).ToList();
 
         foreach (var registration in registrations)
         {
             RegisterService(services, registration);
+        }
+
+        // Register composites - they need to be registered after regular services
+        // but before decorators, so they can collect all non-composite implementations
+        foreach (var composite in composites)
+        {
+            RegisterComposite(services, composite);
         }
 
         foreach (var decorator in decorators)
@@ -225,10 +235,8 @@ public static class QudiAddServiceToContainer
         var lifetime = ConvertLifetime(registration.Lifetime);
         var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
 
-        object Factory(IServiceProvider sp) => ActivatorUtilities.CreateInstance(
-            sp,
-            registration.Type
-        );
+        object Factory(IServiceProvider sp) =>
+            ActivatorUtilities.CreateInstance(sp, registration.Type);
 
         if (registration.AsTypes.Count == 0)
         {
@@ -291,6 +299,91 @@ public static class QudiAddServiceToContainer
         foreach (var asType in registration.AsTypes)
         {
             AddKeyedService(services, asType, registration.Type, registration.Key, lifetime);
+        }
+    }
+
+    private static void RegisterComposite(
+        IServiceCollection services,
+        TypeRegistrationInfo composite
+    )
+    {
+        // Composites need special handling to avoid circular dependencies.
+        // Strategy: Manually resolve all non-composite implementations and pass them to the composite
+        var lifetime = ConvertLifetime(composite.Lifetime);
+
+        if (composite.AsTypes.Count == 0)
+        {
+            // Register without interface - just the composite itself
+            services.Add(
+                ServiceDescriptor.Describe(
+                    composite.Type,
+                    sp => ActivatorUtilities.CreateInstance(sp, composite.Type),
+                    lifetime
+                )
+            );
+            return;
+        }
+
+        // For composites, we need to avoid circular dependency by providing
+        // a factory that gets all existing implementations except the composite itself
+
+        foreach (var asType in composite.AsTypes)
+        {
+            if (asType == composite.Type)
+            {
+                continue;
+            }
+
+            var capturedAsType = asType; // Capture for closure
+
+            // Collect all existing service descriptors for this type (before adding the composite)
+            var existingDescriptors = services.Where(d => d.ServiceType == capturedAsType).ToList();
+
+            services.Add(
+                ServiceDescriptor.Describe(
+                    asType,
+                    sp =>
+                    {
+                        // Manually resolve all the existing (non-composite) implementations
+                        var nonCompositeServices = new List<object>();
+                        foreach (var descriptor in existingDescriptors)
+                        {
+                            object? service = null;
+                            if (descriptor.ImplementationType != null)
+                            {
+                                service = sp.GetRequiredService(descriptor.ImplementationType);
+                            }
+                            else if (descriptor.ImplementationFactory != null)
+                            {
+                                service = descriptor.ImplementationFactory(sp);
+                            }
+                            else
+                            {
+                                service = descriptor.ImplementationInstance;
+                            }
+
+                            if (service != null)
+                            {
+                                nonCompositeServices.Add(service);
+                            }
+                        }
+
+                        // Create a strongly-typed array so IEnumerable<T> constructors match
+                        var serviceArray = Array.CreateInstance(
+                            capturedAsType,
+                            nonCompositeServices.Count
+                        );
+                        for (var i = 0; i < nonCompositeServices.Count; i++)
+                        {
+                            serviceArray.SetValue(nonCompositeServices[i], i);
+                        }
+
+                        // Create the composite using the non-composite services
+                        return ActivatorUtilities.CreateInstance(sp, composite.Type, serviceArray);
+                    },
+                    lifetime
+                )
+            );
         }
     }
 

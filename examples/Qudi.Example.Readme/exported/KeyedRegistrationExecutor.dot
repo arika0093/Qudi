@@ -1,0 +1,13 @@
+digraph Qudi {
+  rankdir=LR;
+  node [shape=box, fontname="Arial"];
+  "Qudi.Examples.KeyedRegistration.EmailNotificationService" [label="EmailNotificationService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.KeyedRegistration.INotificationService" [label="INotificationService", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Examples.KeyedRegistration.KeyedRegistrationExecutor" [label="KeyedRegistrationExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.KeyedRegistration.PushNotificationService" [label="PushNotificationService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.KeyedRegistration.SmsNotificationService" [label="SmsNotificationService", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.KeyedRegistration.INotificationService" -> "Qudi.Examples.KeyedRegistration.EmailNotificationService";
+  "Qudi.Examples.KeyedRegistration.INotificationService" -> "Qudi.Examples.KeyedRegistration.SmsNotificationService";
+  "Qudi.Examples.KeyedRegistration.INotificationService" -> "Qudi.Examples.KeyedRegistration.PushNotificationService";
+  "Qudi.Examples.KeyedRegistration.KeyedRegistrationExecutor" -> "Qudi.Examples.KeyedRegistration.INotificationService";
+}

@@ -135,6 +135,24 @@ internal static class MermaidOutputWriter
             }
         }
 
+        // Add styles for composite nodes
+        var compositeNodes = graph
+            .Nodes.Where(n => n.Kind == "composite" && n.IsConditionMatched && !n.IsExternal)
+            .ToList();
+        if (compositeNodes.Count > 0)
+        {
+            sb.AppendLine(
+                "    classDef composite fill:#f8d7da,stroke:#c62828,stroke-width:2px,color:#000;"
+            );
+            foreach (var node in compositeNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} composite;");
+                }
+            }
+        }
+
         // Add styles for condition-unmatched interface nodes
         var unmatchedInterfaceNodes = graph
             .Nodes.Where(n =>
@@ -197,6 +215,24 @@ internal static class MermaidOutputWriter
             }
         }
 
+        // Add styles for condition-unmatched composite nodes
+        var unmatchedCompositeNodes = graph
+            .Nodes.Where(n => n.Kind == "composite" && !n.IsConditionMatched)
+            .ToList();
+        if (unmatchedCompositeNodes.Count > 0)
+        {
+            sb.AppendLine(
+                "    classDef unmatchedComposite fill:#f5f5f5,stroke:#c62828,stroke-width:1px,stroke-dasharray:3 3,color:#999;"
+            );
+            foreach (var node in unmatchedCompositeNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} unmatchedComposite;");
+                }
+            }
+        }
+
         // Add styles for external nodes
         var externalNodes = graph.Nodes.Where(n => n.IsExternal).ToList();
         if (externalNodes.Count > 0)
@@ -250,7 +286,11 @@ internal static class MermaidOutputWriter
 
     private static string EscapeMermaidLabel(string value)
     {
-        return value.Replace("\"", "\\\"").Replace("<", "#lt;").Replace(">", "#gt;").Replace("|", "#124;");
+        return value
+            .Replace("\"", "\\\"")
+            .Replace("<", "#lt;")
+            .Replace(">", "#gt;")
+            .Replace("|", "#124;");
     }
 
     private static string SanitizeMermaidId(string value)

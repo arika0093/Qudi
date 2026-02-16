@@ -65,6 +65,11 @@ internal static class RegistrationAttrGenerator
                 public bool MarkAsDecorator { get; set; }
 
                 /// <summary>
+                /// Whether this registration is a composite.
+                /// </summary>
+                public bool MarkAsComposite { get; set; }
+
+                /// <summary>
                 /// Whether to export this type for visualization. 
                 /// When true, generates a separate dependency graph starting from this type.
                 /// </summary>
@@ -116,6 +121,62 @@ internal static class RegistrationAttrGenerator
                 /// Whether to use interception for this decorator. default is false.
                 /// </summary>
                 public bool UseIntercept { get; set; }
+            }
+
+            /// <summary>
+            /// Shorthand attribute for composite registration.
+            /// A composite wraps multiple instances of a service type and delegates operations to all of them.
+            /// </summary>
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            {{AttributeClassUsage}}
+            public sealed class QudiCompositeAttribute : QudiCoreAttribute
+            {
+            }
+
+            /// <summary>
+            /// Specifies how a composite method should handle results from multiple implementations.
+            /// </summary>
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+            public sealed class CompositeMethodAttribute : Attribute
+            {
+                /// <summary>
+                /// The result handling strategy for this composite method.
+                /// </summary>
+                public CompositeResult Result { get; set; } = CompositeResult.Forget;
+
+                /// <summary>
+                /// The name of a custom result handler method.
+                /// The method should have signature: TResult MethodName(TResult original, TResult result)
+                /// </summary>
+                public string? ResultHandler { get; set; }
+            }
+
+            /// <summary>
+            /// Defines how a composite method should handle results from multiple implementations.
+            /// </summary>
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            public enum CompositeResult
+            {
+                /// <summary>
+                /// Ignore all results (fire-and-forget).
+                /// </summary>
+                Forget,
+
+                /// <summary>
+                /// Return logical AND of all boolean results (a && b && c && ...).
+                /// </summary>
+                All,
+
+                /// <summary>
+                /// Return logical OR of all boolean results (a || b || c || ...).
+                /// </summary>
+                Any,
+
+                /// <summary>
+                /// Concatenate all enumerable results ([..a, ..b, ..c, ...]).
+                /// </summary>
+                Concat,
             }
         }
         """;

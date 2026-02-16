@@ -153,7 +153,8 @@ public sealed class QudiVisualizationOptions
         }
 
         var normalized = Path.GetFullPath(filePath);
-        var outputFormat = format ?? VisualizeFormatConvertExtensions.DetermineFromFilePath(normalized);
+        var outputFormat =
+            format ?? VisualizeFormatConvertExtensions.DetermineFromFilePath(normalized);
 
         _outputs.Add(new QudiVisualizationFileOutput(normalized, outputFormat));
         return this;

@@ -1,0 +1,13 @@
+digraph Qudi {
+  rankdir=LR;
+  node [shape=box, fontname="Arial"];
+  "Qudi.Examples.SimpleUsage.Abomasnow" [label="Abomasnow", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.SimpleUsage.Altaria" [label="Altaria", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.SimpleUsage.Azumarill" [label="Azumarill", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.SimpleUsage.IPokemon" [label="IPokemon", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Examples.SimpleUsage.SimpleUsageExecutor" [label="SimpleUsageExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.SimpleUsage.IPokemon" -> "Qudi.Examples.SimpleUsage.Altaria";
+  "Qudi.Examples.SimpleUsage.IPokemon" -> "Qudi.Examples.SimpleUsage.Abomasnow";
+  "Qudi.Examples.SimpleUsage.SimpleUsageExecutor" -> "Qudi.Examples.SimpleUsage.IPokemon" [label="*", style=dashed];
+  "Qudi.Examples.SimpleUsage.IPokemon" -> "Qudi.Examples.SimpleUsage.Azumarill";
+}
