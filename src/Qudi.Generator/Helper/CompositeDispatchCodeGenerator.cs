@@ -19,6 +19,9 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeTarget target
     )
     {
+        // Generate two parts:
+        // 1) Open-generic composite helper so DI can inject IEnumerable<IInterface<T>>.
+        // 2) Closed dispatchers per constraint (e.g., IComponent) to enable AOT-safe dispatch.
         // Emit support for open-generic composite (inner-services enumerable only).
         AppendOpenGenericCompositeSupport(builder, target);
         // Emit closed dispatchers for constraint types (e.g., IComponent).
@@ -157,6 +160,7 @@ internal static class CompositeDispatchCodeGenerator
                 foreach (var method in target.Methods)
                 {
                     builder.AppendLine("");
+                    // Dispatch method uses runtime type matching to forward to concrete validators.
                     AppendDispatchMethod(builder, target, method, constraint);
                 }
             }
@@ -204,7 +208,7 @@ internal static class CompositeDispatchCodeGenerator
         {
             if (method.DispatchParameterIndex < 0)
             {
-                // No dispatch parameter: unsupported for dispatch composite.
+                // No dispatch parameter: dispatch composites require a T parameter to select a target.
                 builder.AppendLine(
                     $"throw new {NotSupportedException}(\"{member.Name} is not supported in this dispatch composite.\");"
                 );
@@ -228,6 +232,7 @@ internal static class CompositeDispatchCodeGenerator
 
             if (!isVoid && !isBool && !isTask && !isEnumerable)
             {
+                // Keep return types narrow for predictable, AOT-safe generated code.
                 builder.AppendLine(
                     $"throw new {NotSupportedException}(\"{member.Name} is not supported in this dispatch composite.\");"
                 );

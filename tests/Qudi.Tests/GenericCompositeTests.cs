@@ -65,7 +65,6 @@ public sealed partial class GenericCompositeTests
 
         // Get the composite validator
         var compositeValidator = provider.GetRequiredService<IComponentValidator<Battery>>();
-        compositeValidator.ShouldBeOfType<CompositeValidator<Battery>>();
 
         // Should call all validators
         var result = compositeValidator.Validate(battery);

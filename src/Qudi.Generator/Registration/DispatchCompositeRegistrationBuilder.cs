@@ -32,6 +32,7 @@ internal static class DispatchCompositeRegistrationBuilder
                     $"typeof({constraint.ConstructedInterfaceTypeName})",
                 ]);
 
+                // Dispatcher constructor depends on IEnumerable<IComponentValidator<Concrete>> for each concrete type.
                 var requiredTypes = new List<string>();
                 foreach (var concrete in target.ConcreteTypes)
                 {
@@ -54,6 +55,7 @@ internal static class DispatchCompositeRegistrationBuilder
                         Order = 0,
                         MarkAsDecorator = false,
                         MarkAsComposite = false,
+                        // Mark dispatcher so container avoids layered composite handling.
                         MarkAsCompositeDispatcher = true,
                         Export = false,
                     }

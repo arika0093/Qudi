@@ -932,12 +932,13 @@ internal static class HelperTargetCollector
             return null;
         }
 
-        // Only when user does not define any constructor
+        // Dispatch composite uses generated constructor; skip if user already defined one.
         if (typeSymbol.InstanceConstructors.Any(ctor => !ctor.IsImplicitlyDeclared))
         {
             return null;
         }
 
+        // Require constraints so we can enumerate valid dispatch targets.
         if (typeParam.ConstraintTypes.IsEmpty)
         {
             return null;
@@ -962,6 +963,8 @@ internal static class HelperTargetCollector
             members
         );
 
+        // Create a field/parameter per concrete type so dispatchers can inject
+        // IEnumerable<IComponentValidator<Concrete>> for each matching type.
         var concreteTypeInfos = new List<DispatchCompositeConcreteType>();
         var usedFieldNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var concreteType in concreteTypes)
@@ -1013,7 +1016,8 @@ internal static class HelperTargetCollector
             interfaceSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
         );
 
-        // Dispatchers are generated for each constraint type (e.g., IComponent).
+        // Dispatchers are generated for each constraint type (e.g., IComponent) so
+        // the container can resolve IComponentValidator<IComponent> directly.
         var constraintTypeInfos = new List<DispatchCompositeConstraintType>();
         foreach (var constraint in typeParam.ConstraintTypes.OfType<INamedTypeSymbol>())
         {
@@ -1078,28 +1082,14 @@ internal static class HelperTargetCollector
         var allTypes = new List<INamedTypeSymbol>();
         CollectTypes(compilation.Assembly.GlobalNamespace, allTypes);
 
-        var results = new List<INamedTypeSymbol>();
-        foreach (var type in allTypes)
-        {
-            if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct))
-            {
-                continue;
-            }
+        var results = allTypes
+            .Where(type => type.TypeKind is TypeKind.Class or TypeKind.Struct)
+            .Where(type => !type.IsAbstract && !type.IsGenericType)
+            .Where(type => SatisfiesConstraints(type, typeParam, constraints))
+            .Distinct(NamedTypeSymbolComparer.Instance)
+            .ToImmutableArray();
 
-            if (type.IsAbstract || type.IsGenericType)
-            {
-                continue;
-            }
-
-            if (!SatisfiesConstraints(type, typeParam, constraints))
-            {
-                continue;
-            }
-
-            results.Add(type);
-        }
-
-        return results.Distinct(NamedTypeSymbolComparer.Instance).ToImmutableArray();
+        return results;
     }
 
     private static void CollectTypes(INamespaceSymbol ns, List<INamedTypeSymbol> results)
@@ -1147,23 +1137,16 @@ internal static class HelperTargetCollector
             return false;
         }
 
-        if (typeParam.HasConstructorConstraint)
+        if (
+            typeParam.HasConstructorConstraint
+            && !candidate.IsValueType
+            && candidate.InstanceConstructors.All(c => c.Parameters.Length > 0)
+        )
         {
-            if (!candidate.IsValueType && candidate.InstanceConstructors.All(c => c.Parameters.Length > 0))
-            {
-                return false;
-            }
+            return false;
         }
 
-        foreach (var constraint in constraints)
-        {
-            if (!IsAssignable(candidate, constraint))
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return constraints.All(constraint => IsAssignable(candidate, constraint));
     }
 
     private static bool IsAssignable(INamedTypeSymbol candidate, ITypeSymbol constraint)

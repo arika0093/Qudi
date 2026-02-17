@@ -127,12 +127,9 @@ public static class QudiAddServiceToContainer
             }
 
             var currentDescriptors = descriptorIndexes.Select(i => services[i]).ToList();
-            if (descriptorIndexes.Count == 0)
+            if (descriptorIndexes.Count == 0 && !layers.Any(r => r.MarkAsComposite))
             {
-                if (!layers.Any(r => r.MarkAsComposite))
-                {
-                    continue;
-                }
+                continue;
             }
 
             for (var i = layers.Count - 1; i >= 0; i--)
@@ -230,8 +227,8 @@ public static class QudiAddServiceToContainer
 
             if (registration.MarkAsCompositeDispatcher)
             {
-                // Keep open generic registration as-is for dispatch composites.
-                // Closed dispatchers are generated separately by the source generator.
+                // Dispatch composites stay open-generic here; the generator emits closed dispatcher
+                // registrations so the container doesn't need to synthesize them.
                 materialized.Add(registration);
                 continue;
             }
@@ -302,8 +299,8 @@ public static class QudiAddServiceToContainer
 
                 foreach (var candidate in candidates)
                 {
-                    // For composites, always generate (don't skip if already exists)
-                    // For fallbacks, skip if closed registration already exists
+                    // For composites, always generate (don't skip if already exists).
+                    // For fallbacks, skip if closed registration already exists.
                     if (
                         (!registration.MarkAsComposite || registration.MarkAsCompositeDispatcher)
                         && closedRegistrations.Contains(candidate)
@@ -491,12 +488,13 @@ public static class QudiAddServiceToContainer
             return false;
         }
 
-        if (attributes.HasFlag(GenericParameterAttributes.DefaultConstructorConstraint))
+        if (
+            attributes.HasFlag(GenericParameterAttributes.DefaultConstructorConstraint)
+            && !candidate.IsValueType
+            && candidate.GetConstructor(Type.EmptyTypes) is null
+        )
         {
-            if (!candidate.IsValueType && candidate.GetConstructor(Type.EmptyTypes) is null)
-            {
-                return false;
-            }
+            return false;
         }
 
         foreach (var constraint in constraints)
