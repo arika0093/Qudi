@@ -42,8 +42,8 @@ internal static class MermaidOutputWriter
 
         // Generate edges with condition labels
         var nodesById = graph.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
-        var collectionPairs = graph.Edges
-            .Where(e => e.Kind == "collection")
+        var collectionPairs = graph
+            .Edges.Where(e => e.Kind == "collection")
             .Select(e => (From: e.From, To: e.To))
             .ToHashSet();
         foreach (var edge in graph.Edges)

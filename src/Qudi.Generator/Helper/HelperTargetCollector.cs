@@ -124,8 +124,13 @@ internal static class HelperTargetCollector
         };
         var typeKeyword = $"{(isRecord ? "record " : "")}{typeKind}";
 
+        // Exclude System built-in types (IDisposable, IEquatable<T>, etc.) from auto-registration
         IEnumerable<INamedTypeSymbol> interfaces =
-            asTypes.Length > 0 ? asTypes : typeSymbol.AllInterfaces.OfType<INamedTypeSymbol>();
+            asTypes.Length > 0
+                ? asTypes
+                : typeSymbol
+                    .AllInterfaces.OfType<INamedTypeSymbol>()
+                    .Where(i => !CodeGenerationUtility.IsSystemBuiltInType(i));
         var interfaceList = interfaces
             .Where(iface => iface.TypeKind == TypeKind.Interface)
             .Distinct(NamedTypeSymbolComparer.Instance)

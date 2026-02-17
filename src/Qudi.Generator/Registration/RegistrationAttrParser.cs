@@ -113,8 +113,11 @@ internal static class RegistrationAttrParser
                 .Select(t => CodeGenerationUtility.ToTypeOfLiteral(t))
         );
         // default AsTypes to all implemented interfaces if not specified
+        // Exclude System built-in types (IDisposable, IEquatable<T>, etc.) to avoid unwanted registrations
         var defaultAsTypes = new EquatableArray<string>(
-            typeSymbol.AllInterfaces.Select(CodeGenerationUtility.ToTypeOfLiteral)
+            typeSymbol
+                .AllInterfaces.Where(i => !CodeGenerationUtility.IsSystemBuiltInType(i))
+                .Select(CodeGenerationUtility.ToTypeOfLiteral)
         );
 
         var isDecorator = asDecorator || spec.MarkAsDecorator;

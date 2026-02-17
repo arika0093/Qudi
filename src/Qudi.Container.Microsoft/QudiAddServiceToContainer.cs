@@ -87,11 +87,12 @@ public static class QudiAddServiceToContainer
             .GroupBy(x => x.Service)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(x => x.Reg)
-                    .OrderBy(r => r.Order)
-                    // Lower order is outer; for the same order, decorators wrap composites.
-                    .ThenBy(r => r.MarkAsComposite ? 1 : 0)
-                    .ToList()
+                g =>
+                    g.Select(x => x.Reg)
+                        .OrderBy(r => r.Order)
+                        // Lower order is outer; for the same order, decorators wrap composites.
+                        .ThenBy(r => r.MarkAsComposite ? 1 : 0)
+                        .ToList()
             );
 
         foreach (var (serviceType, layers) in byService)
@@ -138,7 +139,8 @@ public static class QudiAddServiceToContainer
 
                 if (layer.MarkAsComposite)
                 {
-                    currentDescriptors = [
+                    currentDescriptors =
+                    [
                         DescribeCompositeDescriptor(serviceType, layer, currentDescriptors),
                     ];
                 }

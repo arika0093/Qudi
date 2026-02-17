@@ -36,4 +36,30 @@ internal static class CodeGenerationUtility
 
         return typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
+
+    /// <summary>
+    /// Determines if a type is a system built-in type that should be excluded from auto-registration.
+    /// This includes interfaces from System namespaces like IDisposable, IEquatable{T}, IComparable{T}, etc.
+    /// </summary>
+    public static bool IsSystemBuiltInType(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol == null)
+        {
+            return false;
+        }
+
+        // Get the containing namespace
+        var ns = typeSymbol.ContainingNamespace;
+        if (ns == null || ns.IsGlobalNamespace)
+        {
+            return false;
+        }
+
+        // Build the full namespace string
+        var namespaceString = ns.ToDisplayString();
+
+        // Exclude types from System.* namespaces
+        // This includes System, System.Collections, System.Collections.Generic, System.Text, etc.
+        return namespaceString.StartsWith("System", StringComparison.Ordinal);
+    }
 }

@@ -71,14 +71,14 @@ internal static class QudiVisualizationGraphBuilder
             .GroupBy(x => x.Service)
             .ToDictionary(
                 g => g.Key,
-                g => g.OrderBy(x => x.View.Registration.Order)
-                    // Lower order is outer; for the same order, decorators wrap composites.
-                    .ThenBy(x => x.View.Registration.MarkAsComposite ? 1 : 0)
-                    .ThenBy(x => x.View.Registration.Type.FullName, StringComparer.Ordinal)
-                    .Select(x => x.View)
-                    .ToList()
+                g =>
+                    g.OrderBy(x => x.View.Registration.Order)
+                        // Lower order is outer; for the same order, decorators wrap composites.
+                        .ThenBy(x => x.View.Registration.MarkAsComposite ? 1 : 0)
+                        .ThenBy(x => x.View.Registration.Type.FullName, StringComparer.Ordinal)
+                        .Select(x => x.View)
+                        .ToList()
             );
-
 
         // Build a map of implementations by service type
         var implementationsByService = registrationViews
@@ -210,10 +210,7 @@ internal static class QudiVisualizationGraphBuilder
                                 )
                                 .OrderBy(l => l.Registration.Order)
                                 .ThenBy(l => l.Registration.MarkAsComposite ? 1 : 0)
-                                .ThenBy(
-                                    l => l.Registration.Type.FullName,
-                                    StringComparer.Ordinal
-                                )
+                                .ThenBy(l => l.Registration.Type.FullName, StringComparer.Ordinal)
                                 .FirstOrDefault();
                             if (nextLayer is not null)
                             {
@@ -335,10 +332,7 @@ internal static class QudiVisualizationGraphBuilder
                                 )
                                 .OrderBy(l => l.Registration.Order)
                                 .ThenBy(l => l.Registration.MarkAsComposite ? 1 : 0)
-                                .ThenBy(
-                                    l => l.Registration.Type.FullName,
-                                    StringComparer.Ordinal
-                                )
+                                .ThenBy(l => l.Registration.Type.FullName, StringComparer.Ordinal)
                                 .FirstOrDefault();
                             if (
                                 nextLayer is not null
@@ -386,10 +380,9 @@ internal static class QudiVisualizationGraphBuilder
                                     )
                                 )
                                 {
-                                    var implImplId =
-                                        QudiVisualizationAnalyzer.ToFullDisplayName(
-                                            implementationType
-                                        );
+                                    var implImplId = QudiVisualizationAnalyzer.ToFullDisplayName(
+                                        implementationType
+                                    );
                                     AddNode(
                                         nodes,
                                         implementationType,
