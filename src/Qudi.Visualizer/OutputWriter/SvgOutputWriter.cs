@@ -30,8 +30,9 @@ internal static class SvgOutputWriter
                 return $"Unable to start 'dot' to render SVG. Wrote DOT to {dotPath}.";
             }
 
-            var standardOutput = process.StandardOutput.ReadToEnd();
-            var standardError = process.StandardError.ReadToEnd();
+            // Read output asynchronously to prevent deadlock
+            var outputTask = process.StandardOutput.ReadToEndAsync();
+            var errorTask = process.StandardError.ReadToEndAsync();
 
             var exited = process.WaitForExit(5000);
             if (!exited)
@@ -39,7 +40,8 @@ internal static class SvgOutputWriter
                 try
                 {
                     process.Kill(entireProcessTree: true);
-                    process.WaitForExit();
+                    // Use timeout for cleanup wait to prevent infinite hang
+                    process.WaitForExit(1000);
                 }
                 catch
                 {
@@ -48,6 +50,10 @@ internal static class SvgOutputWriter
 
                 return $"Graphviz 'dot' timed out rendering SVG. Wrote DOT to {dotPath}.";
             }
+
+            // Wait for async reads to complete after process exits
+            var standardOutput = outputTask.Result;
+            var standardError = errorTask.Result;
 
             if (process.ExitCode != 0)
             {

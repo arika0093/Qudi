@@ -355,6 +355,12 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
     private bool AskContinue(int errorCount, int warningCount)
     {
+        // Skip interactive prompts if input is not available (e.g., in CI/tests)
+        if (!Console.IsInputRedirected && !Environment.UserInteractive)
+        {
+            return true;
+        }
+
         try
         {
             if (errorCount > 0)

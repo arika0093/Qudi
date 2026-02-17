@@ -25,6 +25,7 @@ public sealed class VisualizeSmokeTests
         {
             conf.EnableVisualizationOutput(opt =>
             {
+                opt.ConsoleOutput = ConsoleDisplay.None;
                 opt.AddOutput(outputPath);
                 opt.SetOutputDirectory(exportDir, QudiVisualizationFormat.Mermaid);
             });
