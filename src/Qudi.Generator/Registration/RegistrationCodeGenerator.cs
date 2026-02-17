@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Qudi.Generator.Dependency;
+using Qudi.Generator.Utility;
 
 namespace Qudi.Generator.Registration;
 
@@ -18,11 +19,24 @@ internal static class RegistrationCodeGenerator
     public static void GenerateRegistrationsCode(
         SourceProductionContext context,
         ImmutableArray<RegistrationSpec?> registrations,
-        ProjectInfo projectInfo
+        ProjectBasicInfo projectInfo,
+        EquatableArray<ProjectDependencyInfo> dependencies
+    )
+    {
+        // Split into two separate files for better incremental generation
+        GenerateInternalRegistrationsFile(context, projectInfo);
+        GenerateProjectRegistrationsFile(context, registrations, projectInfo, dependencies);
+    }
+
+    /// <summary>
+    /// Generates the internal registrations file (depends only on projectInfo).
+    /// </summary>
+    public static void GenerateInternalRegistrationsFile(
+        SourceProductionContext context,
+        ProjectBasicInfo projectInfo
     )
     {
         var builder = new IndentedStringBuilder();
-        var regs = registrations.Where(r => r is not null).Select(r => r!).ToImmutableArray();
 
         builder.AppendLine(
             $$"""
@@ -38,16 +52,42 @@ internal static class RegistrationCodeGenerator
             // Qudi.Generated.QudiInternalRegistrations.FetchAll ...
             GenerateQudiInternalRegistrationsCode(builder, projectInfo);
         }
-        // Qudi.Generated__HASH1234.QudiRegistrations.FetchAll ...
-        GenerateQudiRegistrationsCodes(builder, regs, projectInfo);
 
         var source = builder.ToString();
-        context.AddSource("Qudi.Registration.g.cs", source);
+        context.AddSource("Qudi.Registration.Internal.g.cs", source);
+    }
+
+    /// <summary>
+    /// Generates the project-specific registrations file (depends on registrations, projectInfo, and dependencies).
+    /// </summary>
+    public static void GenerateProjectRegistrationsFile(
+        SourceProductionContext context,
+        ImmutableArray<RegistrationSpec?> registrations,
+        ProjectBasicInfo projectInfo,
+        EquatableArray<ProjectDependencyInfo> dependencies
+    )
+    {
+        var builder = new IndentedStringBuilder();
+        var regs = registrations.Where(r => r is not null).Select(r => r!).ToImmutableArray();
+
+        builder.AppendLine(
+            $$"""
+            {{CodeTemplateContents.CommonGeneratedHeader}}
+            using System.Linq;
+
+            """
+        );
+
+        // Qudi.Generated__HASH1234.QudiRegistrations.FetchAll ...
+        GenerateQudiRegistrationsCodes(builder, regs, projectInfo, dependencies);
+
+        var source = builder.ToString();
+        context.AddSource("Qudi.Registration.Project.g.cs", source);
     }
 
     private static void GenerateQudiInternalRegistrationsCode(
         IndentedStringBuilder builder,
-        ProjectInfo projectInfo
+        ProjectBasicInfo projectInfo
     )
     {
         builder.AppendLine(
@@ -83,7 +123,8 @@ internal static class RegistrationCodeGenerator
     private static void GenerateQudiRegistrationsCodes(
         IndentedStringBuilder builder,
         ImmutableArray<RegistrationSpec> registrations,
-        ProjectInfo projectInfo
+        ProjectBasicInfo projectInfo,
+        EquatableArray<ProjectDependencyInfo> dependencies
     )
     {
         builder.AppendLine($"namespace Qudi.Generated__{projectInfo.ProjectHash}");
@@ -101,7 +142,7 @@ internal static class RegistrationCodeGenerator
         using (builder.BeginScope())
         {
             // export WithDependencies (contains all project's dependencies)
-            GenerateWithDependenciesCode(builder, projectInfo);
+            GenerateWithDependenciesCode(builder, projectInfo, dependencies);
             builder.AppendLine("");
             // export Self (contains only this project's registrations)
             GenerateSelfCode(builder);
@@ -115,7 +156,8 @@ internal static class RegistrationCodeGenerator
 
     private static void GenerateWithDependenciesCode(
         IndentedStringBuilder builder,
-        ProjectInfo projectInfo
+        ProjectBasicInfo projectInfo,
+        EquatableArray<ProjectDependencyInfo> dependencies
     )
     {
         builder.AppendLine(
@@ -138,7 +180,7 @@ internal static class RegistrationCodeGenerator
                 Self(collection, fromOther: fromOther);
                 """
             );
-            foreach (var dep in projectInfo.Dependencies)
+            foreach (var dep in dependencies)
             {
                 builder.AppendLine(
                     $"global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);"
@@ -167,7 +209,7 @@ internal static class RegistrationCodeGenerator
     private static void GenerateOriginalFieldCode(
         IndentedStringBuilder builder,
         ImmutableArray<RegistrationSpec> registrations,
-        ProjectInfo projectInfo
+        ProjectBasicInfo projectInfo
     )
     {
         builder.AppendLine(

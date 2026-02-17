@@ -11,151 +11,63 @@ using Qudi.Generator.Utility;
 
 namespace Qudi.Generator.Dependency;
 
+/// <summary>
+/// Coordinates project information and dependency collection for Qudi source generation.
+/// </summary>
 internal static class DependsCollector
 {
-    private const string QudiRegistrationExtensionsName = "QudiRegistrations";
-    private const string QudiGeneratedRegistrationsPrefix = "Qudi.Generated__";
-
     /// <summary>
-    /// Collects project dependencies that contain Qudi registrations.
+    /// Collects basic project information (lightweight operation).
     /// </summary>
-    public static IncrementalValueProvider<ProjectInfo> QudiProjectDependencies(
+    public static IncrementalValueProvider<ProjectBasicInfo> QudiProjectBasicInfo(
         IncrementalGeneratorInitializationContext context
     )
     {
         return context
             .CompilationProvider.Select(
                 static (compilation, cancellationToken) =>
-                    CollectProjectInfo(compilation, cancellationToken)
+                    ProjectBasicInfoCollector.CollectBasicInfo(compilation, cancellationToken)
             )
-            .WithComparer(EqualityComparer<ProjectInfo>.Default);
+            .WithComparer(EqualityComparer<ProjectBasicInfo>.Default);
     }
 
     /// <summary>
-    /// Collects project info with dependencies that contain Qudi registrations.
+    /// Collects project dependencies that contain Qudi registrations (heavy operation).
     /// </summary>
-    public static ProjectInfo CollectProjectInfo(
-        Compilation compilation,
-        CancellationToken cancellationToken
-    )
+    public static IncrementalValueProvider<EquatableArray<ProjectDependencyInfo>>
+        QudiProjectDependencies(IncrementalGeneratorInitializationContext context)
     {
-        // fetch dependencies
-        var dependencies = new List<ProjectDependencyInfo>();
-        foreach (var reference in compilation.References)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (reference is CompilationReference)
-            {
-                if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assembly)
-                {
-                    FindRegistrationExtensions(
-                        assembly,
-                        assembly.GlobalNamespace,
-                        dependencies,
+        return context
+            .CompilationProvider.Select(
+                static (compilation, cancellationToken) =>
+                    ProjectDependenciesCollector.CollectDependencies(
+                        compilation,
                         cancellationToken
-                    );
+                    )
+            )
+            .WithComparer(EqualityComparer<EquatableArray<ProjectDependencyInfo>>.Default);
+    }
+
+    /// <summary>
+    /// Combines basic project information and dependencies into a single ProjectInfo object.
+    /// </summary>
+    public static IncrementalValueProvider<ProjectInfo> QudiProjectInfo(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        var basicInfo = QudiProjectBasicInfo(context);
+        var dependencies = QudiProjectDependencies(context);
+
+        return basicInfo
+            .Combine(dependencies)
+            .Select(
+                static (combined, _) =>
+                {
+                    var (basic, deps) = combined;
+                    return new ProjectInfo { Basic = basic, Dependencies = deps };
                 }
-
-                continue;
-            }
-
-            if (
-                reference is PortableExecutableReference portable
-                && IsProjectReferencePath(portable.FilePath)
-                && compilation.GetAssemblyOrModuleSymbol(reference)
-                    is IAssemblySymbol projectAssembly
             )
-            {
-                FindRegistrationExtensions(
-                    projectAssembly,
-                    projectAssembly.GlobalNamespace,
-                    dependencies,
-                    cancellationToken
-                );
-            }
-        }
-        var self = new ProjectInfo
-        {
-            AssemblyName = compilation.AssemblyName ?? "UnknownAssembly",
-            Namespace = compilation.Assembly.GlobalNamespace.ToDisplayString(),
-            ProjectHash = GenerateProjectHash(compilation.Assembly, cancellationToken),
-            AddServicesAvailable = AddServiceSupportChecker.IsSupported(compilation),
-            Dependencies = new EquatableArray<ProjectDependencyInfo>(dependencies),
-        };
-        return self;
+            .WithComparer(EqualityComparer<ProjectInfo>.Default);
     }
-
-    private static void FindRegistrationExtensions(
-        IAssemblySymbol assemblySymbol,
-        INamespaceSymbol namespaceSymbol,
-        List<ProjectDependencyInfo> results,
-        CancellationToken cancellationToken
-    )
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        // Look for types named QudiRegistrationExtensions in namespaces
-        // that start with Qudi.Generated.Registrations__
-        foreach (var type in namespaceSymbol.GetTypeMembers())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var ns = type.ContainingNamespace.ToDisplayString();
-            if (
-                type.Name == QudiRegistrationExtensionsName
-                && ns.StartsWith(QudiGeneratedRegistrationsPrefix, StringComparison.Ordinal)
-            )
-            {
-                results.Add(
-                    new ProjectDependencyInfo
-                    {
-                        AssemblyName = assemblySymbol.Name,
-                        Namespace = ns,
-                        ProjectHash = GenerateProjectHash(assemblySymbol, cancellationToken),
-                    }
-                );
-            }
-        }
-        // Recurse into child namespaces
-        foreach (var child in namespaceSymbol.GetNamespaceMembers())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            FindRegistrationExtensions(assemblySymbol, child, results, cancellationToken);
-        }
-    }
-
-    private static string GenerateProjectHash(
-        IAssemblySymbol assemblySymbol,
-        CancellationToken cancellationToken
-    )
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        return FastHashGenerator.Generate(assemblySymbol.Identity.ToString(), 12);
-    }
-
-    private static bool IsProjectReferencePath(string? filePath)
-    {
-        // TODO: The project determination needs to be more precise. The current implementation is path-dependent and thus unreliable.
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            return false;
-        }
-        var path = filePath!.Replace('\\', '/');
-        if (ExcludePath.Any(exclude => path.Contains(exclude, StringComparison.OrdinalIgnoreCase)))
-        {
-            return false;
-        }
-        if (IncludePath.Any(include => path.Contains(include, StringComparison.OrdinalIgnoreCase)))
-        {
-            return true;
-        }
-        return false;
-    }
-
-    private static readonly IReadOnlyCollection<string> ExcludePath =
-    [
-        "/.nuget/",
-        "/packages/",
-        "/packs/",
-    ];
-
-    private static readonly IReadOnlyCollection<string> IncludePath = ["/bin/", "/obj/"];
 }
+

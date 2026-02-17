@@ -11,7 +11,7 @@ internal static class AddServiceCodeGenerator
 
     public static void GenerateAddQudiServicesCode(
         SourceProductionContext context,
-        ProjectInfo projectInfo
+        ProjectBasicInfo projectInfo
     )
     {
         var builder = new IndentedStringBuilder();
@@ -41,7 +41,7 @@ internal static class AddServiceCodeGenerator
     public static void GenerateAddQudiServicesCodeEach(
         IndentedStringBuilder builder,
         AddServiceCore generator,
-        ProjectInfo dependencyInfo
+        ProjectBasicInfo dependencyInfo
     )
     {
         var r = generator.GenerateAddQudiServicesCode(dependencyInfo);

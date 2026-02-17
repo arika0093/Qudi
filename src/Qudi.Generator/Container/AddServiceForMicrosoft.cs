@@ -17,7 +17,7 @@ internal class AddServiceForMicrosoft : AddServiceCore
     public override string CalledMethodName =>
         $"global::{SupportCheckMetadataName}.AddQudiServices";
 
-    public override string? GenerateAddQudiServicesCode(ProjectInfo info)
+    public override string? GenerateAddQudiServicesCode(ProjectBasicInfo info)
     {
         var isSupported = info.AddServicesAvailable.GetValueOrDefault(GetType(), false);
         if (!isSupported)

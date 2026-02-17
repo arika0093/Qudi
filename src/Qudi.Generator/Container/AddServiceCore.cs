@@ -33,7 +33,7 @@ internal abstract class AddServiceCore
     /// <summary>
     /// Generates the AddQudiService code for the given dependency.
     /// </summary>
-    public virtual string? GenerateAddQudiServicesCode(ProjectInfo info)
+    public virtual string? GenerateAddQudiServicesCode(ProjectBasicInfo info)
     {
         return $$"""
             /// <summary>

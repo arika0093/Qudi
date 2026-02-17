@@ -18,24 +18,38 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
 
         var helperTargets = HelperTargetCollector.CollectTargets(context);
 
-        var dependencies = DependsCollector.QudiProjectDependencies(context);
+        var projectBasicInfo = DependsCollector.QudiProjectBasicInfo(context);
+        var projectInfo = DependsCollector.QudiProjectInfo(context);
 
-        var combined = registrations.Combine(dependencies);
-
-        // registrations
+        // Internal registrations - only depends on basic project info
         context.RegisterSourceOutput(
-            combined,
+            projectBasicInfo,
+            static (spc, basicInfo) =>
+                RegistrationCodeGenerator.GenerateInternalRegistrationsFile(spc, basicInfo)
+        );
+
+        // Project registrations - depends on registrations and full project info
+        var combinedForProjectRegistrations = registrations.Combine(projectInfo);
+
+        context.RegisterSourceOutput(
+            combinedForProjectRegistrations,
             static (spc, source) =>
             {
-                var (regs, deps) = source;
-                RegistrationCodeGenerator.GenerateRegistrationsCode(spc, regs, deps);
+                var (regs, projInfo) = source;
+                RegistrationCodeGenerator.GenerateProjectRegistrationsFile(
+                    spc,
+                    regs,
+                    projInfo.Basic,
+                    projInfo.Dependencies
+                );
             }
         );
 
-        // add services
+        // add services - only depends on basic project info
         context.RegisterSourceOutput(
-            dependencies,
-            static (spc, deps) => AddServiceCodeGenerator.GenerateAddQudiServicesCode(spc, deps)
+            projectBasicInfo,
+            static (spc, basicInfo) =>
+                AddServiceCodeGenerator.GenerateAddQudiServicesCode(spc, basicInfo)
         );
 
         // helper (Decorator/Composite)
