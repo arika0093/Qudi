@@ -16,18 +16,6 @@ internal static class RegistrationCodeGenerator
     private const string TRResult = $"{IReadOnlyList}<{TRInfo}>";
     private const string VisitedHashSet = "global::System.Collections.Generic.HashSet<long>";
 
-    public static void GenerateRegistrationsCode(
-        SourceProductionContext context,
-        ImmutableArray<RegistrationSpec?> registrations,
-        ProjectBasicInfo projectInfo,
-        EquatableArray<ProjectDependencyInfo> dependencies
-    )
-    {
-        // Split into two separate files for better incremental generation
-        GenerateInternalAndSelfRegistrationsFile(context, registrations, projectInfo);
-        GenerateWithDependenciesImplementationFile(context, projectInfo, dependencies);
-    }
-
     /// <summary>
     /// Generates the internal and self registrations file (depends only on registrations and basicInfo).
     /// Includes Internal, Self, Original, and partial WithDependencies declaration.
@@ -91,18 +79,19 @@ internal static class RegistrationCodeGenerator
     /// </summary>
     public static void GenerateWithDependenciesImplementationFile(
         SourceProductionContext context,
-        ProjectBasicInfo projectInfo,
-        EquatableArray<ProjectDependencyInfo> dependencies
+        ProjectInfo projectInfo
     )
     {
         var builder = new IndentedStringBuilder();
+        var projectData = projectInfo.Basic;
+        var dependencies = projectInfo.Dependencies;
 
         builder.AppendLine(
             $$"""
             {{CodeTemplateContents.CommonGeneratedHeader}}
             using System.Linq;
 
-            namespace Qudi.Generated__{{projectInfo.ProjectHash}}
+            namespace Qudi.Generated__{{projectData.ProjectHash}}
             """
         );
 
@@ -112,7 +101,7 @@ internal static class RegistrationCodeGenerator
             using (builder.BeginScope())
             {
                 // export WithDependencies implementation
-                GenerateWithDependenciesImplementation(builder, projectInfo, dependencies);
+                GenerateWithDependenciesImplementation(builder, projectData, dependencies);
             }
         }
 
@@ -184,40 +173,6 @@ internal static class RegistrationCodeGenerator
         );
     }
 
-    private static void GenerateQudiRegistrationsCodes(
-        IndentedStringBuilder builder,
-        ImmutableArray<RegistrationSpec> registrations,
-        ProjectBasicInfo projectInfo,
-        EquatableArray<ProjectDependencyInfo> dependencies
-    )
-    {
-        builder.AppendLine($"namespace Qudi.Generated__{projectInfo.ProjectHash}");
-        builder.AppendLine("{");
-        builder.IncreaseIndent();
-        builder.AppendLine(
-            $$"""
-            /// <summary>
-            /// Contains Qudi registration information for this project.
-            /// </summary>
-            {{CodeTemplateContents.EditorBrowsableAttribute}}
-            public static partial class QudiRegistrations
-            """
-        );
-        using (builder.BeginScope())
-        {
-            // export WithDependencies (contains all project's dependencies)
-            GenerateWithDependenciesCode(builder, projectInfo, dependencies);
-            builder.AppendLine("");
-            // export Self (contains only this project's registrations)
-            GenerateSelfCode(builder);
-            builder.AppendLine("");
-            // export Original (all registrations defined in this project)
-            GenerateOriginalFieldCode(builder, registrations, projectInfo);
-        }
-        builder.DecreaseIndent();
-        builder.AppendLine("}");
-    }
-
     private static void GenerateWithDependenciesDeclaration(IndentedStringBuilder builder)
     {
         builder.AppendLine(
@@ -248,41 +203,6 @@ internal static class RegistrationCodeGenerator
             /// <param name="visited">Set of visited project hashes to avoid cycles.</param>
             /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
             public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)
-            """
-        );
-        using (builder.BeginScope())
-        {
-            // add self registrations
-            // check visited to avoid duplicate registrations
-            builder.AppendLine(
-                $$"""
-                if (!visited.Add(0x{{projectInfo.ProjectHash}})) return;
-                Self(collection, fromOther: fromOther);
-                """
-            );
-            foreach (var dep in dependencies)
-            {
-                builder.AppendLine(
-                    $"global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);"
-                );
-            }
-        }
-    }
-
-    private static void GenerateWithDependenciesCode(
-        IndentedStringBuilder builder,
-        ProjectBasicInfo projectInfo,
-        EquatableArray<ProjectDependencyInfo> dependencies
-    )
-    {
-        builder.AppendLine(
-            $"""
-            /// <summary>
-            /// Gets all registrations including dependencies. This method is used internally for Qudi.
-            /// </summary>
-            /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
-            /// <returns>All registrations including dependencies.</returns>
-            public static void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)
             """
         );
         using (builder.BeginScope())

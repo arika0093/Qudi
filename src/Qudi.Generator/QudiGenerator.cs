@@ -38,13 +38,12 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
         );
 
         // WithDependencies implementation - depends on full project info
-        context.RegisterSourceOutput(
+        context.RegisterImplementationSourceOutput(
             projectInfo,
             static (spc, projInfo) =>
                 RegistrationCodeGenerator.GenerateWithDependenciesImplementationFile(
                     spc,
-                    projInfo.Basic,
-                    projInfo.Dependencies
+                    projInfo
                 )
         );
 
