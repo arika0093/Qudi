@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,7 +67,7 @@ public sealed class CompositeTests
     }
 
     [Test]
-    public void CompositeWithIEnumerableReturnConcatenatesResults()
+    public void CompositeWithUnsupportedReturnThrows()
     {
         var services = new ServiceCollection();
         services.AddQudiServices();
@@ -74,13 +75,33 @@ public sealed class CompositeTests
         var provider = services.BuildServiceProvider();
         var dataProvider = provider.GetRequiredService<IDataProvider>();
 
-        var results = dataProvider.GetData().ToList();
+        Should.Throw<NotSupportedException>(() => dataProvider.GetData().ToList());
+    }
 
-        results.Count.ShouldBe(4);
-        results.ShouldContain("A1");
-        results.ShouldContain("A2");
-        results.ShouldContain("B1");
-        results.ShouldContain("B2");
+    [Test]
+    public void CompositeMethodAttributeOverridesResultHandling()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var service = provider.GetRequiredService<ICompositeMethodService>();
+
+        service.AllCheck().ShouldBeFalse();
+        service.AnyCheck().ShouldBeTrue();
+    }
+
+    [Test]
+    public void CompositeUnsupportedMembersThrow()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var service = provider.GetRequiredService<ICompositeMethodService>();
+
+        Should.Throw<NotSupportedException>(() => service.UnsupportedMethod());
+        Should.Throw<NotSupportedException>(() => _ = service.UnsupportedProperty);
     }
 
     [Test]

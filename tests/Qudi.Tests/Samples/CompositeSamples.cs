@@ -130,6 +130,50 @@ public sealed class DataProviderB : IDataProvider
 public sealed partial class CompositeDataProvider(IEnumerable<IDataProvider> innerServices)
     : IDataProvider;
 
+public interface ICompositeMethodService
+{
+    bool AllCheck();
+    bool AnyCheck();
+    int UnsupportedMethod();
+    string UnsupportedProperty { get; }
+}
+
+[DITransient]
+public sealed class CompositeMethodServiceTrue : ICompositeMethodService
+{
+    public bool AllCheck() => true;
+
+    public bool AnyCheck() => false;
+
+    public int UnsupportedMethod() => 1;
+
+    public string UnsupportedProperty => "true";
+}
+
+[DITransient]
+public sealed class CompositeMethodServiceFalse : ICompositeMethodService
+{
+    public bool AllCheck() => false;
+
+    public bool AnyCheck() => true;
+
+    public int UnsupportedMethod() => 2;
+
+    public string UnsupportedProperty => "false";
+}
+
+[QudiComposite]
+public sealed partial class CompositeMethodService(
+    IEnumerable<ICompositeMethodService> innerServices
+) : ICompositeMethodService
+{
+    [CompositeMethod(Result = CompositeResult.All)]
+    public partial bool AllCheck();
+
+    [CompositeMethod(Result = CompositeResult.Any)]
+    public partial bool AnyCheck();
+}
+
 // Test result aggregation with Task return type
 public interface IAsyncService
 {

@@ -1072,33 +1072,21 @@ Unlike the decorator pattern, you need to explicitly specify how to handle the r
 public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     : ISomeService
 {
-    // in void methods, just execute all implementations
+    // in void methods, execute all implementations
     public partial void FeatureA();
 
-    // in IEnumerable/ICollection methods, combine results and return as a single collection
-    public partial IEnumerable<string> FeatureB();
-
-    // in boolean methods, you can specify how to combine results using CompositeMethod attribute
+    // in bool methods, you can specify aggregation behavior
     [CompositeMethod(Result = CompositeResult.All)] // -> return a && b && c && ...;
     [CompositeMethod(Result = CompositeResult.Any)] // -> return a || b || c || ...;
-    public partial bool FeatureC();
+    public partial bool FeatureB();
 
-    // in Task methods, in addition to how to handle results, you can also specify how to execute them.
+    // in Task methods, you can specify aggregation behavior
     [CompositeMethod(Result = CompositeResult.All)] // -> return Task.WhenAll(a,b,c,...);
     [CompositeMethod(Result = CompositeResult.Any)] // -> return Task.WhenAny(a,b,c,...);
-    [CompositeMethod(Result = CompositeResult.Sequential)] // -> await a; await b; await c; ...; return Task.CompletedTask;
-    public partial Task FeatureD(int val);
-
-    // in other cases, you can use a custom result handler to specify how to combine results.
-    [CompositeMethod(ResultHandler = nameof(AggregateEnumValue))] 
-    public partial MyEnumValue FeatureE(string msg);
-
-    // such as result.Aggregate((a,b) => AggregateEnumValue(a,b));
-    private MyEnumValue AggregateEnumValue(MyEnumValue original, MyEnumValue result)
-        => original | result; // example: bitwise OR to combine enum values
+    public partial Task FeatureC(int val);
 
     // if you want to handle results manually, you can implement it as a normal method without using auto implementation.
-    public void FeatureF()
+    public void FeatureD()
     {
         // you can also implement methods without using auto implementation,
         // and call inner services manually if you need more control.

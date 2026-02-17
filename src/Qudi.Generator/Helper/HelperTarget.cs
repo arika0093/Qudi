@@ -164,6 +164,11 @@ internal sealed record HelperImplementingTarget
     /// Generic type arguments for use in constructed types (e.g., "<T>").
     /// </summary>
     public required string GenericTypeArguments { get; init; }
+
+    /// <summary>
+    /// Composite methods declared in the target class that should be auto-implemented.
+    /// </summary>
+    public required EquatableArray<CompositeMethodOverride> CompositeMethodOverrides { get; init; }
 }
 
 /// <summary>
@@ -252,6 +257,43 @@ internal sealed record HelperParameter
     /// Whether the parameter is a params array.
     /// </summary>
     public required bool IsParams { get; init; }
+}
+
+/// <summary>
+/// Represents an explicitly declared composite method in a target class.
+/// </summary>
+internal sealed record CompositeMethodOverride
+{
+    /// <summary>
+    /// Method name.
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    /// Fully qualified return type name.
+    /// </summary>
+    public required string ReturnTypeName { get; init; }
+
+    /// <summary>
+    /// Method parameters.
+    /// </summary>
+    public required EquatableArray<HelperParameter> Parameters { get; init; }
+
+    /// <summary>
+    /// Declared result behavior for composite execution.
+    /// </summary>
+    public required CompositeResultBehavior ResultBehavior { get; init; }
+}
+
+/// <summary>
+/// Composite aggregation behavior.
+/// </summary>
+internal enum CompositeResultBehavior
+{
+    Forget,
+    All,
+    Any,
+    Concat,
 }
 
 /// <summary>

@@ -13,6 +13,7 @@ internal static class HelperTargetCollector
 {
     private const string QudiDecoratorAttribute = "Qudi.QudiDecoratorAttribute";
     private const string QudiCompositeAttribute = "Qudi.QudiCompositeAttribute";
+    private const string CompositeMethodAttribute = "Qudi.CompositeMethodAttribute";
 
     public static IncrementalValueProvider<HelperGenerationInput> CollectTargets(
         IncrementalGeneratorInitializationContext context
@@ -187,18 +188,26 @@ internal static class HelperTargetCollector
                 useIntercept,
                 containingTypesList
             );
+            var members = CollectInterfaceMembers(iface).ToImmutableArray();
             if (constructorTarget is not null)
             {
+                var compositeMethodOverrides = isComposite
+                    ? CollectCompositeMethodOverrides(context, typeSymbol, members)
+                    : ImmutableArray<CompositeMethodOverride>.Empty;
                 implementingTargets.Add(constructorTarget);
+                implementingTargets[^1] = implementingTargets[^1] with
+                {
+                    CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>(
+                        compositeMethodOverrides
+                    ),
+                };
             }
-            var members = CollectInterfaceMembers(iface);
             var decoratorParameterName =
                 isDecorator && constructorTarget is not null
                     ? constructorTarget.BaseParameterName
                     : string.Empty;
             
             // Extract generic type information from the interface
-            var genericParams = CodeGenerationUtility.GetGenericTypeParameters(iface);
             var genericConstraints = CodeGenerationUtility.GetGenericConstraints(iface);
             var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(iface);
             
@@ -349,6 +358,12 @@ internal static class HelperTargetCollector
             {
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
                 UseIntercept = existing.UseIntercept || useIntercept,
+                CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>(
+                    existing.CompositeMethodOverrides
+                        .Concat(target.CompositeMethodOverrides)
+                        .Distinct()
+                        .ToImmutableArray()
+                ),
             };
         }
 
@@ -592,7 +607,6 @@ internal static class HelperTargetCollector
         }
 
         // Extract generic type information from the implementing type
-        var genericParams = CodeGenerationUtility.GetGenericTypeParameters(typeSymbol);
         var genericConstraints = CodeGenerationUtility.GetGenericConstraints(typeSymbol);
         var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(typeSymbol);
 
@@ -615,7 +629,133 @@ internal static class HelperTargetCollector
             UseIntercept = useIntercept,
             GenericTypeParameters = genericConstraints, // Store the where clauses
             GenericTypeArguments = genericArgs,
+                CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>([]),
         };
+    }
+
+    private static ImmutableArray<CompositeMethodOverride> CollectCompositeMethodOverrides(
+        GeneratorAttributeSyntaxContext context,
+        INamedTypeSymbol typeSymbol,
+        ImmutableArray<HelperMember> interfaceMembers
+    )
+    {
+        if (interfaceMembers.IsDefaultOrEmpty)
+        {
+            return ImmutableArray<CompositeMethodOverride>.Empty;
+        }
+
+        var interfaceMethods = interfaceMembers
+            .Where(m => m.Kind == HelperMemberKind.Method)
+            .ToImmutableArray();
+        if (interfaceMethods.IsDefaultOrEmpty)
+        {
+            return ImmutableArray<CompositeMethodOverride>.Empty;
+        }
+
+        var compositeMethodAttrSymbol = context.SemanticModel
+            .Compilation.GetTypeByMetadataName(CompositeMethodAttribute);
+        var methods = typeSymbol
+            .GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(m =>
+                m.MethodKind == MethodKind.Ordinary
+                && !m.IsStatic
+                && m.IsPartialDefinition
+                && m.PartialImplementationPart is null
+            );
+
+        var result = new List<CompositeMethodOverride>();
+        foreach (var method in methods)
+        {
+            var methodMember = interfaceMethods.FirstOrDefault(im =>
+                IsSameSignature(im, method)
+            );
+            if (methodMember is null)
+            {
+                continue;
+            }
+
+            var methodResult = CompositeResultBehavior.Forget;
+            if (compositeMethodAttrSymbol is not null)
+            {
+                var attribute = method
+                    .GetAttributes()
+                    .FirstOrDefault(attr =>
+                        SymbolEqualityComparer.Default.Equals(
+                            attr.AttributeClass,
+                            compositeMethodAttrSymbol
+                        )
+                    );
+                if (attribute is not null)
+                {
+                    foreach (var argument in attribute.NamedArguments)
+                    {
+                        if (argument.Key == "Result" && argument.Value.Value is int intResult)
+                        {
+                            methodResult = intResult switch
+                            {
+                                1 => CompositeResultBehavior.All,
+                                2 => CompositeResultBehavior.Any,
+                                3 => CompositeResultBehavior.Concat,
+                                _ => CompositeResultBehavior.Forget,
+                            };
+                        }
+                    }
+                }
+            }
+
+            result.Add(
+                new CompositeMethodOverride
+                {
+                    Name = method.Name,
+                    ReturnTypeName = method.ReturnType.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    ),
+                    Parameters = new EquatableArray<HelperParameter>(
+                        method.Parameters.Select(CreateParameter).ToImmutableArray()
+                    ),
+                    ResultBehavior = methodResult,
+                }
+            );
+        }
+
+        return result.ToImmutableArray();
+    }
+
+    private static bool IsSameSignature(HelperMember helperMember, IMethodSymbol method)
+    {
+        if (!string.Equals(helperMember.Name, method.Name, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (!string.Equals(helperMember.ReturnTypeName, method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (helperMember.Parameters.Count != method.Parameters.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var left = helperMember.Parameters[i];
+            var right = method.Parameters[i];
+            var rightType = right.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            if (!string.Equals(left.TypeName, rightType, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!string.Equals(left.RefKindPrefix, GetRefKindPrefix(right.RefKind), StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static IParameterSymbol? FindParameterForInterface(
