@@ -647,12 +647,15 @@ public class ScreenValidator : IComponentValidator<Screen>
 }
 
 // -----------
-// usage
+// usage - Helper wrapper for simplified API
+[DITransient]
 public class ComponentValidator<T>(IComponentValidator<T> validator) where T : IComponent
 {
     public bool Check(T component) => validator.Validate(component);
 }
 ```
+
+The `ComponentValidator<T>` wrapper provides a simplified, more discoverable API. Instead of directly resolving `IComponentValidator<T>` and calling `Validate()`, you can resolve `ComponentValidator<T>` and call `Check()`. This helper is automatically registered in the DI container via the `[DITransient]` attribute.
 
 If multiple registrations are made for the same type, you can resolve them all by using `IEnumerable<IComponentValidator<T>>` on the usage side.
 
@@ -671,6 +674,7 @@ public class BatteryAnotherValidator : IComponentValidator<Battery>
 
 // -----------
 // usage
+[DITransient]
 public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
     where T : IComponent
 {
