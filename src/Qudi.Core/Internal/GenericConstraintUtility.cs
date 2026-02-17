@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Qudi.Core.Internal;
 
-internal static class GenericConstraintUtility
+public static class GenericConstraintUtility
 {
     public static bool SatisfiesConstraints(Type candidate, Type genericParameter, Type[] constraints)
     {
