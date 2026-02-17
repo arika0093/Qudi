@@ -75,7 +75,6 @@ node [shape=box, fontname="Consolas"];
   "Qudi.Examples.SimpleUsage.SimpleUsageExecutor" -> "Qudi.Examples.SimpleUsage.IPokemon" [label="*", style=dashed];
   "Qudi.Examples.SimpleUsage.IPokemon" -> "Qudi.Examples.SimpleUsage.Azumarill";
   "Qudi.Examples.CompositePattern.IMessageService" -> "Qudi.Examples.CompositePattern.LoggingMessageServiceDecorator";
-  "Qudi.Examples.CompositePattern.LoggingMessageServiceDecorator" -> "Qudi.Examples.CompositePattern.CompositeMessageService";
   "Qudi.Examples.DecoratorPattern.IMessageService" -> "Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator";
   "Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator" -> "Qudi.Examples.DecoratorPattern.CensorshipMessageServiceDecorator";
   "Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator" -> "Microsoft.Extensions.Logging.ILogger<Qudi.Examples.DecoratorPattern.LoggingMessageServiceDecorator>";

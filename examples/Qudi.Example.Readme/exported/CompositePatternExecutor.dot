@@ -1,17 +1,9 @@
 digraph Qudi {
   rankdir=LR;
 node [shape=box, fontname="Consolas"];
-  "Qudi.Examples.CompositePattern.CompositeMessageService" [label="CompositeMessageService", shape=box, style=filled, fillcolor="#f8d7da", color="#c62828"];
   "Qudi.Examples.CompositePattern.CompositePatternExecutor" [label="CompositePatternExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
-  "Qudi.Examples.CompositePattern.EmailMessageService" [label="EmailMessageService", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.CompositePattern.IMessageService" [label="IMessageService", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
   "Qudi.Examples.CompositePattern.LoggingMessageServiceDecorator" [label="LoggingMessageServiceDecorator", shape=box, style=filled, fillcolor="#e1bee7"];
-  "Qudi.Examples.CompositePattern.PushNotificationService" [label="PushNotificationService", shape=box, style=filled, fillcolor="#bbdefb"];
-  "Qudi.Examples.CompositePattern.SmsMessageService" [label="SmsMessageService", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.CompositePattern.CompositePatternExecutor" -> "Qudi.Examples.CompositePattern.IMessageService";
   "Qudi.Examples.CompositePattern.IMessageService" -> "Qudi.Examples.CompositePattern.LoggingMessageServiceDecorator";
-  "Qudi.Examples.CompositePattern.LoggingMessageServiceDecorator" -> "Qudi.Examples.CompositePattern.CompositeMessageService";
-  "Qudi.Examples.CompositePattern.CompositeMessageService" -> "Qudi.Examples.CompositePattern.EmailMessageService" [label="*", style=dashed];
-  "Qudi.Examples.CompositePattern.CompositeMessageService" -> "Qudi.Examples.CompositePattern.SmsMessageService" [label="*", style=dashed];
-  "Qudi.Examples.CompositePattern.CompositeMessageService" -> "Qudi.Examples.CompositePattern.PushNotificationService" [label="*", style=dashed];
 }
