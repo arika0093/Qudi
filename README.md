@@ -171,7 +171,7 @@ flowchart LR
 
 ```
 
-### Decorator and Composit
+### Decorator and Composite
 You can easily implement the Decorator and Composite patterns using Qudi’s features. First, let’s take a look at the Decorator pattern.
 
 A decorator is a design pattern that adds functionality to an existing service without modifying its code.
