@@ -1402,7 +1402,7 @@ If information about dependencies also needs to be collected, `WithDependencies`
 This implementation is generated separately at compile time. This design allows us to collect information about dependencies in multiple passes without worrying about the order of generation, and also allows us to easily visualize the collected information by outputting it in the final configuration step.
 
 <details>
-<summary>Generated Code for Dependency Collection (Qudi.Registration.Dependencies.g.cs)</summary
+<summary>Generated Code for Dependency Collection (Qudi.Registration.Dependencies.g.cs)</summary>
 
 ```csharp
 #nullable enable
