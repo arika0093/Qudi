@@ -9,11 +9,8 @@ Explicitly, No assembly scan, AOT friendly, and Visualize registrations.
 
 ## Getting Started
 ### First Step
-Well, it's easier to show you than to explain it. 😉
+Well, it's easier to show you than to explain it. 😉  
 If you are using .NET 10 or later, just paste the following code into a file and run `dotnet file.cs`.
-
-<details>
-<summary>Code Example</summary>
 
 ```csharp
 #!/usr/bin/env dotnet
@@ -63,8 +60,6 @@ public class Abomasnow : IPokemon
     public IEnumerable<string> Types => ["Grass", "Ice"];
 }
 ```
-
-</details>
 
 As you can see, just these two steps. 
 
