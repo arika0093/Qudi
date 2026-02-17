@@ -381,7 +381,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             }
             return true;
         }
-        catch (NotSupportedException)
+        catch (Exception ex) when (ex is InvalidOperationException || ex is NotSupportedException)
         {
             // ignore if console input is not supported (e.g. in some IDEs or environments)
             return true;
