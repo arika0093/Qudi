@@ -1686,6 +1686,45 @@ public class Keyboard : IComponent
 
 When using it, you can simply call `ComponentValidator.Validate(...)` without worrying about `<T>` at all.
 
+```mermaid
+flowchart LR
+    IComponentValidator_T_["IComponentValidator#lt;T#gt;"]
+    BatteryValidator["BatteryValidator"]
+    IComponentValidator_Battery_["IComponentValidator#lt;Battery#gt;"]
+    BatteryAnotherValidator["BatteryAnotherValidator"]
+    ScreenValidator["ScreenValidator"]
+    IComponentValidator_Screen_["IComponentValidator#lt;Screen#gt;"]
+    ComponentValidator["ComponentValidator"]
+    ComponentValidatorDispatcher_T_["ComponentValidatorDispatcher#lt;T#gt;"]
+    IComponentValidator_Keyboard_["IComponentValidator#lt;Keyboard#gt;"] 
+    NullComponentValidator_Keyboard_["NullComponentValidator#lt;Keyboard#gt;"]
+    ComponentValidator --> IComponentValidator_T_
+    IComponentValidator_Battery_ --> BatteryValidator
+    IComponentValidator_Battery_ --> BatteryAnotherValidator
+    IComponentValidator_Screen_ --> ScreenValidator
+    IComponentValidator_T_ --> ComponentValidatorDispatcher_T_
+    ComponentValidatorDispatcher_T_ -.->|"*"| IComponentValidator_Battery_
+    ComponentValidatorDispatcher_T_ -.->|"*"| IComponentValidator_Screen_
+    ComponentValidatorDispatcher_T_ -.->|"*"| IComponentValidator_Keyboard_
+    IComponentValidator_Keyboard_ --> NullComponentValidator_Keyboard_
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IComponentValidator_T_ interface;
+    class IComponentValidator_Battery_ interface;
+    class IComponentValidator_Screen_ interface;
+    class IComponentValidator_Keyboard_ interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class NullComponentValidator_T_ cls;
+    class BatteryValidator cls;
+    class BatteryAnotherValidator cls;
+    class ScreenValidator cls;
+    class ComponentValidator cls;
+    class NullComponentValidator_Keyboard_ cls;
+    class ComponentValidatorDispatcher_Keyboard_ cls;
+    classDef composite fill:#f8d7da,stroke:#c62828,stroke-width:2px,color:#000;
+    class ComponentValidatorDispatcher_T_ composite;
+
+```
+
 ## Visualize Registration
 ### Setup
 Qudi collects registration information and generates code.
