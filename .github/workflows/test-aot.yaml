@@ -1,0 +1,42 @@
+name: .NET Build and Test (AOT)
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - release/*
+    paths:
+      - '**.csproj'
+      - '**.cs'
+      - '**./Directories.Build.props'
+      - '.github/workflows/test-aot.yaml'
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  # run AOT tests
+  test-aot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore 
+
+      - name: Publish and run AOT tests
+        run: |
+          cd tests/Qudi.Tests
+          dotnet publish -o ./publish -f net10.0 -r linux-x64
+           ./publish/Qudi.Tests

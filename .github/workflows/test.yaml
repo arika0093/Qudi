@@ -41,29 +41,6 @@ jobs:
       - name: Run tests
         run: dotnet test --no-build --verbosity normal
 
-  # run AOT tests
-  test-aot:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Restore dependencies
-        run: dotnet restore 
-
-      - name: Publish and run AOT tests
-        run: |
-          cd tests/Qudi.Tests
-          dotnet publish -o ./publish -f net10.0 -r linux-x64
-           ./publish/Qudi.Tests
-
   # run examples code with packed package
   test-examples:
     runs-on: ubuntu-latest
