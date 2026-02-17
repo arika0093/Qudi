@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using Qudi.Core.Internal;
 
 namespace Qudi.Visualizer;
 
@@ -13,7 +13,7 @@ internal static class QudiVisualizationGraphBuilder
         var nodes = new Dictionary<string, QudiVisualizationNode>(StringComparer.Ordinal);
         var edges = new List<QudiVisualizationEdge>();
         var registeredTypes = new HashSet<Type>();
-        var availableTypes = CollectLoadableTypes(
+        var availableTypes = GenericConstraintUtility.CollectLoadableTypes(
             allRegistrations.Select(r => r.Type.Assembly).Distinct().ToList()
         );
         var constraintCandidateCache = new Dictionary<Type, List<Type>>();
@@ -763,11 +763,13 @@ internal static class QudiVisualizationGraphBuilder
 
             if (!registration.Type.IsGenericTypeDefinition)
             {
+                expanded.Add(required);
                 continue;
             }
 
             if (!TryGetSingleGenericParameter(registration.Type, out var genericParameter))
             {
+                expanded.Add(required);
                 continue;
             }
 
@@ -778,6 +780,7 @@ internal static class QudiVisualizationGraphBuilder
                 constraintCandidateCache
             );
 
+            var anyClosed = false;
             foreach (var candidate in candidates)
             {
                 var mapping = new Dictionary<int, Type>
@@ -788,7 +791,13 @@ internal static class QudiVisualizationGraphBuilder
                 if (closed != null)
                 {
                     expanded.Add(closed);
+                    anyClosed = true;
                 }
+            }
+
+            if (!anyClosed)
+            {
+                expanded.Add(required);
             }
         }
 
@@ -854,6 +863,10 @@ internal static class QudiVisualizationGraphBuilder
         return type;
     }
 
+    /// <summary>
+    /// Only open generic type definitions with exactly one generic parameter are expanded
+    /// (for example, IHandler&lt;T&gt;). Multi-parameter generics are intentionally not expanded.
+    /// </summary>
     private static bool TryGetSingleGenericParameter(
         Type openGenericType,
         out Type genericParameter
@@ -882,6 +895,8 @@ internal static class QudiVisualizationGraphBuilder
         IDictionary<Type, List<Type>> cache
     )
     {
+        // Cache key assumes Build() uses a single availableTypes set and genericParameter
+        // consistently derived from openGenericType.
         if (cache.TryGetValue(openGenericType, out var cached))
         {
             return cached;
@@ -908,7 +923,7 @@ internal static class QudiVisualizationGraphBuilder
                 continue;
             }
 
-            if (!SatisfiesConstraints(candidate, genericParameter, constraints))
+            if (!GenericConstraintUtility.SatisfiesConstraints(candidate, genericParameter, constraints))
             {
                 continue;
             }
@@ -920,72 +935,6 @@ internal static class QudiVisualizationGraphBuilder
         return candidates;
     }
 
-    private static bool SatisfiesConstraints(
-        Type candidate,
-        Type genericParameter,
-        Type[] constraints
-    )
-    {
-        var attributes = genericParameter.GenericParameterAttributes;
-
-        if (
-            attributes.HasFlag(GenericParameterAttributes.ReferenceTypeConstraint)
-            && candidate.IsValueType
-        )
-        {
-            return false;
-        }
-
-        if (
-            attributes.HasFlag(GenericParameterAttributes.NotNullableValueTypeConstraint)
-            && !candidate.IsValueType
-        )
-        {
-            return false;
-        }
-
-        if (attributes.HasFlag(GenericParameterAttributes.DefaultConstructorConstraint))
-        {
-            if (!candidate.IsValueType && candidate.GetConstructor(Type.EmptyTypes) is null)
-            {
-                return false;
-            }
-        }
-
-        foreach (var constraint in constraints)
-        {
-            if (constraint == typeof(object))
-            {
-                continue;
-            }
-
-            if (!constraint.IsAssignableFrom(candidate))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static List<Type> CollectLoadableTypes(IReadOnlyList<Assembly> assemblies)
-    {
-        var types = new List<Type>();
-
-        foreach (var assembly in assemblies)
-        {
-            try
-            {
-                types.AddRange(assembly.GetTypes());
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                types.AddRange(ex.Types.Where(t => t is not null)!.Select(t => t!));
-            }
-        }
-
-        return types;
-    }
 
     /// <summary>
     /// Build a subgraph starting from a specific root type.

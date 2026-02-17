@@ -1539,7 +1539,7 @@ flowchart LR
 
 #### Use Composite pattern for Generic Types
 Although the above implementation works, it requires specifying the generic type each time (e.g. `ComponentValidator<Battery>`, `ComponentValidator<Screen>`), which is cumbersome.  
-By combining the Composite pattern you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type, allowing callers to simply use a single ComponentValidator or IComponentValidator (non-generic) and call Validate(component) without specifying T.
+By combining the Composite pattern you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type. Callers can then use a single `ComponentValidator` or non-generic `IComponentValidator` and call `Validate(component)` without specifying `T`.
 
 ```csharp
 [QudiComposite]

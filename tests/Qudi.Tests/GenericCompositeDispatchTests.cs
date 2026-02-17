@@ -12,7 +12,7 @@ public sealed partial class GenericCompositeTests
         var services = new ServiceCollection();
         services.AddQudiServices();
 
-        var provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
 
         var battery1 = new Battery
         {

@@ -50,7 +50,7 @@ internal static class DispatchCompositeRegistrationBuilder
                         When = new EquatableArray<string>([]),
                         AsTypes = asTypes,
                         RequiredTypes = new EquatableArray<string>(requiredTypes.ToArray()),
-                        UsePublic = true,
+                        UsePublic = false,
                         KeyLiteral = null,
                         Order = 0,
                         MarkAsDecorator = false,

@@ -23,7 +23,6 @@ List<IComponent> components = [battery1, battery2, screen, keyboard];
 var validator = provider.GetRequiredService<ComponentValidator>();
 foreach (var component in components)
 {
-    //
     Console.WriteLine($"{component.Name} valid check: {validator.Validate(component)}");
 }
 

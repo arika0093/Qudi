@@ -482,7 +482,7 @@ internal static class HelperTargetCollector
         var members = new List<HelperMember>();
         var visited = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
 
-        foreach (var iface in interfaceSymbol.AllInterfaces.Concat([interfaceSymbol]))
+        foreach (var iface in interfaceSymbol.AllInterfaces.Append(interfaceSymbol))
         {
             foreach (var member in iface.GetMembers())
             {
@@ -986,12 +986,13 @@ internal static class HelperTargetCollector
             if (!usedFieldNames.Add(fieldName))
             {
                 var suffix = 1;
-                var candidate = fieldName;
-                while (!usedFieldNames.Add(candidate))
+                string candidate;
+                do
                 {
-                    suffix++;
                     candidate = $"{fieldName}{suffix}";
-                }
+                    suffix++;
+                } while (!usedFieldNames.Add(candidate));
+
                 fieldName = candidate;
             }
 
@@ -1068,6 +1069,12 @@ internal static class HelperTargetCollector
         };
     }
 
+    /// <summary>
+    /// Collects concrete types from <paramref name="compilation"/> by scanning only
+    /// <c>compilation.Assembly.GlobalNamespace</c>.
+    /// This current-compilation-only scope is intentional to keep discovery predictable
+    /// and avoid introducing external assembly dependencies during source generation.
+    /// </summary>
     private static ImmutableArray<INamedTypeSymbol> CollectConcreteTypes(
         Compilation compilation,
         ITypeParameterSymbol typeParam
@@ -1183,7 +1190,8 @@ internal static class HelperTargetCollector
     )
     {
         var methods = interfaceSymbol
-            .GetMembers()
+            .AllInterfaces.Append(interfaceSymbol)
+            .SelectMany(i => i.GetMembers())
             .OfType<IMethodSymbol>()
             .Where(m => m.MethodKind == MethodKind.Ordinary)
             .ToImmutableArray();
@@ -1192,9 +1200,47 @@ internal static class HelperTargetCollector
         foreach (var member in members.Where(m => m.Kind == HelperMemberKind.Method))
         {
             var methodSymbol = methods.FirstOrDefault(m =>
-                string.Equals(member.Name, m.Name, StringComparison.Ordinal)
-                && m.Parameters.Length == member.Parameters.Count
-            );
+            {
+                if (!string.Equals(member.Name, m.Name, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                if (m.Parameters.Length != member.Parameters.Count)
+                {
+                    return false;
+                }
+
+                for (var i = 0; i < m.Parameters.Length; i++)
+                {
+                    var symbolParameter = m.Parameters[i];
+                    var memberParameter = member.Parameters[i];
+
+                    if (
+                        !string.Equals(
+                            symbolParameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                            memberParameter.TypeName,
+                            StringComparison.Ordinal
+                        )
+                    )
+                    {
+                        return false;
+                    }
+
+                    if (
+                        !string.Equals(
+                            GetRefKindPrefix(symbolParameter.RefKind),
+                            memberParameter.RefKindPrefix ?? string.Empty,
+                            StringComparison.Ordinal
+                        )
+                    )
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
 
             var index = -1;
             if (methodSymbol is not null)
@@ -1215,6 +1261,8 @@ internal static class HelperTargetCollector
 
         return results.ToImmutableArray();
     }
+
+
 }
 
 internal sealed class NamedTypeSymbolComparer : IEqualityComparer<INamedTypeSymbol>

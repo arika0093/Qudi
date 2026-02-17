@@ -16,13 +16,13 @@ services.AddQudiServices(conf =>
 });
 
 var provider = services.BuildServiceProvider();
-var BatteryValidator = provider.GetRequiredService<ComponentValidator<Battery>>();
-Console.WriteLine($"Battery 1 valid check: {BatteryValidator.Validate(battery1)}");
-Console.WriteLine($"Battery 2 valid check: {BatteryValidator.Validate(battery2)}");
-var ScreenValidator = provider.GetRequiredService<ComponentValidator<Screen>>();
-Console.WriteLine($"Screen valid check: {ScreenValidator.Validate(screen)}");
-var KeyboardValidator = provider.GetRequiredService<ComponentValidator<Keyboard>>();
-Console.WriteLine($"Keyboard valid check: {KeyboardValidator.Validate(keyboard)}");
+var batteryValidator = provider.GetRequiredService<ComponentValidator<Battery>>();
+Console.WriteLine($"Battery 1 valid check: {batteryValidator.Validate(battery1)}");
+Console.WriteLine($"Battery 2 valid check: {batteryValidator.Validate(battery2)}");
+var screenValidator = provider.GetRequiredService<ComponentValidator<Screen>>();
+Console.WriteLine($"Screen valid check: {screenValidator.Validate(screen)}");
+var keyboardValidator = provider.GetRequiredService<ComponentValidator<Keyboard>>();
+Console.WriteLine($"Keyboard valid check: {keyboardValidator.Validate(keyboard)}");
 
 // -----------
 // impl

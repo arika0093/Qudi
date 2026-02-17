@@ -200,7 +200,7 @@ internal static class CompositeDispatchCodeGenerator
         var overrideBehavior = TryGetCompositeOverride(target, method);
 
         var asyncModifier =
-            returnType == Task && overrideBehavior == CompositeResultBehavior.Sequential
+            returnType == Task && overrideBehavior != CompositeResultBehavior.All
                 ? "async "
                 : string.Empty;
         builder.AppendLine($"public {asyncModifier}{returnType} {member.Name}({parameters})");
@@ -225,10 +225,7 @@ internal static class CompositeDispatchCodeGenerator
             var isVoid = returnType == "void";
             var isBool = returnType == "bool";
             var isTask = returnType == Task;
-            var isEnumerable =
-                returnType.Contains("IEnumerable")
-                || returnType.Contains("ICollection")
-                || returnType.Contains("IList");
+            var isEnumerable = IsSupportedEnumerableReturnType(returnType);
 
             if (!isVoid && !isBool && !isTask && !isEnumerable)
             {
@@ -392,11 +389,15 @@ internal static class CompositeDispatchCodeGenerator
                     {
                         builder.AppendLine($"__tasks.Add(__validator.{methodName}({arguments}));");
                     }
-                    builder.AppendLine(
-                        behavior == CompositeResultBehavior.Any
-                            ? $"return {Task}.WhenAny(__tasks);"
-                            : $"return {Task}.WhenAll(__tasks);"
-                    );
+                    if (behavior == CompositeResultBehavior.Any)
+                    {
+                        builder.AppendLine($"await {Task}.WhenAny(__tasks);");
+                        builder.AppendLine("return;");
+                    }
+                    else
+                    {
+                        builder.AppendLine($"return {Task}.WhenAll(__tasks);");
+                    }
                 }
                 builder.DecreaseIndent();
             }
@@ -499,12 +500,39 @@ internal static class CompositeDispatchCodeGenerator
 
     private static string ExtractEnumerableType(string enumerableType)
     {
-        var match = Regex.Match(enumerableType, @"<([^<>]+)>$");
-        if (match.Success)
+        var openIndex = enumerableType.IndexOf('<');
+        if (openIndex < 0)
         {
-            return match.Groups[1].Value;
+            return "object";
         }
+
+        var depth = 0;
+        for (var i = openIndex; i < enumerableType.Length; i++)
+        {
+            if (enumerableType[i] == '<')
+            {
+                depth++;
+            }
+            else if (enumerableType[i] == '>')
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    return enumerableType.Substring(openIndex + 1, i - openIndex - 1);
+                }
+            }
+        }
+
         return "object";
+    }
+
+    private static bool IsSupportedEnumerableReturnType(string returnType)
+    {
+        var openIndex = returnType.IndexOf('<');
+        var typeName = openIndex >= 0 ? returnType.Substring(0, openIndex) : returnType;
+        return typeName is "global::System.Collections.Generic.IEnumerable"
+            or "global::System.Collections.Generic.ICollection"
+            or "global::System.Collections.Generic.IList";
     }
 
     private static string BuildDispatchArguments(
@@ -540,9 +568,9 @@ internal static class CompositeDispatchCodeGenerator
                     typeParamName,
                     replacementTypeName
                 );
-                var prefix = parameter.RefKindPrefix ?? string.Empty;
+                var refKindPrefix = parameter.RefKindPrefix ?? string.Empty;
                 var paramsPrefix = parameter.IsParams ? "params " : string.Empty;
-                return $"{paramsPrefix}{typeName} {prefix}{parameter.Name}";
+                return $"{paramsPrefix}{refKindPrefix}{typeName} {parameter.Name}";
             })
         );
     }
