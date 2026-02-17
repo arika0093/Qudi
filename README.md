@@ -1310,12 +1310,9 @@ This library performs the following tasks internally.
 First, the source generator scans classes annotated with attributes like `DISingleton` and `DITransient`. Based on the results, it generates code such as the following:
 
 <details>
-<summary>Generated Code (Qudi.Registrations.g.cs)</summary>
+<summary>Generated Code (Qudi.Registration.Self.g.cs)</summary>
 
 ```csharp
-#nullable enable
-using System.Linq;
-
 namespace Qudi.Generated
 {
     [global::Microsoft.CodeAnalysis.EmbeddedAttribute]
@@ -1326,14 +1323,14 @@ namespace Qudi.Generated
             var collection = new global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> { };
             if (selfOnly)
             {
-                global::Qudi.Generated__4e72f6940c99.QudiRegistrations.Self(
+                global::Qudi.Generated__3c388ac24d47.QudiRegistrations.Self(
                     collection: collection,
                     fromOther: false
                 );
             }
             else
             {
-                global::Qudi.Generated__4e72f6940c99.QudiRegistrations.WithDependencies(
+                global::Qudi.Generated__3c388ac24d47.QudiRegistrations.WithDependencies(
                     collection: collection,
                     visited: new global::System.Collections.Generic.HashSet<long> { },
                     fromOther: false
@@ -1343,7 +1340,8 @@ namespace Qudi.Generated
         }
     }
 }
-namespace Qudi.Generated__4e72f6940c99
+
+namespace Qudi.Generated__3c388ac24d47
 {
     /// <summary>
     /// Contains Qudi registration information for this project.
@@ -1354,14 +1352,10 @@ namespace Qudi.Generated__4e72f6940c99
         /// <summary>
         /// Gets all registrations including dependencies. This method is used internally for Qudi.
         /// </summary>
+        /// <param name="collection">Collection to add registrations to.</param>
+        /// <param name="visited">Set of visited project hashes to avoid cycles.</param>
         /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
-        /// <returns>All registrations including dependencies.</returns>
-        public static void WithDependencies(global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> collection, global::System.Collections.Generic.HashSet<long> visited, bool fromOther)
-        {
-            if (!visited.Add(0x4e72f6940c99)) return;
-            Self(collection, fromOther: fromOther);
-            global::Qudi.Generated__cee6ef8da00c.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);
-        }
+        public static partial void WithDependencies(global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> collection, global::System.Collections.Generic.HashSet<long> visited, bool fromOther);
         
         /// <summary>
         /// Gets registrations defined in this project only. This method is used internally for Qudi.
@@ -1389,7 +1383,9 @@ namespace Qudi.Generated__4e72f6940c99
                 Key = null,
                 Order = 0,
                 MarkAsDecorator = false,
-                AssemblyName = "Qudi.Example.Worker",
+                MarkAsComposite = false,
+                Export = false,
+                AssemblyName = "Qudi.Example.SimpleCase.Worker",
                 Namespace = "Qudi.Example.Worker",
             },
         };
@@ -1400,7 +1396,34 @@ namespace Qudi.Generated__4e72f6940c99
 </details>
 
 
-As shown, information about annotated classes is collected as `TypeRegistrationInfo`. If dependencies exist, those are included automatically. Because this information is DI-container-agnostic, it can be used to support multiple DI containers.
+As shown, information about annotated classes is collected as `TypeRegistrationInfo`.
+If information about dependencies also needs to be collected, `WithDependencies` is called (which is not implemented at this point).
+
+This implementation is generated separately at compile time. This design allows us to collect information about dependencies in multiple passes without worrying about the order of generation, and also allows us to easily visualize the collected information by outputting it in the final configuration step.
+
+<details>
+<summary>Generated Code for Dependency Collection (Qudi.Registration.Dependencies.g.cs)</summary
+
+```csharp
+#nullable enable
+using System.Linq;
+
+namespace Qudi.Generated__3c388ac24d47
+{
+    public static partial class QudiRegistrations
+    {
+        public static partial void WithDependencies(global::System.Collections.Generic.List<global::Qudi.TypeRegistrationInfo> collection, global::System.Collections.Generic.HashSet<long> visited, bool fromOther)
+        {
+            if (!visited.Add(0x3c388ac24d47)) return;
+            Self(collection, fromOther: fromOther);
+            global::Qudi.Generated__ce33e33fb0a9.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);
+        }
+    }
+}
+```
+
+</details>
+
 
 ### Invoking registrations for each container
 Next, container-specific `AddQudiServices` extension methods are generated.

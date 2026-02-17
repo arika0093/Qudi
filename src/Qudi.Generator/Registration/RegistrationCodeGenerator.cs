@@ -15,6 +15,7 @@ internal static class RegistrationCodeGenerator
     private const string TRList = $"{List}<{TRInfo}>";
     private const string TRResult = $"{IReadOnlyList}<{TRInfo}>";
     private const string VisitedHashSet = "global::System.Collections.Generic.HashSet<long>";
+    private const string WithDependenciesDeclare = $"public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)";
 
     /// <summary>
     /// Generates the internal and self registrations file (depends only on registrations and basicInfo).
@@ -183,7 +184,7 @@ internal static class RegistrationCodeGenerator
             /// <param name="collection">Collection to add registrations to.</param>
             /// <param name="visited">Set of visited project hashes to avoid cycles.</param>
             /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
-            public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther);
+            {WithDependenciesDeclare};
             """
         );
     }
@@ -194,17 +195,7 @@ internal static class RegistrationCodeGenerator
         EquatableArray<ProjectDependencyInfo> dependencies
     )
     {
-        builder.AppendLine(
-            $"""
-            /// <summary>
-            /// Gets all registrations including dependencies. This method is used internally for Qudi.
-            /// </summary>
-            /// <param name="collection">Collection to add registrations to.</param>
-            /// <param name="visited">Set of visited project hashes to avoid cycles.</param>
-            /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
-            public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)
-            """
-        );
+        builder.AppendLine(WithDependenciesDeclare);
         using (builder.BeginScope())
         {
             // add self registrations
