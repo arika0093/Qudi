@@ -302,7 +302,7 @@ Here we’ll implement a decorator that adds decorative output before and after 
 Create a class that accepts `IPokemon` in the constructor and also implements `IPokemon`, like the following.
 
 ```csharp
-[QudiDecorator]
+[QudiDecorator] // add [QudiDecorator] attribute and mark as partial class
 public partial class PokemonDecorator(IPokemon decorated) : IPokemon
 {
     public void DisplayInfo()
@@ -439,7 +439,7 @@ var provider = services.BuildServiceProvider();
 var displayService = provider.GetRequiredService<IPokemon>();
 displayService.DisplayInfo();
 
-[QudiComposite]
+[QudiComposite] // add [QudiComposite] attribute and mark as partial class
 public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPokemon
 {
     // all methods of IPokemon will be implemented
@@ -545,8 +545,6 @@ flowchart LR
     class DisplayPokemonService composite;
 
 ```
-
-By using `[QudiComposite]`, you can provide multiple implementations together as a single interface.
 
 By default, composites are called after decorators, but in this case, we want the opposite.
 Let's specify the order explicitly to achieve the expected behavior.
@@ -665,6 +663,8 @@ flowchart LR
 
 ```
 
+That was a bit long, but those are Qudi's main features.  
+Of course, you can also use only the simple attribute-based registration. 😉
 
 ## Installation
 Install `Qudi` from NuGet.
@@ -891,7 +891,9 @@ flowchart LR
 
 ```
 
-then, specify the rules to apply each condition as an argument of the `AddQudiServices` method.
+By default, "Development" is active in `DEBUG` build and "Production" is active in `RELEASE` build.
+You can also specify conditions in the argument of `AddQudiServices` as needed.
+
 
 ```csharp
 builder.Services.AddQudiServices(conf => {
@@ -906,7 +908,7 @@ builder.Services.AddQudiServices(conf => {
 ```
 
 > [!NOTE]
-> If you want to switch processing dynamically according to conditions during runtime, consider using Strategy Pattern or [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
+> If you want to switch processing dynamically according to conditions during runtime, consider using [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
 
 
 ### Generic Registration
