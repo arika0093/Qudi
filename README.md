@@ -1083,10 +1083,10 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     [CompositeMethod(Result = CompositeResult.Any)] // -> return a || b || c || ...;
     public partial bool FeatureC();
 
-    // in Task methods, you can also specify how to combine results using CompositeMethod attribute
+    // in Task methods, in addition to how to handle results, you can also specify how to execute them.
     [CompositeMethod(Result = CompositeResult.All)] // -> return Task.WhenAll(a,b,c,...);
     [CompositeMethod(Result = CompositeResult.Any)] // -> return Task.WhenAny(a,b,c,...);
-    [CompositeMethod(Result = CompositeResult.Forget)] // -> execute all and return completed task immediately without waiting for results;
+    [CompositeMethod(Result = CompositeResult.Sequential)] // -> await a; await b; await c; ...; return Task.CompletedTask;
     public partial Task FeatureD(int val);
 
     // in other cases, you can use a custom result handler to specify how to combine results.
@@ -1104,10 +1104,96 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
         // and call inner services manually if you need more control.
     }
 
-    // Behavior for properties is not guaranteed,
-    // so it is recommended to implement them manually or avoid using properties.
+    // If methods or properties exist that are not in the above list, they will be automatically generated to throw exceptions.
+    // For example:
+    // * int ErrorA()
+    // * string ErrorB(int val)
+    // * string PropertyC { get; }
+    // * double PropertyD { get; set; }
+    // Of course, if you implement them yourself, your implementation takes precedence.
 }
 ```
+
+<details>
+<summary>Generated Code Snippets</summary>
+
+```csharp
+partial class MyComposite(IEnumerable<IService> services) : IService_MyComposite
+{
+    IEnumerable<IService> IService_MyComposite.__InnerServices => services;
+
+    // If there is no [CompositeMethod], the implementation of the interface will be used as before
+
+    // If there is a [CompositeMethod], an implementation will be generated according to the Result and will override the implementation of the interface
+    public partial bool MethodB()
+    {
+        foreach (var service in __InnerServices)
+        {
+            if (!service.MethodB()) return false;
+        }
+        return true;
+    }
+
+    public partial bool MethodC()
+    {
+        foreach (var service in __InnerServices)
+        {
+            if (service.MethodC()) return true;
+        }
+        return false;
+    }
+}
+
+public interface IService_MyComposite : IService
+{
+    IEnumerable<IService> __InnerServices { get; }
+
+    // Provide a standard implementation according to IService
+    // for example, if void, just call all
+    void IService.MethodA()
+    {
+        foreach (var service in __InnerServices)
+        {
+            service.MethodA();
+        }
+    }
+
+    // if bool, generate as All
+    bool IService.MethodB()
+    {
+        foreach (var service in __InnerServices)
+        {
+            if (!service.MethodB()) return false;
+        }
+        return true;
+    }
+
+    // if Task, generate as All
+    Task IService.MethodC()
+    {
+        return Task.WhenAll(__InnerServices.Select(s => s.MethodC()));
+    }
+
+    //  For properties and methods that return int/string, generate an implementation that throws an exception
+    int IService.ErrorA()
+    {
+        throw new NotSupportedException("ErrorA is not supported in MyComposite.");
+    }
+    string IService.ErrorB(int val)
+    {
+        throw new NotSupportedException("ErrorB is not supported in MyComposite.");
+    }
+    string IService.PropertyC => throw new NotSupportedException("PropertyC is not supported in MyComposite.");
+    double IService.PropertyD
+    {
+        get => throw new NotSupportedException("PropertyD is not supported in MyComposite.");
+        set => throw new NotSupportedException("PropertyD is not supported in MyComposite.");
+    }
+}
+```
+
+</details>
+
 
 ## Visualize Registration
 ### Setup
