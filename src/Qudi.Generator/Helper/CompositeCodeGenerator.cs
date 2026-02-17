@@ -25,6 +25,10 @@ internal static class CompositeCodeGenerator
         var isVoid = returnType == "void";
         var isBool = returnType == "bool";
         var isTask = returnType == Task;
+        var isIEnumerable =
+            returnType.Contains("IEnumerable")
+            || returnType.Contains("ICollection")
+            || returnType.Contains("IList");
 
         // For composite, we iterate over all inner services and call the method on each
         builder.AppendLine($"{returnType} {interfaceName}.{method.Name}({parameters})");
@@ -37,19 +41,27 @@ internal static class CompositeCodeGenerator
             else if (isBool)
             {
                 // Default to CompositeResult.All (logical AND) for bool
-                // TODO: Support CompositeMethod attribute to override this
                 AppendCompositeBoolMethod(builder, method, helperAccessor, arguments, useAnd: true);
             }
             else if (isTask)
             {
                 // Default to Task.WhenAll
-                // TODO: Support CompositeMethod attribute to override this with WhenAny
                 AppendCompositeTaskMethod(
                     builder,
                     method,
                     helperAccessor,
                     arguments,
                     useWhenAll: true
+                );
+            }
+            else if (isIEnumerable)
+            {
+                AppendCompositeEnumerableMethod(
+                    builder,
+                    method,
+                    helperAccessor,
+                    arguments,
+                    returnType
                 );
             }
             else
@@ -94,7 +106,12 @@ internal static class CompositeCodeGenerator
         var isBool = returnType == "bool";
         var isTask = returnType == Task;
 
-        builder.AppendLine($"public partial {returnType} {method.Name}({parameters})");
+        // Add async modifier for Sequential task execution
+        var asyncModifier = isTask && method.ResultBehavior == CompositeResultBehavior.Sequential
+            ? "async "
+            : "";
+
+        builder.AppendLine($"public partial {asyncModifier}{returnType} {method.Name}({parameters})");
         using (builder.BeginScope())
         {
             if (isVoid)
@@ -112,8 +129,8 @@ internal static class CompositeCodeGenerator
 
             if (isTask)
             {
-                var useWhenAll = method.ResultBehavior != CompositeResultBehavior.Any;
-                AppendCompositeTaskMethodBody(builder, method.Name, innerServicesAccessor, arguments, useWhenAll);
+                var behavior = method.ResultBehavior;
+                AppendCompositeTaskMethodBody(builder, method.Name, innerServicesAccessor, arguments, behavior);
                 return;
             }
 
@@ -195,6 +212,43 @@ internal static class CompositeCodeGenerator
         }
     }
 
+    private static void AppendCompositeEnumerableMethod(
+        IndentedStringBuilder builder,
+        HelperMember method,
+        string helperAccessor,
+        string arguments,
+        string returnType
+    )
+    {
+        // For IEnumerable/ICollection/IList, concatenate all results
+        var elementType = ExtractEnumerableType(returnType);
+        builder.AppendLine(
+            $"var __results = new global::System.Collections.Generic.List<{elementType}>();"
+        );
+        builder.AppendLine($"foreach (var __service in {helperAccessor})");
+        using (builder.BeginScope())
+        {
+            builder.AppendLine($"var __serviceResult = __service.{method.Name}({arguments});");
+            builder.AppendLine($"if (__serviceResult != null)");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__results.AddRange(__serviceResult);");
+            }
+        }
+        builder.AppendLine($"return __results;");
+    }
+
+    private static string ExtractEnumerableType(string enumerableType)
+    {
+        // Extract T from IEnumerable<T>, ICollection<T>, IList<T>, etc.
+        var match = System.Text.RegularExpressions.Regex.Match(enumerableType, @"<([^<>]+)>$");
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+        return "object";
+    }
+
     private static void AppendCompositeUnsupportedMethod(IndentedStringBuilder builder, string methodName)
     {
         builder.AppendLine($"throw new {NotSupportedException}(\"{methodName} is not supported in this composite.\");");
@@ -247,16 +301,37 @@ internal static class CompositeCodeGenerator
         string methodName,
         string helperAccessor,
         string arguments,
-        bool useWhenAll
+        CompositeResultBehavior behavior
     )
     {
-        builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{Task}>();");
-        builder.AppendLine($"foreach (var __service in {helperAccessor})");
-        using (builder.BeginScope())
+        if (behavior == CompositeResultBehavior.Sequential)
         {
-            builder.AppendLine($"__tasks.Add(__service.{methodName}({arguments}));");
+            // Sequential execution: await each task one by one
+            builder.AppendLine($"foreach (var __service in {helperAccessor})");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"await __service.{methodName}({arguments});");
+            }
+            // No return statement needed for async Task method
         }
+        else
+        {
+            // Parallel execution: collect all tasks and await together
+            builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{Task}>();");
+            builder.AppendLine($"foreach (var __service in {helperAccessor})");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__tasks.Add(__service.{methodName}({arguments}));");
+            }
 
-        builder.AppendLine(useWhenAll ? $"return {Task}.WhenAll(__tasks);" : $"return {Task}.WhenAny(__tasks);");
+            if (behavior == CompositeResultBehavior.Any)
+            {
+                builder.AppendLine($"return {Task}.WhenAny(__tasks);");
+            }
+            else
+            {
+                builder.AppendLine($"return {Task}.WhenAll(__tasks);");
+            }
+        }
     }
 }

@@ -290,10 +290,9 @@ internal sealed record CompositeMethodOverride
 /// </summary>
 internal enum CompositeResultBehavior
 {
-    Forget,
     All,
     Any,
-    Concat,
+    Sequential,
 }
 
 /// <summary>

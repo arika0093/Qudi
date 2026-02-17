@@ -675,7 +675,7 @@ internal static class HelperTargetCollector
                 continue;
             }
 
-            var methodResult = CompositeResultBehavior.Forget;
+            var methodResult = CompositeResultBehavior.All;
             if (compositeMethodAttrSymbol is not null)
             {
                 var attribute = method
@@ -694,10 +694,10 @@ internal static class HelperTargetCollector
                         {
                             methodResult = intResult switch
                             {
-                                1 => CompositeResultBehavior.All,
-                                2 => CompositeResultBehavior.Any,
-                                3 => CompositeResultBehavior.Concat,
-                                _ => CompositeResultBehavior.Forget,
+                                0 => CompositeResultBehavior.All,
+                                1 => CompositeResultBehavior.Any,
+                                2 => CompositeResultBehavior.Sequential,
+                                _ => CompositeResultBehavior.All,
                             };
                         }
                     }

@@ -206,3 +206,40 @@ public sealed partial class CompositeAsyncService(IEnumerable<IAsyncService> inn
 {
     public static readonly ConcurrentBag<string> ProcessedItems = new();
 }
+
+// Test Sequential execution
+public interface ISequentialAsyncService
+{
+    Task ExecuteAsync(string input);
+}
+
+[DITransient]
+public sealed class SequentialServiceA : ISequentialAsyncService
+{
+    public async Task ExecuteAsync(string input)
+    {
+        await Task.Delay(50);
+        CompositeSequentialAsyncService.ExecutionOrder.Add($"A:{input}:{System.DateTime.UtcNow.Ticks}");
+    }
+}
+
+[DITransient]
+public sealed class SequentialServiceB : ISequentialAsyncService
+{
+    public async Task ExecuteAsync(string input)
+    {
+        await Task.Delay(50);
+        CompositeSequentialAsyncService.ExecutionOrder.Add($"B:{input}:{System.DateTime.UtcNow.Ticks}");
+    }
+}
+
+[QudiComposite]
+public sealed partial class CompositeSequentialAsyncService(
+    IEnumerable<ISequentialAsyncService> innerServices
+) : ISequentialAsyncService
+{
+    public static readonly List<string> ExecutionOrder = new();
+
+    [CompositeMethod(Result = CompositeResult.Sequential)]
+    public partial Task ExecuteAsync(string input);
+}

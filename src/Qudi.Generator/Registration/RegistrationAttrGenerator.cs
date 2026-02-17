@@ -146,7 +146,7 @@ internal static class RegistrationAttrGenerator
                 /// <summary>
                 /// The result handling strategy for this composite method.
                 /// </summary>
-                public CompositeResult Result { get; set; } = CompositeResult.Forget;
+                public CompositeResult Result { get; set; } = CompositeResult.All;
 
                 /// <summary>
                 /// The name of a custom result handler method.
@@ -162,11 +162,6 @@ internal static class RegistrationAttrGenerator
             public enum CompositeResult
             {
                 /// <summary>
-                /// Ignore all results (fire-and-forget).
-                /// </summary>
-                Forget,
-
-                /// <summary>
                 /// Return logical AND of all results.
                 /// In Boolean: (a && b && c && ...).
                 /// In Task: Task.WhenAll(a, b, c, ...).
@@ -181,9 +176,10 @@ internal static class RegistrationAttrGenerator
                 Any,
 
                 /// <summary>
-                /// Concatenate all enumerable results ([..a, ..b, ..c, ...]).
+                /// Execute sequentially and return when all complete.
+                /// In Task: await a; await b; await c; ...; return Task.CompletedTask.
                 /// </summary>
-                Concat,
+                Sequential,
             }
         }
         """;

@@ -1075,18 +1075,22 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     // in void methods, execute all implementations
     public partial void FeatureA();
 
+    // in collection methods, combine results from all implementations into a single collection
+    public partial IEnumerable<string> FeatureB();
+
     // in bool methods, you can specify aggregation behavior
     [CompositeMethod(Result = CompositeResult.All)] // -> return a && b && c && ...;
     [CompositeMethod(Result = CompositeResult.Any)] // -> return a || b || c || ...;
-    public partial bool FeatureB();
+    public partial bool FeatureC();
 
     // in Task methods, you can specify aggregation behavior
     [CompositeMethod(Result = CompositeResult.All)] // -> return Task.WhenAll(a,b,c,...);
     [CompositeMethod(Result = CompositeResult.Any)] // -> return Task.WhenAny(a,b,c,...);
-    public partial Task FeatureC(int val);
+    [CompositeMethod(Result = CompositeResult.Sequential)] // -> execute tasks sequentially (await each one before starting the next)
+    public partial Task FeatureD(int val);
 
     // if you want to handle results manually, you can implement it as a normal method without using auto implementation.
-    public void FeatureD()
+    public void FeatureE()
     {
         // you can also implement methods without using auto implementation,
         // and call inner services manually if you need more control.
@@ -1113,20 +1117,20 @@ partial class MyComposite(IEnumerable<IService> services) : IService_MyComposite
     // If there is no [CompositeMethod], the implementation of the interface will be used as before
 
     // If there is a [CompositeMethod], an implementation will be generated according to the Result and will override the implementation of the interface
-    public partial bool MethodB()
-    {
-        foreach (var service in __InnerServices)
-        {
-            if (!service.MethodB()) return false;
-        }
-        return true;
-    }
-
     public partial bool MethodC()
     {
         foreach (var service in __InnerServices)
         {
-            if (service.MethodC()) return true;
+            if (!service.MethodC()) return false;
+        }
+        return true;
+    }
+
+    public partial bool MethodD()
+    {
+        foreach (var service in __InnerServices)
+        {
+            if (service.MethodD()) return true;
         }
         return false;
     }
@@ -1146,20 +1150,32 @@ public interface IService_MyComposite : IService
         }
     }
 
-    // if bool, generate as All
-    bool IService.MethodB()
+    // if collection, generate as Combine
+    IEnumerable<string> IService.MethodB()
     {
         foreach (var service in __InnerServices)
         {
-            if (!service.MethodB()) return false;
+            foreach (var item in service.MethodB())
+            {
+                yield return item;
+            }
+        }
+    }
+
+    // if bool, generate as All
+    bool IService.MethodC()
+    {
+        foreach (var service in __InnerServices)
+        {
+            if (!service.MethodC()) return false;
         }
         return true;
     }
 
     // if Task, generate as All
-    Task IService.MethodC()
+    Task IService.MethodD()
     {
-        return Task.WhenAll(__InnerServices.Select(s => s.MethodC()));
+        return Task.WhenAll(__InnerServices.Select(s => s.MethodD()));
     }
 
     //  For properties and methods that return int/string, generate an implementation that throws an exception

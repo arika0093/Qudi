@@ -67,7 +67,7 @@ public sealed class CompositeTests
     }
 
     [Test]
-    public void CompositeWithUnsupportedReturnThrows()
+    public void CompositeWithEnumerableReturnCombinesResults()
     {
         var services = new ServiceCollection();
         services.AddQudiServices();
@@ -75,7 +75,13 @@ public sealed class CompositeTests
         var provider = services.BuildServiceProvider();
         var dataProvider = provider.GetRequiredService<IDataProvider>();
 
-        Should.Throw<NotSupportedException>(() => dataProvider.GetData().ToList());
+        var data = dataProvider.GetData().ToList();
+        data.ShouldNotBeNull();
+        data.Count.ShouldBe(4); // A1, A2, B1, B2
+        data.ShouldContain("A1");
+        data.ShouldContain("A2");
+        data.ShouldContain("B1");
+        data.ShouldContain("B2");
     }
 
     [Test]
@@ -120,5 +126,38 @@ public sealed class CompositeTests
         CompositeAsyncService.ProcessedItems.Count.ShouldBe(2);
         CompositeAsyncService.ProcessedItems.ShouldContain("A:test");
         CompositeAsyncService.ProcessedItems.ShouldContain("B:test");
+    }
+
+    [Test]
+    public async Task CompositeWithSequentialTaskExecutesInOrder()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var sequentialService = provider.GetRequiredService<ISequentialAsyncService>();
+
+        CompositeSequentialAsyncService.ExecutionOrder.Clear();
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        await sequentialService.ExecuteAsync("test");
+        stopwatch.Stop();
+
+        // Sequential execution should take at least 100ms (50ms * 2)
+        // whereas parallel would take only 50ms
+        stopwatch.ElapsedMilliseconds.ShouldBeGreaterThan(90);
+
+        CompositeSequentialAsyncService.ExecutionOrder.Count.ShouldBe(2);
+
+        // Parse timestamps and verify sequential order
+        var aTicks = long.Parse(
+            CompositeSequentialAsyncService.ExecutionOrder[0].Split(':')[2]
+        );
+        var bTicks = long.Parse(
+            CompositeSequentialAsyncService.ExecutionOrder[1].Split(':')[2]
+        );
+
+        // B should execute after A (timestamp should be later)
+        bTicks.ShouldBeGreaterThan(aTicks);
     }
 }
