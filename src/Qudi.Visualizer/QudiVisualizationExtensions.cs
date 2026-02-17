@@ -13,7 +13,7 @@ public static class QudiVisualizationExtensions
     /// </summary>
     /// <param name="builder"> The Qudi configuration root builder to add the visualization output to.</param>
     /// <param name="configure"> An action to configure the visualization options.</param>
-    public static QudiConfigurationRootBuilder EnableVisualizationOutput(
+    public static QudiConfigurationBuilder EnableVisualizationOutput(
         this QudiConfigurationRootBuilder builder,
         Action<QudiVisualizationOptions>? configure = null
     )
@@ -29,12 +29,10 @@ public static class QudiVisualizationExtensions
         var options = new QudiVisualizationOptions();
         configure?.Invoke(options);
 
-        builder.AddService(configuration =>
+        return builder.AddService(configuration =>
         {
             var runtime = options.BuildRuntimeOptions();
             QudiVisualizationRunner.Execute(configuration, runtime);
         });
-
-        return builder;
     }
 }
