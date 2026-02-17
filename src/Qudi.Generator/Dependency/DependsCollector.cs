@@ -34,16 +34,14 @@ internal static class DependsCollector
     /// <summary>
     /// Collects project dependencies that contain Qudi registrations (heavy operation).
     /// </summary>
-    public static IncrementalValueProvider<EquatableArray<ProjectDependencyInfo>>
-        QudiProjectDependencies(IncrementalGeneratorInitializationContext context)
+    public static IncrementalValueProvider<
+        EquatableArray<ProjectDependencyInfo>
+    > QudiProjectDependencies(IncrementalGeneratorInitializationContext context)
     {
         return context
             .CompilationProvider.Select(
                 static (compilation, cancellationToken) =>
-                    ProjectDependenciesCollector.CollectDependencies(
-                        compilation,
-                        cancellationToken
-                    )
+                    ProjectDependenciesCollector.CollectDependencies(compilation, cancellationToken)
             )
             .WithComparer(EqualityComparer<EquatableArray<ProjectDependencyInfo>>.Default);
     }
@@ -70,4 +68,3 @@ internal static class DependsCollector
             .WithComparer(EqualityComparer<ProjectInfo>.Default);
     }
 }
-

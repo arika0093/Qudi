@@ -117,6 +117,7 @@ internal static class RegistrationAttrParser
 
         var isDecorator = asDecorator || spec.MarkAsDecorator;
         var isComposite = asComposite || spec.MarkAsComposite;
+        var isCompositeDispatcher = false;
         var effectiveLifetime =
             (isDecorator || isComposite) ? "Transient" : lifetime ?? spec.Lifetime;
 
@@ -129,6 +130,7 @@ internal static class RegistrationAttrParser
             Lifetime = effectiveLifetime,
             MarkAsDecorator = isDecorator,
             MarkAsComposite = isComposite,
+            MarkAsCompositeDispatcher = isCompositeDispatcher,
         };
     }
 
@@ -180,4 +182,6 @@ internal static class RegistrationAttrParser
 
         return false;
     }
+
+    // Composite dispatch registration is handled by generated types.
 }

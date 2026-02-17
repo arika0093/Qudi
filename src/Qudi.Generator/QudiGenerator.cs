@@ -4,6 +4,7 @@ using Qudi.Generator.Container;
 using Qudi.Generator.Dependency;
 using Qudi.Generator.Helper;
 using Qudi.Generator.Registration;
+using Qudi.Generator.Utility;
 
 namespace Qudi.Generator;
 
@@ -17,6 +18,12 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
         var registrations = RegistrationAttrParser.QudiAttributeRegistration(context);
 
         var helperTargets = HelperTargetCollector.CollectTargets(context);
+        var dispatchRegistrations = helperTargets.Select(
+            static (targets, _) =>
+                DispatchCompositeRegistrationBuilder.Build(targets.DispatchCompositeTargets)
+        );
+
+        registrations = registrations.CombineAndMerge(dispatchRegistrations);
 
         var projectBasicInfo = DependsCollector.QudiProjectBasicInfo(context);
         var projectInfo = DependsCollector.QudiProjectInfo(context);
@@ -41,10 +48,7 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
         context.RegisterImplementationSourceOutput(
             projectInfo,
             static (spc, projInfo) =>
-                RegistrationCodeGenerator.GenerateWithDependenciesImplementationFile(
-                    spc,
-                    projInfo
-                )
+                RegistrationCodeGenerator.GenerateWithDependenciesImplementationFile(spc, projInfo)
         );
 
         // add services - only depends on basic project info

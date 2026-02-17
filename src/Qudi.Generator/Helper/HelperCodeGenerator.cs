@@ -18,8 +18,9 @@ internal static class HelperCodeGenerator
     {
         var interfaceTargets = input.InterfaceTargets;
         var implementingTargets = input.ImplementingTargets;
+        var dispatchTargets = input.DispatchCompositeTargets;
 
-        if (interfaceTargets.Count == 0 && implementingTargets.Count == 0)
+        if (interfaceTargets.Count == 0 && implementingTargets.Count == 0 && dispatchTargets.Count == 0)
         {
             return;
         }
@@ -36,13 +37,18 @@ internal static class HelperCodeGenerator
             context.AddSource("Qudi.Helper.Interfaces.g.cs", builder.ToString());
         }
 
-        if (implementingTargets.Count > 0)
+        if (implementingTargets.Count > 0 || dispatchTargets.Count > 0)
         {
             var builder = new IndentedStringBuilder();
             builder.AppendLine(CodeTemplateContents.CommonGeneratedHeader);
             foreach (var target in implementingTargets)
             {
                 GeneratePartialClass(builder, target);
+                builder.AppendLine("");
+            }
+            foreach (var target in dispatchTargets)
+            {
+                CompositeDispatchCodeGenerator.AppendDispatchCompositeImplementation(builder, target);
                 builder.AppendLine("");
             }
 
@@ -56,25 +62,28 @@ internal static class HelperCodeGenerator
         HelperImplementingTarget target
     )
     {
-        var helperName = HelperCodeGeneratorUtility.BuildHelperInterfaceName(target.InterfaceHelperName, target.IsComposite);
+        var helperName = HelperCodeGeneratorUtility.BuildHelperInterfaceName(
+            target.InterfaceHelperName,
+            target.IsComposite
+        );
         var genericArgs = target.GenericTypeArguments;
         var genericParams = target.GenericTypeParameters;
-        
+
         var helperInterfaceName = string.IsNullOrEmpty(genericArgs)
             ? helperName
             : $"{helperName}{genericArgs}";
-        
+
         var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
             ? helperInterfaceName
             : $"global::{target.InterfaceNamespace}.{helperInterfaceName}";
-        
+
         var implementingTypeName = string.IsNullOrEmpty(genericArgs)
             ? target.ImplementingTypeName
             : $"{target.ImplementingTypeName}{genericArgs}";
-        
+
         // Build where clauses if present
         var whereClause = string.IsNullOrEmpty(genericParams) ? "" : $" {genericParams}";
-        
+
         // namespace
         var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
         builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
@@ -122,7 +131,11 @@ internal static class HelperCodeGenerator
 
                     foreach (var compositeMethod in target.CompositeMethodOverrides)
                     {
-                        CompositeCodeGenerator.AppendCompositePartialMethodImplementation(builder, compositeMethod, target.BaseParameterName);
+                        CompositeCodeGenerator.AppendCompositePartialMethodImplementation(
+                            builder,
+                            compositeMethod,
+                            target.BaseParameterName
+                        );
                     }
                 }
             }
@@ -179,7 +192,10 @@ internal static class HelperCodeGenerator
         {
             helperAccessor = "__InnerServices";
         }
-        var helperName = HelperCodeGeneratorUtility.BuildHelperInterfaceName(interfaceHelperName, isComposite);
+        var helperName = HelperCodeGeneratorUtility.BuildHelperInterfaceName(
+            interfaceHelperName,
+            isComposite
+        );
         var genericArgs = helper.GenericTypeArguments;
         var genericParams = helper.GenericTypeParameters;
 
@@ -191,7 +207,7 @@ internal static class HelperCodeGenerator
 
         // Build the interface declaration line
         var interfaceDeclaration = $"public interface {helperInterfaceName} : {interfaceName}";
-        
+
         // Add where clauses if present
         if (!string.IsNullOrEmpty(genericParams))
         {
@@ -213,11 +229,19 @@ internal static class HelperCodeGenerator
                 {
                     if (isComposite)
                     {
-                        CompositeCodeGenerator.AppendCompositeMethod(builder, member, helperAccessor);
+                        CompositeCodeGenerator.AppendCompositeMethod(
+                            builder,
+                            member,
+                            helperAccessor
+                        );
                     }
                     else
                     {
-                        DecoratorCodeGenerator.AppendDecoratorMethod(builder, member, helperAccessor);
+                        DecoratorCodeGenerator.AppendDecoratorMethod(
+                            builder,
+                            member,
+                            helperAccessor
+                        );
                     }
                 }
                 else if (member.Kind == HelperMemberKind.Property)
@@ -228,7 +252,11 @@ internal static class HelperCodeGenerator
                     }
                     else
                     {
-                        DecoratorCodeGenerator.AppendDecoratorProperty(builder, member, helperAccessor);
+                        DecoratorCodeGenerator.AppendDecoratorProperty(
+                            builder,
+                            member,
+                            helperAccessor
+                        );
                     }
                 }
             }

@@ -59,6 +59,7 @@ internal static class HelperTargetCollector
         {
             InterfaceTargets = new EquatableArray<HelperInterfaceTarget>([]),
             ImplementingTargets = new EquatableArray<HelperImplementingTarget>([]),
+            DispatchCompositeTargets = new EquatableArray<DispatchCompositeTarget>([]),
         };
 
         // Validate target symbol and attributes
@@ -160,6 +161,7 @@ internal static class HelperTargetCollector
         var prunedInterfaces = FilterDerivedInterfaces(interfaceList);
         var interfaceTargets = new List<HelperInterfaceTarget>();
         var implementingTargets = new List<HelperImplementingTarget>();
+        var dispatchTargets = new List<DispatchCompositeTarget>();
         foreach (
             var iface in prunedInterfaces.OrderBy(iface =>
                 iface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
@@ -202,15 +204,32 @@ internal static class HelperTargetCollector
                     ),
                 };
             }
+            else if (isComposite && prunedInterfaces.Length == 1)
+            {
+                var dispatchTarget = TryCreateDispatchCompositeTarget(
+                    context,
+                    typeSymbol,
+                    iface,
+                    typeName,
+                    typeNamespace,
+                    typeKeyword,
+                    containingTypesList,
+                    members
+                );
+                if (dispatchTarget is not null)
+                {
+                    dispatchTargets.Add(dispatchTarget);
+                }
+            }
             var decoratorParameterName =
                 isDecorator && constructorTarget is not null
                     ? constructorTarget.BaseParameterName
                     : string.Empty;
-            
+
             // Extract generic type information from the interface
             var genericConstraints = CodeGenerationUtility.GetGenericConstraints(iface);
             var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(iface);
-            
+
             var target = new HelperInterfaceTarget
             {
                 InterfaceName = interfaceName,
@@ -236,6 +255,9 @@ internal static class HelperTargetCollector
             ImplementingTargets = new EquatableArray<HelperImplementingTarget>(
                 implementingTargets.ToImmutableArray()
             ),
+            DispatchCompositeTargets = new EquatableArray<DispatchCompositeTarget>(
+                dispatchTargets.ToImmutableArray()
+            ),
         };
     }
 
@@ -243,6 +265,7 @@ internal static class HelperTargetCollector
     {
         var interfaceTargets = targets.SelectMany(t => t.InterfaceTargets).ToImmutableArray();
         var implementingTargets = targets.SelectMany(t => t.ImplementingTargets).ToImmutableArray();
+        var dispatchTargets = targets.SelectMany(t => t.DispatchCompositeTargets).ToImmutableArray();
 
         var mergedInterfaces = MergeInterfaceTargets(interfaceTargets);
         var mergedImplementing = MergeImplementingTargets(implementingTargets, mergedInterfaces);
@@ -251,7 +274,37 @@ internal static class HelperTargetCollector
         {
             InterfaceTargets = new EquatableArray<HelperInterfaceTarget>(mergedInterfaces),
             ImplementingTargets = new EquatableArray<HelperImplementingTarget>(mergedImplementing),
+            DispatchCompositeTargets = new EquatableArray<DispatchCompositeTarget>(
+                MergeDispatchTargets(dispatchTargets)
+            ),
         };
+    }
+
+    private static ImmutableArray<DispatchCompositeTarget> MergeDispatchTargets(
+        ImmutableArray<DispatchCompositeTarget> targets
+    )
+    {
+        if (targets.IsDefaultOrEmpty)
+        {
+            return ImmutableArray<DispatchCompositeTarget>.Empty;
+        }
+
+        var map = new Dictionary<string, DispatchCompositeTarget>(StringComparer.Ordinal);
+        foreach (var target in targets)
+        {
+            var key =
+                target.ImplementingTypeNamespace
+                + "."
+                + target.ImplementingTypeName
+                + ":"
+                + target.InterfaceName;
+            if (!map.ContainsKey(key))
+            {
+                map[key] = target;
+            }
+        }
+
+        return map.Values.ToImmutableArray();
     }
 
     private static ImmutableArray<HelperInterfaceTarget> MergeInterfaceTargets(
@@ -359,8 +412,8 @@ internal static class HelperTargetCollector
                 IsDecorator = existing.IsDecorator || target.IsDecorator,
                 UseIntercept = existing.UseIntercept || useIntercept,
                 CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>(
-                    existing.CompositeMethodOverrides
-                        .Concat(target.CompositeMethodOverrides)
+                    existing
+                        .CompositeMethodOverrides.Concat(target.CompositeMethodOverrides)
                         .Distinct()
                         .ToImmutableArray()
                 ),
@@ -629,7 +682,7 @@ internal static class HelperTargetCollector
             UseIntercept = useIntercept,
             GenericTypeParameters = genericConstraints, // Store the where clauses
             GenericTypeArguments = genericArgs,
-                CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>([]),
+            CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>([]),
         };
     }
 
@@ -652,8 +705,9 @@ internal static class HelperTargetCollector
             return ImmutableArray<CompositeMethodOverride>.Empty;
         }
 
-        var compositeMethodAttrSymbol = context.SemanticModel
-            .Compilation.GetTypeByMetadataName(CompositeMethodAttribute);
+        var compositeMethodAttrSymbol = context.SemanticModel.Compilation.GetTypeByMetadataName(
+            CompositeMethodAttribute
+        );
         var methods = typeSymbol
             .GetMembers()
             .OfType<IMethodSymbol>()
@@ -667,9 +721,7 @@ internal static class HelperTargetCollector
         var result = new List<CompositeMethodOverride>();
         foreach (var method in methods)
         {
-            var methodMember = interfaceMethods.FirstOrDefault(im =>
-                IsSameSignature(im, method)
-            );
+            var methodMember = interfaceMethods.FirstOrDefault(im => IsSameSignature(im, method));
             if (methodMember is null)
             {
                 continue;
@@ -729,7 +781,13 @@ internal static class HelperTargetCollector
             return false;
         }
 
-        if (!string.Equals(helperMember.ReturnTypeName, method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), StringComparison.Ordinal))
+        if (
+            !string.Equals(
+                helperMember.ReturnTypeName,
+                method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                StringComparison.Ordinal
+            )
+        )
         {
             return false;
         }
@@ -749,7 +807,13 @@ internal static class HelperTargetCollector
                 return false;
             }
 
-            if (!string.Equals(left.RefKindPrefix, GetRefKindPrefix(right.RefKind), StringComparison.Ordinal))
+            if (
+                !string.Equals(
+                    left.RefKindPrefix,
+                    GetRefKindPrefix(right.RefKind),
+                    StringComparison.Ordinal
+                )
+            )
             {
                 return false;
             }
@@ -834,6 +898,327 @@ internal static class HelperTargetCollector
             Accessibility.ProtectedAndInternal => "private protected",
             _ => "internal",
         };
+    }
+
+    private static DispatchCompositeTarget? TryCreateDispatchCompositeTarget(
+        GeneratorAttributeSyntaxContext context,
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol interfaceSymbol,
+        string typeName,
+        string typeNamespace,
+        string typeKeyword,
+        List<ContainingTypeInfo> containingTypes,
+        ImmutableArray<HelperMember> members
+    )
+    {
+        if (!typeSymbol.IsGenericType || typeSymbol.TypeParameters.Length != 1)
+        {
+            return null;
+        }
+
+        if (
+            !interfaceSymbol.IsGenericType
+            || interfaceSymbol.TypeArguments.Length != 1
+            || interfaceSymbol.TypeArguments[0] is not ITypeParameterSymbol ifaceParam
+        )
+        {
+            return null;
+        }
+
+        var typeParam = typeSymbol.TypeParameters[0];
+        if (!SymbolEqualityComparer.Default.Equals(ifaceParam, typeParam))
+        {
+            return null;
+        }
+
+        // Only when user does not define any constructor
+        if (typeSymbol.InstanceConstructors.Any(ctor => !ctor.IsImplicitlyDeclared))
+        {
+            return null;
+        }
+
+        if (typeParam.ConstraintTypes.IsEmpty)
+        {
+            return null;
+        }
+
+        var concreteTypes = CollectConcreteTypes(context.SemanticModel.Compilation, typeParam);
+        if (concreteTypes.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
+        var dispatchMethods = CollectDispatchCompositeMethods(
+            interfaceSymbol,
+            members,
+            typeParam
+        );
+
+        var concreteTypeInfos = new List<DispatchCompositeConcreteType>();
+        var usedFieldNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var concreteType in concreteTypes)
+        {
+            var constructedInterface = interfaceSymbol.OriginalDefinition.Construct(concreteType);
+            var constructedInterfaceName = constructedInterface.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat
+            );
+            var typeDisplayName = concreteType.ToDisplayString(
+                SymbolDisplayFormat.MinimallyQualifiedFormat
+            );
+            var baseName = SanitizeIdentifier(typeDisplayName);
+            if (string.IsNullOrEmpty(baseName))
+            {
+                baseName = "Type";
+            }
+
+            var fieldName = $"_{char.ToLowerInvariant(baseName[0])}{baseName.Substring(1)}Validators";
+            if (!usedFieldNames.Add(fieldName))
+            {
+                var suffix = 1;
+                var candidate = fieldName;
+                while (!usedFieldNames.Add(candidate))
+                {
+                    suffix++;
+                    candidate = $"{fieldName}{suffix}";
+                }
+                fieldName = candidate;
+            }
+
+            var parameterName = fieldName.TrimStart('_');
+
+            concreteTypeInfos.Add(
+                new DispatchCompositeConcreteType
+                {
+                    TypeName = concreteType.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    ),
+                    FieldName = fieldName,
+                    ParameterName = parameterName,
+                    ConstructedInterfaceTypeName = constructedInterfaceName,
+                }
+            );
+        }
+
+        var genericConstraints = CodeGenerationUtility.GetGenericConstraints(typeSymbol);
+        var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(typeSymbol);
+        var interfaceHelperName = SanitizeIdentifier(
+            interfaceSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+        );
+
+        var constraintTypeInfos = new List<DispatchCompositeConstraintType>();
+        foreach (var constraint in typeParam.ConstraintTypes.OfType<INamedTypeSymbol>())
+        {
+            if (constraint.SpecialType == SpecialType.System_Object)
+            {
+                continue;
+            }
+
+            var constraintInterface = interfaceSymbol.OriginalDefinition.Construct(constraint);
+            var suffix = SanitizeIdentifier(
+                constraint.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+            );
+            constraintTypeInfos.Add(
+                new DispatchCompositeConstraintType
+                {
+                    TypeName = constraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                    Suffix = suffix,
+                    ConstructedInterfaceTypeName = constraintInterface.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    ),
+                }
+            );
+        }
+
+        return new DispatchCompositeTarget
+        {
+            ImplementingTypeName = typeName,
+            ImplementingTypeNamespace = typeNamespace,
+            ImplementingTypeKeyword = typeKeyword,
+            ImplementingTypeAccessibility = GetAccessibility(typeSymbol.DeclaredAccessibility),
+            ContainingTypes = new EquatableArray<ContainingTypeInfo>(containingTypes.ToImmutableArray()),
+            InterfaceName = interfaceSymbol.ToDisplayString(
+                SymbolDisplayFormat.FullyQualifiedFormat
+            ),
+            InterfaceHelperName = interfaceHelperName,
+            Methods = new EquatableArray<DispatchCompositeMethod>(dispatchMethods),
+            GenericTypeParameters = genericConstraints,
+            GenericTypeArguments = genericArgs,
+            ConcreteTypes = new EquatableArray<DispatchCompositeConcreteType>(
+                concreteTypeInfos.ToImmutableArray()
+            ),
+            ConstraintTypes = new EquatableArray<DispatchCompositeConstraintType>(
+                constraintTypeInfos.ToImmutableArray()
+            ),
+        };
+    }
+
+    private static ImmutableArray<INamedTypeSymbol> CollectConcreteTypes(
+        Compilation compilation,
+        ITypeParameterSymbol typeParam
+    )
+    {
+        var constraints = typeParam.ConstraintTypes;
+        if (constraints.IsEmpty)
+        {
+            return ImmutableArray<INamedTypeSymbol>.Empty;
+        }
+
+        var allTypes = new List<INamedTypeSymbol>();
+        CollectTypes(compilation.Assembly.GlobalNamespace, allTypes);
+
+        var results = new List<INamedTypeSymbol>();
+        foreach (var type in allTypes)
+        {
+            if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct))
+            {
+                continue;
+            }
+
+            if (type.IsAbstract || type.IsGenericType)
+            {
+                continue;
+            }
+
+            if (!SatisfiesConstraints(type, typeParam, constraints))
+            {
+                continue;
+            }
+
+            results.Add(type);
+        }
+
+        return results.Distinct(NamedTypeSymbolComparer.Instance).ToImmutableArray();
+    }
+
+    private static void CollectTypes(INamespaceSymbol ns, List<INamedTypeSymbol> results)
+    {
+        foreach (var type in ns.GetTypeMembers())
+        {
+            results.Add(type);
+            foreach (var nested in GetNestedTypes(type))
+            {
+                results.Add(nested);
+            }
+        }
+
+        foreach (var child in ns.GetNamespaceMembers())
+        {
+            CollectTypes(child, results);
+        }
+    }
+
+    private static IEnumerable<INamedTypeSymbol> GetNestedTypes(INamedTypeSymbol type)
+    {
+        foreach (var nested in type.GetTypeMembers())
+        {
+            yield return nested;
+            foreach (var sub in GetNestedTypes(nested))
+            {
+                yield return sub;
+            }
+        }
+    }
+
+    private static bool SatisfiesConstraints(
+        INamedTypeSymbol candidate,
+        ITypeParameterSymbol typeParam,
+        ImmutableArray<ITypeSymbol> constraints
+    )
+    {
+        if (typeParam.HasReferenceTypeConstraint && candidate.IsValueType)
+        {
+            return false;
+        }
+
+        if (typeParam.HasValueTypeConstraint && !candidate.IsValueType)
+        {
+            return false;
+        }
+
+        if (typeParam.HasConstructorConstraint)
+        {
+            if (!candidate.IsValueType && candidate.InstanceConstructors.All(c => c.Parameters.Length > 0))
+            {
+                return false;
+            }
+        }
+
+        foreach (var constraint in constraints)
+        {
+            if (!IsAssignable(candidate, constraint))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsAssignable(INamedTypeSymbol candidate, ITypeSymbol constraint)
+    {
+        if (SymbolEqualityComparer.Default.Equals(candidate, constraint))
+        {
+            return true;
+        }
+
+        if (constraint.TypeKind == TypeKind.Interface)
+        {
+            return candidate.AllInterfaces.Any(i =>
+                SymbolEqualityComparer.Default.Equals(i, constraint)
+            );
+        }
+
+        var current = candidate.BaseType;
+        while (current is not null)
+        {
+            if (SymbolEqualityComparer.Default.Equals(current, constraint))
+            {
+                return true;
+            }
+            current = current.BaseType;
+        }
+
+        return false;
+    }
+
+    private static ImmutableArray<DispatchCompositeMethod> CollectDispatchCompositeMethods(
+        INamedTypeSymbol interfaceSymbol,
+        ImmutableArray<HelperMember> members,
+        ITypeParameterSymbol typeParam
+    )
+    {
+        var methods = interfaceSymbol
+            .GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(m => m.MethodKind == MethodKind.Ordinary)
+            .ToImmutableArray();
+
+        var results = new List<DispatchCompositeMethod>();
+        foreach (var member in members.Where(m => m.Kind == HelperMemberKind.Method))
+        {
+            var methodSymbol = methods.FirstOrDefault(m =>
+                string.Equals(member.Name, m.Name, StringComparison.Ordinal)
+                && m.Parameters.Length == member.Parameters.Count
+            );
+
+            var index = -1;
+            if (methodSymbol is not null)
+            {
+                for (var i = 0; i < methodSymbol.Parameters.Length; i++)
+                {
+                    var parameterType = methodSymbol.Parameters[i].Type;
+                    if (SymbolEqualityComparer.Default.Equals(parameterType, typeParam))
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+            }
+
+            results.Add(new DispatchCompositeMethod { Member = member, DispatchParameterIndex = index });
+        }
+
+        return results.ToImmutableArray();
     }
 }
 

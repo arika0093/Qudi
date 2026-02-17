@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -53,10 +54,15 @@ public static class QudiAddServiceToContainer
         var materialized = MaterializeOpenGenericFallbacks(applicable);
 
         var registrations = materialized
-            .Where(t => !t.MarkAsDecorator && !t.MarkAsComposite)
+            .Where(t =>
+                !t.MarkAsDecorator
+                && (!t.MarkAsComposite || t.MarkAsCompositeDispatcher)
+            )
             .ToList();
         var layeredRegistrations = materialized
-            .Where(t => t.MarkAsDecorator || t.MarkAsComposite)
+            .Where(t =>
+                t.MarkAsDecorator || (t.MarkAsComposite && !t.MarkAsCompositeDispatcher)
+            )
             // Higher order is applied later (outer), so process lower order first.
             .OrderBy(t => t.Order)
             // Keep composites ahead of decorators when Order is the same so decorators wrap composites.
@@ -191,6 +197,9 @@ public static class QudiAddServiceToContainer
         IReadOnlyCollection<TypeRegistrationInfo> registrations
     )
     {
+        var availableTypes = CollectLoadableTypes(
+            registrations.Select(r => r.Type.Assembly).Distinct().ToList()
+        );
         var closedRegistrations = registrations
             .SelectMany(r => r.AsTypes)
             .Where(t => !t.IsGenericTypeDefinition)
@@ -216,6 +225,13 @@ public static class QudiAddServiceToContainer
                 continue;
             }
 
+            if (registration.MarkAsCompositeDispatcher)
+            {
+                // Keep open generic registration as-is for dispatch composites.
+                materialized.Add(registration);
+                continue;
+            }
+
             var genericAsTypes = registration
                 .AsTypes.Where(t => t.IsGenericTypeDefinition)
                 .Distinct()
@@ -232,14 +248,30 @@ public static class QudiAddServiceToContainer
             foreach (var genericAsType in genericAsTypes)
             {
                 List<Type> candidates;
-                
+
                 // For composites, materialize for all closed types that have implementations
-                if (registration.MarkAsComposite)
+                if (registration.MarkAsComposite && !registration.MarkAsCompositeDispatcher)
                 {
                     candidates = closedRegistrations
-                        .Where(t => t.IsConstructedGenericType && t.GetGenericTypeDefinition() == genericAsType)
+                        .Where(t =>
+                            t.IsConstructedGenericType
+                            && t.GetGenericTypeDefinition() == genericAsType
+                        )
                         .Distinct()
                         .ToList();
+
+                    // Also include constraint base types (e.g., IComponent) for generic composites
+                    candidates.AddRange(
+                        BuildConstraintBasedCandidates(
+                            genericAsType,
+                            availableTypes,
+                            includeAbstract: true,
+                            includeInterfaces: true,
+                            includeConstraintTypes: true
+                        )
+                    );
+
+                    candidates = candidates.Distinct().ToList();
                 }
                 else
                 {
@@ -248,13 +280,29 @@ public static class QudiAddServiceToContainer
                         .Where(t => t.GetGenericTypeDefinition() == genericAsType)
                         .Distinct()
                         .ToList();
+
+                    // Also include concrete types that satisfy generic constraints
+                    candidates.AddRange(
+                        BuildConstraintBasedCandidates(
+                            genericAsType,
+                            availableTypes,
+                            includeAbstract: false,
+                            includeInterfaces: false,
+                            includeConstraintTypes: false
+                        )
+                    );
+
+                    candidates = candidates.Distinct().ToList();
                 }
 
                 foreach (var candidate in candidates)
                 {
                     // For composites, always generate (don't skip if already exists)
                     // For fallbacks, skip if closed registration already exists
-                    if (!registration.MarkAsComposite && closedRegistrations.Contains(candidate))
+                    if (
+                        (!registration.MarkAsComposite || registration.MarkAsCompositeDispatcher)
+                        && closedRegistrations.Contains(candidate)
+                    )
                     {
                         continue;
                     }
@@ -308,6 +356,177 @@ public static class QudiAddServiceToContainer
         }
 
         return materialized;
+    }
+
+    private static List<Type> BuildConstraintBasedCandidates(
+        Type openGenericServiceType,
+        IReadOnlyList<Type> availableTypes,
+        bool includeAbstract,
+        bool includeInterfaces,
+        bool includeConstraintTypes
+    )
+    {
+        if (!TryGetSingleGenericParameter(openGenericServiceType, out var genericParameter))
+        {
+            return [];
+        }
+
+        var constraints = genericParameter.GetGenericParameterConstraints();
+        if (constraints.Length == 0)
+        {
+            return [];
+        }
+
+        var candidates = new List<Type>();
+
+        foreach (var candidate in availableTypes)
+        {
+            if (candidate.ContainsGenericParameters || candidate.IsGenericTypeDefinition)
+            {
+                continue;
+            }
+
+            if (!includeInterfaces && candidate.IsInterface)
+            {
+                continue;
+            }
+
+            if (!includeAbstract && candidate.IsAbstract)
+            {
+                continue;
+            }
+
+            if (!SatisfiesConstraints(candidate, genericParameter, constraints))
+            {
+                continue;
+            }
+
+            TryAddClosedCandidate(candidates, openGenericServiceType, candidate);
+        }
+
+        if (includeConstraintTypes)
+        {
+            foreach (var constraint in constraints)
+            {
+                if (constraint == typeof(object))
+                {
+                    continue;
+                }
+
+                if (!SatisfiesConstraints(constraint, genericParameter, constraints))
+                {
+                    continue;
+                }
+
+                TryAddClosedCandidate(candidates, openGenericServiceType, constraint);
+            }
+        }
+
+        return candidates.Distinct().ToList();
+    }
+
+    private static void TryAddClosedCandidate(
+        ICollection<Type> candidates,
+        Type openGenericServiceType,
+        Type argumentType
+    )
+    {
+        try
+        {
+            candidates.Add(openGenericServiceType.MakeGenericType(argumentType));
+        }
+        catch (ArgumentException)
+        {
+            // Ignore types that do not satisfy generic constraints
+        }
+    }
+
+    private static bool TryGetSingleGenericParameter(
+        Type openGenericType,
+        out Type genericParameter
+    )
+    {
+        genericParameter = typeof(object);
+        if (!openGenericType.IsGenericTypeDefinition)
+        {
+            return false;
+        }
+
+        var genericArguments = openGenericType.GetGenericArguments();
+        if (genericArguments.Length != 1)
+        {
+            return false;
+        }
+
+        genericParameter = genericArguments[0];
+        return genericParameter.IsGenericParameter;
+    }
+
+    private static bool SatisfiesConstraints(
+        Type candidate,
+        Type genericParameter,
+        Type[] constraints
+    )
+    {
+        var attributes = genericParameter.GenericParameterAttributes;
+
+        if (
+            attributes.HasFlag(GenericParameterAttributes.ReferenceTypeConstraint)
+            && candidate.IsValueType
+        )
+        {
+            return false;
+        }
+
+        if (
+            attributes.HasFlag(GenericParameterAttributes.NotNullableValueTypeConstraint)
+            && !candidate.IsValueType
+        )
+        {
+            return false;
+        }
+
+        if (attributes.HasFlag(GenericParameterAttributes.DefaultConstructorConstraint))
+        {
+            if (!candidate.IsValueType && candidate.GetConstructor(Type.EmptyTypes) is null)
+            {
+                return false;
+            }
+        }
+
+        foreach (var constraint in constraints)
+        {
+            if (constraint == typeof(object))
+            {
+                continue;
+            }
+
+            if (!constraint.IsAssignableFrom(candidate))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static List<Type> CollectLoadableTypes(IReadOnlyList<Assembly> assemblies)
+    {
+        var types = new List<Type>();
+
+        foreach (var assembly in assemblies)
+        {
+            try
+            {
+                types.AddRange(assembly.GetTypes());
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                types.AddRange(ex.Types.Where(t => t is not null)!.Select(t => t!));
+            }
+        }
+
+        return types;
     }
 
     private static IEnumerable<Type> CollectAllTypes(Type type)

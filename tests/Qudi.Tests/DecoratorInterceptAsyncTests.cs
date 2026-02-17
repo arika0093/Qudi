@@ -38,14 +38,11 @@ public sealed class DecoratorInterceptAsyncTests
         entries.Count.ShouldBeGreaterThanOrEqualTo(4);
 
         var lastEntries = entries.Skip(entries.Count - 4).ToArray();
-        lastEntries.ShouldBe(
-            new[]
-            {
-                $"before:{methodName}",
-                $"service:start:{methodName}",
-                $"service:end:{methodName}",
-                $"after:{methodName}",
-            }
-        );
+        lastEntries.ShouldBe([
+            $"before:{methodName}",
+            $"service:start:{methodName}",
+            $"service:end:{methodName}",
+            $"after:{methodName}",
+        ]);
     }
 }

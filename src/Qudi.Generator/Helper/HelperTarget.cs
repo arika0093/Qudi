@@ -185,6 +185,60 @@ internal sealed record HelperGenerationInput
     /// Types that should implement helper interfaces.
     /// </summary>
     public required EquatableArray<HelperImplementingTarget> ImplementingTargets { get; init; }
+
+    /// <summary>
+    /// Dispatch-based composite targets.
+    /// </summary>
+    public required EquatableArray<DispatchCompositeTarget> DispatchCompositeTargets { get; init; }
+}
+
+/// <summary>
+/// Represents a dispatch-based composite target.
+/// </summary>
+internal sealed record DispatchCompositeTarget
+{
+    public required string ImplementingTypeName { get; init; }
+    public required string ImplementingTypeNamespace { get; init; }
+    public required string ImplementingTypeKeyword { get; init; }
+    public required string ImplementingTypeAccessibility { get; init; }
+    public required EquatableArray<ContainingTypeInfo> ContainingTypes { get; init; }
+    public required string InterfaceName { get; init; }
+    public required string InterfaceHelperName { get; init; }
+    public required EquatableArray<DispatchCompositeMethod> Methods { get; init; }
+    public required string GenericTypeParameters { get; init; }
+    public required string GenericTypeArguments { get; init; }
+    public required EquatableArray<DispatchCompositeConcreteType> ConcreteTypes { get; init; }
+    public required EquatableArray<DispatchCompositeConstraintType> ConstraintTypes { get; init; }
+}
+
+/// <summary>
+/// Method metadata for dispatch composites.
+/// </summary>
+internal sealed record DispatchCompositeMethod
+{
+    public required HelperMember Member { get; init; }
+    public required int DispatchParameterIndex { get; init; }
+}
+
+/// <summary>
+/// Concrete type metadata for dispatch composites.
+/// </summary>
+internal sealed record DispatchCompositeConcreteType
+{
+    public required string TypeName { get; init; }
+    public required string FieldName { get; init; }
+    public required string ParameterName { get; init; }
+    public required string ConstructedInterfaceTypeName { get; init; }
+}
+
+/// <summary>
+/// Constraint type metadata for dispatch composites.
+/// </summary>
+internal sealed record DispatchCompositeConstraintType
+{
+    public required string TypeName { get; init; }
+    public required string Suffix { get; init; }
+    public required string ConstructedInterfaceTypeName { get; init; }
 }
 
 /// <summary>

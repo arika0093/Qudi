@@ -30,9 +30,13 @@ internal static class DecoratorCodeGenerator
     {
         var typeName = property.ReturnTypeName;
         var propertyName = property.IsIndexer ? "this" : property.Name;
-        var parameters = property.IsIndexer ? HelperCodeGeneratorUtility.BuildParameterList(property.Parameters) : "";
+        var parameters = property.IsIndexer
+            ? HelperCodeGeneratorUtility.BuildParameterList(property.Parameters)
+            : "";
         var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : "";
-        var accessSuffix = property.IsIndexer ? $"[{HelperCodeGeneratorUtility.BuildArgumentList(property.Parameters)}]" : "";
+        var accessSuffix = property.IsIndexer
+            ? $"[{HelperCodeGeneratorUtility.BuildArgumentList(property.Parameters)}]"
+            : "";
         var getterAccess = property.IsIndexer
             ? $"{helperAccessor}{accessSuffix}"
             : $"{helperAccessor}.{propertyName}{accessSuffix}";
@@ -54,10 +58,14 @@ internal static class DecoratorCodeGenerator
         var returnType = method.ReturnTypeName;
         var parameters = HelperCodeGeneratorUtility.BuildParameterList(method.Parameters);
         var arguments = HelperCodeGeneratorUtility.BuildArgumentList(method.Parameters);
-        var interceptArguments = HelperCodeGeneratorUtility.BuildInterceptArgumentList(method.Parameters);
+        var interceptArguments = HelperCodeGeneratorUtility.BuildInterceptArgumentList(
+            method.Parameters
+        );
         var returnsVoid = returnType == "void";
         var isTaskLike = HelperCodeGeneratorUtility.IsTaskLikeReturnType(returnType);
-        var isTaskLikeNonGeneric = HelperCodeGeneratorUtility.IsTaskLikeNonGenericReturnType(returnType);
+        var isTaskLikeNonGeneric = HelperCodeGeneratorUtility.IsTaskLikeNonGenericReturnType(
+            returnType
+        );
         var useResult = !returnsVoid && !isTaskLikeNonGeneric;
         var resultVarSyntax = useResult ? "var result = " : "";
         var resultReturnSyntax = useResult ? "return result;" : "return;";
