@@ -103,7 +103,7 @@ flowchart LR
 ```
 
 ### Analytics
-Let's add a class `DisplayPokemonService` to call the registered `IPokemon` together. [Source](./examples/Qudi.Example.Snippets/002_WrongLifetime.cs)
+Let's add a class `DisplayPokemonService` to call the registered `IPokemon` together.
 
 ```csharp
 [DISingleton] // WARN: this is wrong!
@@ -118,6 +118,70 @@ public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
     }
 }
 ```
+
+<details>
+<summary>Full code snippet</summary>
+
+```csharp
+#!/usr/bin/env dotnet
+#:package Qudi@*
+#:package Qudi.Visualizer@*
+using Microsoft.Extensions.DependencyInjection;
+using Qudi;
+using Qudi.Visualizer;
+
+var services = new ServiceCollection();
+
+services.AddQudiServices(conf =>
+{
+    conf.EnableVisualizationOutput(option =>
+    {
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.AddOutput("summary.md");
+    });
+});
+
+var provider = services.BuildServiceProvider();
+var displayService = provider.GetRequiredService<DisplayPokemonService>();
+displayService.DisplayAll();
+
+// ------ Declare services ------
+public interface IPokemon
+{
+    string Name { get; }
+    IEnumerable<string> Types { get; }
+    public void DisplayInfo() =>
+        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+}
+
+[DISingleton]
+public class Altaria : IPokemon
+{
+    public string Name => "Altaria";
+    public IEnumerable<string> Types => ["Dragon", "Flying"];
+}
+
+[DITransient]
+public class Abomasnow : IPokemon
+{
+    public string Name => "Abomasnow";
+    public IEnumerable<string> Types => ["Grass", "Ice"];
+}
+
+[DISingleton] // WARN: this is wrong!
+public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
+{
+    public void DisplayAll()
+    {
+        foreach (var pokemon in pokemons)
+        {
+            pokemon.DisplayInfo();
+        }
+    }
+}
+```
+
+</details>
 
 Note that it is registered as Singleton (by mistake). If it contains Transient services, it will cause issues with proper disposal.
 
@@ -134,12 +198,76 @@ you will see the following warning.
 ![getting start with warning](assets/getting-start-warning.png)
 
 This library has a feature that provides clear [warnings for common mistakes](#registration-status-visualization).
-Let's fix it by setting the correct lifetime.  [Source](./examples/Qudi.Example.Snippets/003_CorrectLifetime.cs)
+Let's fix it by setting the correct lifetime.
 
 ```csharp
 [DITransient] // FIX: change to transient
 public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
 ```
+
+<details>
+<summary>Full code snippet</summary>
+
+```csharp
+#!/usr/bin/env dotnet
+#:package Qudi@*
+#:package Qudi.Visualizer@*
+using Microsoft.Extensions.DependencyInjection;
+using Qudi;
+using Qudi.Visualizer;
+
+var services = new ServiceCollection();
+
+services.AddQudiServices(conf =>
+{
+    conf.EnableVisualizationOutput(option =>
+    {
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.AddOutput("summary.md");
+    });
+});
+
+var provider = services.BuildServiceProvider();
+var displayService = provider.GetRequiredService<DisplayPokemonService>();
+displayService.DisplayAll();
+
+// ------ Declare services ------
+public interface IPokemon
+{
+    string Name { get; }
+    IEnumerable<string> Types { get; }
+    public void DisplayInfo() =>
+        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+}
+
+[DISingleton]
+public class Altaria : IPokemon
+{
+    public string Name => "Altaria";
+    public IEnumerable<string> Types => ["Dragon", "Flying"];
+}
+
+[DITransient]
+public class Abomasnow : IPokemon
+{
+    public string Name => "Abomasnow";
+    public IEnumerable<string> Types => ["Grass", "Ice"];
+}
+
+[DITransient] // ✅️ this is correct!
+public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
+{
+    public void DisplayAll()
+    {
+        foreach (var pokemon in pokemons)
+        {
+            pokemon.DisplayInfo();
+        }
+    }
+}
+```
+
+</details>
 
 Now, the warning is gone and the application runs successfully 🎉
 <br/>
@@ -171,7 +299,7 @@ You can easily implement the Decorator and Composite patterns using Qudi’s fea
 
 A decorator is a design pattern that adds functionality to an existing service without modifying its code.
 Here we’ll implement a decorator that adds decorative output before and after console output.
-Create a class that accepts `IPokemon` in the constructor and also implements `IPokemon`, like the following. [Source](./examples/Qudi.Example.Snippets/004_Decorator.cs)
+Create a class that accepts `IPokemon` in the constructor and also implements `IPokemon`, like the following.
 
 ```csharp
 [QudiDecorator]
@@ -186,6 +314,82 @@ public partial class PokemonDecorator(IPokemon decorated) : IPokemon
     // you don't need to implement Name and Types, they will be auto-implemented by generated code
 }
 ```
+
+<details>
+<summary>Full code snippet</summary>
+
+```csharp
+#!/usr/bin/env dotnet
+#:package Qudi@*
+#:package Qudi.Visualizer@*
+using Microsoft.Extensions.DependencyInjection;
+using Qudi;
+using Qudi.Visualizer;
+
+var services = new ServiceCollection();
+
+services.AddQudiServices(conf =>
+{
+    conf.EnableVisualizationOutput(option =>
+    {
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.AddOutput("summary.md");
+    });
+});
+
+var provider = services.BuildServiceProvider();
+var displayService = provider.GetRequiredService<DisplayPokemonService>();
+displayService.DisplayAll();
+
+// ------ Declare services ------
+public interface IPokemon
+{
+    string Name { get; }
+    IEnumerable<string> Types { get; }
+    public void DisplayInfo() =>
+        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+}
+
+[DISingleton]
+public class Altaria : IPokemon
+{
+    public string Name => "Altaria";
+    public IEnumerable<string> Types => ["Dragon", "Flying"];
+}
+
+[DITransient]
+public class Abomasnow : IPokemon
+{
+    public string Name => "Abomasnow";
+    public IEnumerable<string> Types => ["Grass", "Ice"];
+}
+
+[DITransient]
+public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
+{
+    public void DisplayAll()
+    {
+        foreach (var pokemon in pokemons)
+        {
+            pokemon.DisplayInfo();
+        }
+    }
+}
+
+[QudiDecorator]
+public partial class PokemonDecorator(IPokemon decorated) : IPokemon
+{
+    public void DisplayInfo()
+    {
+        Console.WriteLine("=== Decorated Pokémon Info ===");
+        decorated.DisplayInfo();
+        Console.WriteLine("==============================");
+    }
+    // you don't need to implement Name and Types, they will be auto-implemented by generated code
+}
+```
+
+</details>
 
 When you run this, you will see the following console output.
 
@@ -225,9 +429,9 @@ flowchart LR
 
 ---
 
-`DisplayPokemonService` is just a service that calls `IPokemon.DisplayInfo()` together.
-In this case, you want to be able to simply call `IPokemon` without being aware that multiple `IPokemon` are registered from the caller, and have all registered `IPokemon` called just by calling `IPokemon`.
-Such a service can be easily implemented using `[QudiComposite]`. [Source](./examples/Qudi.Example.Snippets/005_Composite.cs)
+`DisplayPokemonService` is just a service that calls `IPokemon.DisplayInfo()` together.  
+In this case, you want to be able to simply call `IPokemon` without being aware that multiple `IPokemon` are registered from the caller, and have all registered `IPokemon` called just by calling `IPokemon`.  
+Such a service can be easily implemented using `[QudiComposite]`.
 
 ```csharp
 var provider = services.BuildServiceProvider();
@@ -243,10 +447,76 @@ public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPo
 }
 ```
 
+<details>
+<summary>Full code snippet</summary>
+
+```csharp
+#!/usr/bin/env dotnet
+#:package Qudi@*
+#:package Qudi.Visualizer@*
+using Microsoft.Extensions.DependencyInjection;
+using Qudi;
+using Qudi.Visualizer;
+
+var services = new ServiceCollection();
+
+services.AddQudiServices(conf =>
+{
+    conf.EnableVisualizationOutput(option =>
+    {
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.AddOutput("summary.md");
+    });
+});
+
+var provider = services.BuildServiceProvider();
+var displayService = provider.GetRequiredService<IPokemon>();
+displayService.DisplayInfo();
+
+// ------ Declare services ------
+public interface IPokemon
+{
+    string Name { get; }
+    IEnumerable<string> Types { get; }
+    public void DisplayInfo() =>
+        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+}
+
+[DISingleton]
+public class Altaria : IPokemon
+{
+    public string Name => "Altaria";
+    public IEnumerable<string> Types => ["Dragon", "Flying"];
+}
+
+[DITransient]
+public class Abomasnow : IPokemon
+{
+    public string Name => "Abomasnow";
+    public IEnumerable<string> Types => ["Grass", "Ice"];
+}
+
+[QudiComposite]
+public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPokemon { }
+
+[QudiDecorator]
+public partial class PokemonDecorator(IPokemon decorated) : IPokemon
+{
+    public void DisplayInfo()
+    {
+        Console.WriteLine("=== Decorated Pokémon Info ===");
+        decorated.DisplayInfo();
+        Console.WriteLine("==============================");
+    }
+}
+```
+
+</details>
+
 Note that we are resolving `IPokemon` instead of `DisplayPokemonService` with `RequiredService`.
 When you run the application in this state, the result will be as follows.
 
-```bash
+```
 === Decorated Pokémon Info ===
 Altaria is a Dragon/Flying type Pokémon.
 Abomasnow is a Grass/Ice type Pokémon.
@@ -278,7 +548,8 @@ flowchart LR
 
 By using `[QudiComposite]`, you can provide multiple implementations together as a single interface.
 
-If you want to control the order, you can specify the order of decorators and composites using the `Order` property. [Source](./examples/Qudi.Example.Snippets/006_Composit_order.cs)
+By default, composites are called after decorators, but in this case, we want the opposite.
+Let's specify the order explicitly to achieve the expected behavior.
 
 ```csharp
 [QudiComposite(Order = 0)]
@@ -295,6 +566,70 @@ public partial class PokemonDecorator(IPokemon decorated) : IPokemon
     }
 }
 ```
+
+<details>
+<summary>Full code snippet</summary>
+
+```csharp
+#!/usr/bin/env dotnet
+using Microsoft.Extensions.DependencyInjection;
+using Qudi;
+using Qudi.Visualizer;
+
+var services = new ServiceCollection();
+
+services.AddQudiServices(conf =>
+{
+    conf.EnableVisualizationOutput(option =>
+    {
+        option.ConsoleOutput = ConsoleDisplay.All;
+        option.AddOutput("summary.md");
+    });
+});
+
+var provider = services.BuildServiceProvider();
+var displayService = provider.GetRequiredService<IPokemon>();
+displayService.DisplayInfo();
+
+// ------ Declare services ------
+public interface IPokemon
+{
+    string Name { get; }
+    IEnumerable<string> Types { get; }
+    public void DisplayInfo() =>
+        Console.WriteLine($"{Name} is a {string.Join("/", Types)} type Pokémon.");
+}
+
+[DISingleton]
+public class Altaria : IPokemon
+{
+    public string Name => "Altaria";
+    public IEnumerable<string> Types => ["Dragon", "Flying"];
+}
+
+[DITransient]
+public class Abomasnow : IPokemon
+{
+    public string Name => "Abomasnow";
+    public IEnumerable<string> Types => ["Grass", "Ice"];
+}
+
+[QudiComposite(Order = 0)]
+public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPokemon { }
+
+[QudiDecorator(Order = 1)]
+public partial class PokemonDecorator(IPokemon decorated) : IPokemon
+{
+    public void DisplayInfo()
+    {
+        Console.WriteLine("=== Decorated Pokémon Info ===");
+        decorated.DisplayInfo();
+        Console.WriteLine("==============================");
+    }
+}
+```
+
+</details>
 
 In this case, the output will be as follows.
 
