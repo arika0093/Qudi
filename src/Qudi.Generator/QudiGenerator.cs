@@ -22,27 +22,25 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
 
         var combined = registrations.Combine(dependencies);
 
+        // registrations
         context.RegisterSourceOutput(
             combined,
-            static (spc, source) => Execute(spc, source.Left, source.Right)
+            static (spc, source) => {
+                var (regs, deps) = source;
+                RegistrationCodeGenerator.GenerateAddQudiServicesCode(spc, regs, deps);
+            }
         );
 
+        // add services
+        context.RegisterSourceOutput(
+            dependencies,
+            static (spc, deps) => AddServiceCodeGenerator.GenerateAddQudiServicesCode(spc, deps)
+        );
+
+        // helper (Decorator/Composite)
         context.RegisterSourceOutput(
             helperTargets,
             static (spc, targets) => HelperCodeGenerator.GenerateHelpers(spc, targets)
         );
-    }
-
-    private static void Execute(
-        SourceProductionContext context,
-        ImmutableArray<RegistrationSpec?> registrations,
-        ProjectInfo projectInfo
-    )
-    {
-        // RegistrationInfos
-        RegistrationCodeGenerator.GenerateAddQudiServicesCode(context, registrations, projectInfo);
-
-        // AddServices
-        AddServiceCodeGenerator.GenerateAddQudiServicesCode(context, projectInfo);
     }
 }
