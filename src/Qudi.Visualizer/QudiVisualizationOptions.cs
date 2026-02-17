@@ -1,10 +1,11 @@
+#pragma warning disable IDE0130
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 
-namespace Qudi.Visualizer;
+namespace Qudi;
 
 /// <summary>
 /// Defines the output format for Qudi visualization. Supported formats include:

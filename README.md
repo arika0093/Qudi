@@ -21,7 +21,6 @@ If you are using .NET 10 or later, just paste the following code into a file and
 #:package Qudi.Visualizer@*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
-using Qudi.Visualizer;
 
 var services = new ServiceCollection();
 

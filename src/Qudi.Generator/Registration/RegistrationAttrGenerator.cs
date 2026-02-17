@@ -17,6 +17,9 @@ internal static class RegistrationAttrGenerator
     private const string AttributeClassUsage =
         "[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]";
 
+    private const string AttributeMethodUsage =
+        "[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]";
+
     private const string QudiAttributeCode = $$"""
         {{CodeTemplateContents.CommonGeneratedHeader}}
         using System;
@@ -137,7 +140,7 @@ internal static class RegistrationAttrGenerator
             /// Specifies how a composite method should handle results from multiple implementations.
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
-            [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+            {{AttributeMethodUsage}}
             public sealed class CompositeMethodAttribute : Attribute
             {
                 /// <summary>
@@ -164,12 +167,16 @@ internal static class RegistrationAttrGenerator
                 Forget,
 
                 /// <summary>
-                /// Return logical AND of all boolean results (a && b && c && ...).
+                /// Return logical AND of all results.
+                /// In Boolean: (a && b && c && ...).
+                /// In Task: Task.WhenAll(a, b, c, ...).
                 /// </summary>
                 All,
 
                 /// <summary>
-                /// Return logical OR of all boolean results (a || b || c || ...).
+                /// Return logical OR of all results.
+                /// In Boolean: (a || b || c || ...).
+                /// In Task: Task.WhenAny(a, b, c, ...).
                 /// </summary>
                 Any,
 
