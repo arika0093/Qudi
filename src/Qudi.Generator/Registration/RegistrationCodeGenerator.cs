@@ -15,7 +15,7 @@ internal static class RegistrationCodeGenerator
     private const string TRResult = $"{IReadOnlyList}<{TRInfo}>";
     private const string VisitedHashSet = "global::System.Collections.Generic.HashSet<long>";
 
-    public static void GenerateAddQudiServicesCode(
+    public static void GenerateRegistrationsCode(
         SourceProductionContext context,
         ImmutableArray<RegistrationSpec?> registrations,
         ProjectInfo projectInfo

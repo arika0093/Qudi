@@ -28,7 +28,7 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
             static (spc, source) =>
             {
                 var (regs, deps) = source;
-                RegistrationCodeGenerator.GenerateAddQudiServicesCode(spc, regs, deps);
+                RegistrationCodeGenerator.GenerateRegistrationsCode(spc, regs, deps);
             }
         );
 
