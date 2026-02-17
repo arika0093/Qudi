@@ -117,6 +117,8 @@ internal static class RegistrationAttrParser
 
         var isDecorator = asDecorator || spec.MarkAsDecorator;
         var isComposite = asComposite || spec.MarkAsComposite;
+        // Dispatch composites are registered via generated concrete dispatcher types,
+        // not via the original open-generic composite registration.
         var isCompositeDispatcher = false;
         var effectiveLifetime =
             (isDecorator || isComposite) ? "Transient" : lifetime ?? spec.Lifetime;

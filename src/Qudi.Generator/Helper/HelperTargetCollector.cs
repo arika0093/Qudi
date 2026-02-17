@@ -206,6 +206,7 @@ internal static class HelperTargetCollector
             }
             else if (isComposite && prunedInterfaces.Length == 1)
             {
+                // Dispatch composites: no user-defined constructor, single generic interface.
                 var dispatchTarget = TryCreateDispatchCompositeTarget(
                     context,
                     typeSymbol,
@@ -942,6 +943,7 @@ internal static class HelperTargetCollector
             return null;
         }
 
+        // Concrete types come from constraint matching within the current compilation.
         var concreteTypes = CollectConcreteTypes(context.SemanticModel.Compilation, typeParam);
         if (concreteTypes.IsDefaultOrEmpty)
         {
@@ -952,6 +954,12 @@ internal static class HelperTargetCollector
             interfaceSymbol,
             members,
             typeParam
+        );
+
+        var compositeMethodOverrides = CollectCompositeMethodOverrides(
+            context,
+            typeSymbol,
+            members
         );
 
         var concreteTypeInfos = new List<DispatchCompositeConcreteType>();
@@ -1005,6 +1013,7 @@ internal static class HelperTargetCollector
             interfaceSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
         );
 
+        // Dispatchers are generated for each constraint type (e.g., IComponent).
         var constraintTypeInfos = new List<DispatchCompositeConstraintType>();
         foreach (var constraint in typeParam.ConstraintTypes.OfType<INamedTypeSymbol>())
         {
@@ -1048,6 +1057,9 @@ internal static class HelperTargetCollector
             ),
             ConstraintTypes = new EquatableArray<DispatchCompositeConstraintType>(
                 constraintTypeInfos.ToImmutableArray()
+            ),
+            CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>(
+                compositeMethodOverrides
             ),
         };
     }

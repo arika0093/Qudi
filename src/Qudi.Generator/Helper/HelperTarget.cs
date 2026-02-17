@@ -209,6 +209,7 @@ internal sealed record DispatchCompositeTarget
     public required string GenericTypeArguments { get; init; }
     public required EquatableArray<DispatchCompositeConcreteType> ConcreteTypes { get; init; }
     public required EquatableArray<DispatchCompositeConstraintType> ConstraintTypes { get; init; }
+    public required EquatableArray<CompositeMethodOverride> CompositeMethodOverrides { get; init; }
 }
 
 /// <summary>

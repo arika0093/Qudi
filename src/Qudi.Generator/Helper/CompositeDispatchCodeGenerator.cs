@@ -19,7 +19,9 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeTarget target
     )
     {
+        // Emit support for open-generic composite (inner-services enumerable only).
         AppendOpenGenericCompositeSupport(builder, target);
+        // Emit closed dispatchers for constraint types (e.g., IComponent).
         AppendConstraintDispatchers(builder, target);
     }
 
@@ -28,6 +30,8 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeTarget target
     )
     {
+        // For open generics we keep the composite helper interface, but only store
+        // IEnumerable<TInterface> to avoid forcing concrete type dependencies.
         var genericArgs = target.GenericTypeArguments;
         var genericParams = target.GenericTypeParameters;
         var whereClause = string.IsNullOrEmpty(genericParams) ? "" : $" {genericParams}";
@@ -104,6 +108,7 @@ internal static class CompositeDispatchCodeGenerator
             return;
         }
 
+        // For each constraint, generate a closed dispatcher that resolves concrete validators.
         foreach (var constraint in target.ConstraintTypes)
         {
             AppendDispatcherForConstraint(builder, target, constraint);
@@ -116,6 +121,8 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeConstraintType constraint
     )
     {
+        // Closed dispatcher implements the constraint-closed interface
+        // (e.g., IComponentValidator<IComponent>).
         var className = $"{target.ImplementingTypeName}__Dispatch_{constraint.Suffix}";
         var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
         builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
@@ -173,6 +180,7 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeConstraintType constraint
     )
     {
+        // Replace the generic type parameter with the constraint type for signatures.
         var member = method.Member;
         var returnType = ReplaceTypeParameter(
             member.ReturnTypeName,
@@ -185,11 +193,18 @@ internal static class CompositeDispatchCodeGenerator
             constraint.TypeName
         );
 
-        builder.AppendLine($"public {returnType} {member.Name}({parameters})");
+        var overrideBehavior = TryGetCompositeOverride(target, method);
+
+        var asyncModifier =
+            returnType == Task && overrideBehavior == CompositeResultBehavior.Sequential
+                ? "async "
+                : string.Empty;
+        builder.AppendLine($"public {asyncModifier}{returnType} {member.Name}({parameters})");
         using (builder.BeginScope())
         {
             if (method.DispatchParameterIndex < 0)
             {
+                // No dispatch parameter: unsupported for dispatch composite.
                 builder.AppendLine(
                     $"throw new {NotSupportedException}(\"{member.Name} is not supported in this dispatch composite.\");"
                 );
@@ -227,16 +242,35 @@ internal static class CompositeDispatchCodeGenerator
 
             if (isBool)
             {
-                AppendDispatchBool(builder, target, member.Name, dispatchArguments, dispatchParamName);
+                var useAny =
+                    overrideBehavior.HasValue
+                    && overrideBehavior.Value == CompositeResultBehavior.Any;
+                AppendDispatchBool(
+                    builder,
+                    target,
+                    member.Name,
+                    dispatchArguments,
+                    dispatchParamName,
+                    useAny
+                );
                 return;
             }
 
             if (isTask)
             {
-                AppendDispatchTask(builder, target, member.Name, dispatchArguments, dispatchParamName);
+                var behavior = overrideBehavior ?? CompositeResultBehavior.All;
+                AppendDispatchTask(
+                    builder,
+                    target,
+                    member.Name,
+                    dispatchArguments,
+                    dispatchParamName,
+                    behavior
+                );
                 return;
             }
 
+            // CompositeMethod overrides do not apply to enumerable returns (same as composite behavior).
             AppendDispatchEnumerable(
                 builder,
                 target,
@@ -284,7 +318,8 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeTarget target,
         string methodName,
         string arguments,
-        string dispatchParamName
+        string dispatchParamName,
+        bool useAny
     )
     {
         builder.AppendLine($"switch ({dispatchParamName})");
@@ -297,15 +332,22 @@ internal static class CompositeDispatchCodeGenerator
                 builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
                 using (builder.BeginScope())
                 {
-                    builder.AppendLine($"if (!__validator.{methodName}({arguments})) return false;");
+                    if (useAny)
+                    {
+                        builder.AppendLine($"if (__validator.{methodName}({arguments})) return true;");
+                    }
+                    else
+                    {
+                        builder.AppendLine($"if (!__validator.{methodName}({arguments})) return false;");
+                    }
                 }
-                builder.AppendLine("return true;");
+                builder.AppendLine(useAny ? "return false;" : "return true;");
                 builder.DecreaseIndent();
             }
 
             builder.AppendLine("default:");
             builder.IncreaseIndent();
-            builder.AppendLine("return true;");
+            builder.AppendLine(useAny ? "return false;" : "return true;");
             builder.DecreaseIndent();
         }
     }
@@ -315,7 +357,8 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeTarget target,
         string methodName,
         string arguments,
-        string dispatchParamName
+        string dispatchParamName,
+        CompositeResultBehavior behavior
     )
     {
         builder.AppendLine($"switch ({dispatchParamName})");
@@ -325,22 +368,86 @@ internal static class CompositeDispatchCodeGenerator
             {
                 builder.AppendLine($"case {concrete.TypeName} __arg:");
                 builder.IncreaseIndent();
-                builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{Task}>();");
-                builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                using (builder.BeginScope())
+                if (behavior == CompositeResultBehavior.Sequential)
                 {
-                    builder.AppendLine($"__tasks.Add(__validator.{methodName}({arguments}));");
+                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                    using (builder.BeginScope())
+                    {
+                        builder.AppendLine($"await __validator.{methodName}({arguments});");
+                    }
+                    builder.AppendLine("return;");
                 }
-                builder.AppendLine($"return {Task}.WhenAll(__tasks);");
+                else
+                {
+                    builder.AppendLine(
+                        $"var __tasks = new global::System.Collections.Generic.List<{Task}>();"
+                    );
+                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                    using (builder.BeginScope())
+                    {
+                        builder.AppendLine($"__tasks.Add(__validator.{methodName}({arguments}));");
+                    }
+                    builder.AppendLine(
+                        behavior == CompositeResultBehavior.Any
+                            ? $"return {Task}.WhenAny(__tasks);"
+                            : $"return {Task}.WhenAll(__tasks);"
+                    );
+                }
                 builder.DecreaseIndent();
             }
 
             builder.AppendLine("default:");
             builder.IncreaseIndent();
-            builder.AppendLine($"return {Task}.CompletedTask;");
+            builder.AppendLine(behavior == CompositeResultBehavior.Sequential ? "return;" : $"return {Task}.CompletedTask;");
             builder.DecreaseIndent();
         }
     }
+
+    private static CompositeResultBehavior? TryGetCompositeOverride(
+        DispatchCompositeTarget target,
+        DispatchCompositeMethod method
+    )
+    {
+        foreach (var overrideMethod in target.CompositeMethodOverrides)
+        {
+            if (!string.Equals(overrideMethod.Name, method.Member.Name, System.StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (overrideMethod.Parameters.Count != method.Member.Parameters.Count)
+            {
+                continue;
+            }
+
+            var matches = true;
+            for (var i = 0; i < overrideMethod.Parameters.Count; i++)
+            {
+                var left = overrideMethod.Parameters[i];
+                var right = method.Member.Parameters[i];
+                if (!string.Equals(left.TypeName, right.TypeName, System.StringComparison.Ordinal))
+                {
+                    matches = false;
+                    break;
+                }
+                if (!string.Equals(left.RefKindPrefix, right.RefKindPrefix, System.StringComparison.Ordinal))
+                {
+                    matches = false;
+                    break;
+                }
+            }
+
+            if (!matches)
+            {
+                continue;
+            }
+
+            return overrideMethod.ResultBehavior;
+        }
+
+        return null;
+    }
+
 
     private static void AppendDispatchEnumerable(
         IndentedStringBuilder builder,

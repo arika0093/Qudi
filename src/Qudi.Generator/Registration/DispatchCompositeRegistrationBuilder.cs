@@ -16,6 +16,8 @@ internal static class DispatchCompositeRegistrationBuilder
             return ImmutableArray<RegistrationSpec?>.Empty;
         }
 
+        // Build registrations for closed dispatcher types generated from composite constraints
+        // (e.g., IComponentValidator<IComponent> -> ComponentValidatorDispatcher__Dispatch_IComponent).
         var specs = new List<RegistrationSpec?>();
         foreach (var target in targets)
         {

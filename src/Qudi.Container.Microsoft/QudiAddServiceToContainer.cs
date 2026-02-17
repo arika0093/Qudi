@@ -53,12 +53,15 @@ public static class QudiAddServiceToContainer
 
         var materialized = MaterializeOpenGenericFallbacks(applicable);
 
+        // Composite dispatchers are generated as normal registrations (no layered composite factory),
+        // so keep them in the base registration list.
         var registrations = materialized
             .Where(t =>
                 !t.MarkAsDecorator
                 && (!t.MarkAsComposite || t.MarkAsCompositeDispatcher)
             )
             .ToList();
+        // Layered composites are handled by the composite factory (descriptor wrapping).
         var layeredRegistrations = materialized
             .Where(t =>
                 t.MarkAsDecorator || (t.MarkAsComposite && !t.MarkAsCompositeDispatcher)
@@ -228,6 +231,7 @@ public static class QudiAddServiceToContainer
             if (registration.MarkAsCompositeDispatcher)
             {
                 // Keep open generic registration as-is for dispatch composites.
+                // Closed dispatchers are generated separately by the source generator.
                 materialized.Add(registration);
                 continue;
             }
@@ -249,7 +253,8 @@ public static class QudiAddServiceToContainer
             {
                 List<Type> candidates;
 
-                // For composites, materialize for all closed types that have implementations
+                // For composites, materialize for all closed types that have implementations.
+                // Dispatch composites are handled by generated dispatcher registrations instead.
                 if (registration.MarkAsComposite && !registration.MarkAsCompositeDispatcher)
                 {
                     candidates = closedRegistrations
