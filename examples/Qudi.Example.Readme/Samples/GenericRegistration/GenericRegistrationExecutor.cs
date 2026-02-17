@@ -7,16 +7,20 @@ public interface IComponent { }
 
 public class Battery : IComponent
 {
+    public string Name { get; set; } = "Battery";
     public int Capacity { get; set; } = 5000;
+    public int Voltage { get; set; } = 3;
 }
 
 public class Screen : IComponent
 {
+    public string Name { get; set; } = "Screen";
     public int Size { get; set; } = 6;
 }
 
 public class Keyboard : IComponent
 {
+    public string Name { get; set; } = "Keyboard";
     public int Keys { get; set; } = 104;
 }
 
@@ -78,6 +82,15 @@ public class ScreenValidator : IComponentValidator<Screen>
         );
         return isValid;
     }
+}
+
+// -----------
+// Helper to simplify component validation
+[DITransient]
+public class ComponentValidator<T>(IComponentValidator<T> validator)
+    where T : IComponent
+{
+    public bool Check(T component) => validator.Validate(component);
 }
 
 [DITransient(Export = true)]

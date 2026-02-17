@@ -138,4 +138,37 @@ public sealed class ConstrainedGenericRegistrationTests
         public List<IComponentValidator<Keyboard>> KeyboardValidators { get; } =
             keyboardValidators.ToList();
     }
+
+    [Test]
+    public void ComponentValidatorHelperSimplifiesValidationAPI()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+
+        // Verify ComponentValidator<T> is registered and works
+        var batteryValidator = provider.GetRequiredService<ComponentValidator<Battery>>();
+        var screenValidator = provider.GetRequiredService<ComponentValidator<Screen>>();
+        var keyboardValidator = provider.GetRequiredService<ComponentValidator<Keyboard>>();
+
+        batteryValidator.ShouldNotBeNull();
+        screenValidator.ShouldNotBeNull();
+        keyboardValidator.ShouldNotBeNull();
+
+        var battery = new Battery();
+        var screen = new Screen();
+        var keyboard = new Keyboard();
+
+        batteryValidator.Check(battery).ShouldBeFalse();
+        screenValidator.Check(screen).ShouldBeFalse();
+        keyboardValidator.Check(keyboard).ShouldBeTrue();
+    }
+
+    [DITransient]
+    public class ComponentValidator<T>(IComponentValidator<T> validator)
+        where T : IComponent
+    {
+        public bool Check(T component) => validator.Validate(component);
+    }
 }
