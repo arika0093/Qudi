@@ -24,8 +24,100 @@ internal static class RegistrationCodeGenerator
     )
     {
         // Split into two separate files for better incremental generation
-        GenerateInternalRegistrationsFile(context, projectInfo);
-        GenerateProjectRegistrationsFile(context, registrations, projectInfo, dependencies);
+        GenerateInternalAndSelfRegistrationsFile(context, registrations, projectInfo);
+        GenerateWithDependenciesImplementationFile(context, projectInfo, dependencies);
+    }
+
+    /// <summary>
+    /// Generates the internal and self registrations file (depends only on registrations and basicInfo).
+    /// Includes Internal, Self, Original, and partial WithDependencies declaration.
+    /// </summary>
+    public static void GenerateInternalAndSelfRegistrationsFile(
+        SourceProductionContext context,
+        ImmutableArray<RegistrationSpec?> registrations,
+        ProjectBasicInfo projectInfo
+    )
+    {
+        var builder = new IndentedStringBuilder();
+        var regs = registrations.Where(r => r is not null).Select(r => r!).ToImmutableArray();
+
+        builder.AppendLine(
+            $$"""
+            {{CodeTemplateContents.CommonGeneratedHeader}}
+            using System.Linq;
+
+            namespace Qudi.Generated
+            """
+        );
+
+        using (builder.BeginScope())
+        {
+            // Qudi.Generated.QudiInternalRegistrations.FetchAll ...
+            GenerateQudiInternalRegistrationsCode(builder, projectInfo);
+        }
+
+        builder.AppendLine("");
+        builder.AppendLine($"namespace Qudi.Generated__{projectInfo.ProjectHash}");
+        using (builder.BeginScope())
+        {
+            builder.AppendLine(
+                $$"""
+                /// <summary>
+                /// Contains Qudi registration information for this project.
+                /// </summary>
+                {{CodeTemplateContents.EditorBrowsableAttribute}}
+                public static partial class QudiRegistrations
+                """
+            );
+            using (builder.BeginScope())
+            {
+                // Partial declaration of WithDependencies (implementation in separate file)
+                GenerateWithDependenciesDeclaration(builder);
+                builder.AppendLine("");
+                // export Self (contains only this project's registrations)
+                GenerateSelfCode(builder);
+                builder.AppendLine("");
+                // export Original (all registrations defined in this project)
+                GenerateOriginalFieldCode(builder, regs, projectInfo);
+            }
+        }
+
+        var source = builder.ToString();
+        context.AddSource("Qudi.Registration.Self.g.cs", source);
+    }
+
+    /// <summary>
+    /// Generates the WithDependencies implementation file (depends on projectInfo and dependencies).
+    /// </summary>
+    public static void GenerateWithDependenciesImplementationFile(
+        SourceProductionContext context,
+        ProjectBasicInfo projectInfo,
+        EquatableArray<ProjectDependencyInfo> dependencies
+    )
+    {
+        var builder = new IndentedStringBuilder();
+
+        builder.AppendLine(
+            $$"""
+            {{CodeTemplateContents.CommonGeneratedHeader}}
+            using System.Linq;
+
+            namespace Qudi.Generated__{{projectInfo.ProjectHash}}
+            """
+        );
+
+        using (builder.BeginScope())
+        {
+            builder.AppendLine("public static partial class QudiRegistrations");
+            using (builder.BeginScope())
+            {
+                // export WithDependencies implementation
+                GenerateWithDependenciesImplementation(builder, projectInfo, dependencies);
+            }
+        }
+
+        var source = builder.ToString();
+        context.AddSource("Qudi.Registration.Dependencies.g.cs", source);
     }
 
     /// <summary>
@@ -55,34 +147,6 @@ internal static class RegistrationCodeGenerator
 
         var source = builder.ToString();
         context.AddSource("Qudi.Registration.Internal.g.cs", source);
-    }
-
-    /// <summary>
-    /// Generates the project-specific registrations file (depends on registrations, projectInfo, and dependencies).
-    /// </summary>
-    public static void GenerateProjectRegistrationsFile(
-        SourceProductionContext context,
-        ImmutableArray<RegistrationSpec?> registrations,
-        ProjectBasicInfo projectInfo,
-        EquatableArray<ProjectDependencyInfo> dependencies
-    )
-    {
-        var builder = new IndentedStringBuilder();
-        var regs = registrations.Where(r => r is not null).Select(r => r!).ToImmutableArray();
-
-        builder.AppendLine(
-            $$"""
-            {{CodeTemplateContents.CommonGeneratedHeader}}
-            using System.Linq;
-
-            """
-        );
-
-        // Qudi.Generated__HASH1234.QudiRegistrations.FetchAll ...
-        GenerateQudiRegistrationsCodes(builder, regs, projectInfo, dependencies);
-
-        var source = builder.ToString();
-        context.AddSource("Qudi.Registration.Project.g.cs", source);
     }
 
     private static void GenerateQudiInternalRegistrationsCode(
@@ -152,6 +216,57 @@ internal static class RegistrationCodeGenerator
         }
         builder.DecreaseIndent();
         builder.AppendLine("}");
+    }
+
+    private static void GenerateWithDependenciesDeclaration(IndentedStringBuilder builder)
+    {
+        builder.AppendLine(
+            $"""
+            /// <summary>
+            /// Gets all registrations including dependencies. This method is used internally for Qudi.
+            /// </summary>
+            /// <param name="collection">Collection to add registrations to.</param>
+            /// <param name="visited">Set of visited project hashes to avoid cycles.</param>
+            /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
+            public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther);
+            """
+        );
+    }
+
+    private static void GenerateWithDependenciesImplementation(
+        IndentedStringBuilder builder,
+        ProjectBasicInfo projectInfo,
+        EquatableArray<ProjectDependencyInfo> dependencies
+    )
+    {
+        builder.AppendLine(
+            $"""
+            /// <summary>
+            /// Gets all registrations including dependencies. This method is used internally for Qudi.
+            /// </summary>
+            /// <param name="collection">Collection to add registrations to.</param>
+            /// <param name="visited">Set of visited project hashes to avoid cycles.</param>
+            /// <param name="fromOther">Whether to include only public registrations from other projects.</param>
+            public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)
+            """
+        );
+        using (builder.BeginScope())
+        {
+            // add self registrations
+            // check visited to avoid duplicate registrations
+            builder.AppendLine(
+                $$"""
+                if (!visited.Add(0x{{projectInfo.ProjectHash}})) return;
+                Self(collection, fromOther: fromOther);
+                """
+            );
+            foreach (var dep in dependencies)
+            {
+                builder.AppendLine(
+                    $"global::Qudi.Generated__{dep.ProjectHash}.QudiRegistrations.WithDependencies(collection, visited, fromOther: true);"
+                );
+            }
+        }
     }
 
     private static void GenerateWithDependenciesCode(
