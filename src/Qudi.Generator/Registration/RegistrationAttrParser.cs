@@ -17,6 +17,7 @@ internal static class RegistrationAttrParser
     private const string QudiTransientAttribute = $"Qudi.DITransientAttribute";
     private const string QudiDecoratorAttribute = $"Qudi.QudiDecoratorAttribute";
     private const string QudiCompositeAttribute = $"Qudi.QudiCompositeAttribute";
+    private const string QudiDispatchAttribute = $"Qudi.QudiDispatchAttribute";
 
     public static IncrementalValueProvider<
         ImmutableArray<RegistrationSpec?>
@@ -52,6 +53,11 @@ internal static class RegistrationAttrParser
             static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, asComposite: true)
         );
+        var dispatchProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
+            QudiDispatchAttribute,
+            static (node, _) => true,
+            static (context, _) => CreateFromAttribute(context, asComposite: true)
+        );
 
         var qudiRegistrations = qudiProvider.Collect();
         var singletonCollections = singletonProvider.Collect();
@@ -59,12 +65,14 @@ internal static class RegistrationAttrParser
         var scopedCollections = scopedProvider.Collect();
         var decoratorCollections = decoratorProvider.Collect();
         var compositeCollections = compositeProvider.Collect();
+        var dispatchCollections = dispatchProvider.Collect();
         return qudiRegistrations
             .CombineAndMerge(singletonCollections)
             .CombineAndMerge(transientCollections)
             .CombineAndMerge(scopedCollections)
             .CombineAndMerge(decoratorCollections)
-            .CombineAndMerge(compositeCollections);
+            .CombineAndMerge(compositeCollections)
+            .CombineAndMerge(dispatchCollections);
     }
 
     /// <summary>

@@ -13,6 +13,7 @@ internal static class HelperTargetCollector
 {
     private const string QudiDecoratorAttribute = "Qudi.QudiDecoratorAttribute";
     private const string QudiCompositeAttribute = "Qudi.QudiCompositeAttribute";
+    private const string QudiDispatchAttribute = "Qudi.QudiDispatchAttribute";
     private const string CompositeMethodAttribute = "Qudi.CompositeMethodAttribute";
 
     public static IncrementalValueProvider<HelperGenerationInput> CollectTargets(
@@ -23,22 +24,30 @@ internal static class HelperTargetCollector
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) => CreateTargets(ctx, isDecorator: true, isComposite: false)
+                static (ctx, _) => CreateTargets(ctx, isDecorator: true, isComposite: false, isDispatch: false)
             )
             .Select(static (targets, _) => targets);
         var compositeTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiCompositeAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) => CreateTargets(ctx, isDecorator: false, isComposite: true)
+                static (ctx, _) => CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: false)
+            )
+            .Select(static (targets, _) => targets);
+        var dispatchTargets = context
+            .SyntaxProvider.ForAttributeWithMetadataName(
+                QudiDispatchAttribute,
+                static (node, _) => IsPartialClass(node),
+                static (ctx, _) => CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: true)
             )
             .Select(static (targets, _) => targets);
         return decoratorTargets
             .Collect()
             .Combine(compositeTargets.Collect())
+            .Combine(dispatchTargets.Collect())
             .Select(
                 static (targets, _) =>
-                    MergeTargets(targets.Left.Concat(targets.Right).ToImmutableArray())
+                    MergeTargets(targets.Left.Left.Concat(targets.Left.Right).Concat(targets.Right).ToImmutableArray())
             );
     }
 
@@ -52,7 +61,8 @@ internal static class HelperTargetCollector
     private static HelperGenerationInput CreateTargets(
         GeneratorAttributeSyntaxContext context,
         bool isDecorator,
-        bool isComposite
+        bool isComposite,
+        bool isDispatch
     )
     {
         var blankInput = new HelperGenerationInput
@@ -71,7 +81,7 @@ internal static class HelperTargetCollector
             return blankInput;
         }
 
-        var attributeName = isDecorator ? QudiDecoratorAttribute : QudiCompositeAttribute;
+        var attributeName = isDecorator ? QudiDecoratorAttribute : isDispatch ? QudiDispatchAttribute : QudiCompositeAttribute;
         var attribute = context
             .Attributes.Where(attr =>
                 SymbolEqualityComparer.Default.Equals(
@@ -83,6 +93,9 @@ internal static class HelperTargetCollector
         var asTypes = GetExplicitAsTypes(attribute);
         var useIntercept =
             isDecorator && (SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false);
+        var dispatchMultiple = isDispatch
+            ? (SGAttributeParser.GetValue<bool?>(attribute, "Multiple") ?? true)
+            : true;
 
         // Collect nested class information (from innermost to outermost)
         var containingTypesList = new List<ContainingTypeInfo>();
@@ -215,7 +228,8 @@ internal static class HelperTargetCollector
                     typeNamespace,
                     typeKeyword,
                     containingTypesList,
-                    members
+                    members,
+                    dispatchMultiple
                 );
                 if (dispatchTarget is not null)
                 {
@@ -909,7 +923,8 @@ internal static class HelperTargetCollector
         string typeNamespace,
         string typeKeyword,
         List<ContainingTypeInfo> containingTypes,
-        ImmutableArray<HelperMember> members
+        ImmutableArray<HelperMember> members,
+        bool multiple
     )
     {
         if (!typeSymbol.IsGenericType || typeSymbol.TypeParameters.Length != 1)
@@ -1063,6 +1078,7 @@ internal static class HelperTargetCollector
             ConstraintTypes = new EquatableArray<DispatchCompositeConstraintType>(
                 constraintTypeInfos.ToImmutableArray()
             ),
+            Multiple = multiple,
             CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>(
                 compositeMethodOverrides
             ),

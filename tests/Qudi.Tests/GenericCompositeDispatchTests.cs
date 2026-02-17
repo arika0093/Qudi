@@ -44,13 +44,49 @@ public sealed partial class GenericCompositeTests
         componentValidator.Validate(keyboard).ShouldBeTrue();
     }
 
-    [QudiComposite]
+    [Test]
+    public void QudiDispatchWithMultipleFalseResolvesSingleService()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        using var provider = services.BuildServiceProvider();
+        var validator = provider.GetRequiredService<ISingleComponentValidator<ISingleComponent>>();
+
+        validator.Validate(new SingleDevice()).ShouldBeTrue();
+    }
+
+    [QudiDispatch]
     public partial class ComponentValidatorDispatcher<T> : IComponentValidator<T>
         where T : IComponent;
+
+    [QudiDispatch(Multiple = false)]
+    public partial class SingleComponentValidatorDispatcher<T> : ISingleComponentValidator<T>
+        where T : ISingleComponent;
 
     [DITransient]
     public class ComponentValidator(IComponentValidator<IComponent> validator)
     {
         public bool Validate(IComponent component) => validator.Validate(component);
+    }
+
+    public interface ISingleComponent
+    {
+    }
+
+    public sealed class SingleDevice : ISingleComponent
+    {
+    }
+
+    public interface ISingleComponentValidator<T>
+        where T : ISingleComponent
+    {
+        bool Validate(T value);
+    }
+
+    [DITransient]
+    public sealed class SingleDeviceValidator : ISingleComponentValidator<SingleDevice>
+    {
+        public bool Validate(SingleDevice value) => true;
     }
 }

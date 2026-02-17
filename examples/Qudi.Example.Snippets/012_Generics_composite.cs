@@ -73,7 +73,7 @@ public class ScreenValidator : IComponentValidator<Screen>
 
 // -----------
 // usage
-[QudiComposite]
+[QudiDispatch]
 public partial class ComponentValidatorDispatcher<T> : IComponentValidator<T>
     where T : IComponent
 {

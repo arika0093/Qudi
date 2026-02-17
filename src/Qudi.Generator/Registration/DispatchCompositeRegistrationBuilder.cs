@@ -37,7 +37,9 @@ internal static class DispatchCompositeRegistrationBuilder
                 foreach (var concrete in target.ConcreteTypes)
                 {
                     requiredTypes.Add(
-                        $"typeof(global::System.Collections.Generic.IEnumerable<{concrete.ConstructedInterfaceTypeName}>)"
+                        target.Multiple
+                            ? $"typeof(global::System.Collections.Generic.IEnumerable<{concrete.ConstructedInterfaceTypeName}>)"
+                            : $"typeof({concrete.ConstructedInterfaceTypeName})"
                     );
                 }
 

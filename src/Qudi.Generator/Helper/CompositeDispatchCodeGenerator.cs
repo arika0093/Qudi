@@ -139,7 +139,7 @@ internal static class CompositeDispatchCodeGenerator
                 foreach (var concreteType in target.ConcreteTypes)
                 {
                     builder.AppendLine(
-                        $"private readonly {IEnumerable}<{concreteType.ConstructedInterfaceTypeName}> {concreteType.FieldName};"
+                        $"private readonly {BuildDispatchDependencyType(concreteType.ConstructedInterfaceTypeName, target.Multiple)} {concreteType.FieldName};"
                     );
                 }
 
@@ -172,9 +172,14 @@ internal static class CompositeDispatchCodeGenerator
         return string.Join(
             ", ",
             target.ConcreteTypes.Select(t =>
-                $"{IEnumerable}<{t.ConstructedInterfaceTypeName}> {t.ParameterName}"
+                $"{BuildDispatchDependencyType(t.ConstructedInterfaceTypeName, target.Multiple)} {t.ParameterName}"
             )
         );
+    }
+
+    private static string BuildDispatchDependencyType(string serviceTypeName, bool multiple)
+    {
+        return multiple ? $"{IEnumerable}<{serviceTypeName}>" : serviceTypeName;
     }
 
     private static void AppendDispatchMethod(
@@ -299,10 +304,17 @@ internal static class CompositeDispatchCodeGenerator
             {
                 builder.AppendLine($"case {concrete.TypeName} __arg:");
                 builder.IncreaseIndent();
-                builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                using (builder.BeginScope())
+                if (target.Multiple)
                 {
-                    builder.AppendLine($"__validator.{methodName}({arguments});");
+                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                    using (builder.BeginScope())
+                    {
+                        builder.AppendLine($"__validator.{methodName}({arguments});");
+                    }
+                }
+                else
+                {
+                    builder.AppendLine($"{concrete.FieldName}.{methodName}({arguments});");
                 }
                 builder.AppendLine("break;");
                 builder.DecreaseIndent();
@@ -331,19 +343,26 @@ internal static class CompositeDispatchCodeGenerator
             {
                 builder.AppendLine($"case {concrete.TypeName} __arg:");
                 builder.IncreaseIndent();
-                builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                using (builder.BeginScope())
+                if (target.Multiple)
                 {
-                    if (useAny)
+                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                    using (builder.BeginScope())
                     {
-                        builder.AppendLine($"if (__validator.{methodName}({arguments})) return true;");
+                        if (useAny)
+                        {
+                            builder.AppendLine($"if (__validator.{methodName}({arguments})) return true;");
+                        }
+                        else
+                        {
+                            builder.AppendLine($"if (!__validator.{methodName}({arguments})) return false;");
+                        }
                     }
-                    else
-                    {
-                        builder.AppendLine($"if (!__validator.{methodName}({arguments})) return false;");
-                    }
+                    builder.AppendLine(useAny ? "return false;" : "return true;");
                 }
-                builder.AppendLine(useAny ? "return false;" : "return true;");
+                else
+                {
+                    builder.AppendLine($"return {concrete.FieldName}.{methodName}({arguments});");
+                }
                 builder.DecreaseIndent();
             }
 
@@ -370,33 +389,48 @@ internal static class CompositeDispatchCodeGenerator
             {
                 builder.AppendLine($"case {concrete.TypeName} __arg:");
                 builder.IncreaseIndent();
-                if (behavior == CompositeResultBehavior.Sequential)
+                if (target.Multiple)
                 {
-                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                    using (builder.BeginScope())
+                    if (behavior == CompositeResultBehavior.Sequential)
                     {
-                        builder.AppendLine($"await __validator.{methodName}({arguments});");
-                    }
-                    builder.AppendLine("return;");
-                }
-                else
-                {
-                    builder.AppendLine(
-                        $"var __tasks = new global::System.Collections.Generic.List<{Task}>();"
-                    );
-                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                    using (builder.BeginScope())
-                    {
-                        builder.AppendLine($"__tasks.Add(__validator.{methodName}({arguments}));");
-                    }
-                    if (behavior == CompositeResultBehavior.Any)
-                    {
-                        builder.AppendLine($"await {Task}.WhenAny(__tasks);");
+                        builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                        using (builder.BeginScope())
+                        {
+                            builder.AppendLine($"await __validator.{methodName}({arguments});");
+                        }
                         builder.AppendLine("return;");
                     }
                     else
                     {
-                        builder.AppendLine($"return {Task}.WhenAll(__tasks);");
+                        builder.AppendLine(
+                            $"var __tasks = new global::System.Collections.Generic.List<{Task}>();"
+                        );
+                        builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                        using (builder.BeginScope())
+                        {
+                            builder.AppendLine($"__tasks.Add(__validator.{methodName}({arguments}));");
+                        }
+                        if (behavior == CompositeResultBehavior.Any)
+                        {
+                            builder.AppendLine($"await {Task}.WhenAny(__tasks);");
+                            builder.AppendLine("return;");
+                        }
+                        else
+                        {
+                            builder.AppendLine($"return {Task}.WhenAll(__tasks);");
+                        }
+                    }
+                }
+                else
+                {
+                    if (behavior == CompositeResultBehavior.Any || behavior == CompositeResultBehavior.Sequential)
+                    {
+                        builder.AppendLine($"await {concrete.FieldName}.{methodName}({arguments});");
+                        builder.AppendLine("return;");
+                    }
+                    else
+                    {
+                        builder.AppendLine($"return {concrete.FieldName}.{methodName}({arguments});");
                     }
                 }
                 builder.DecreaseIndent();
@@ -475,10 +509,22 @@ internal static class CompositeDispatchCodeGenerator
                 builder.AppendLine(
                     $"var __results = new global::System.Collections.Generic.List<{elementType}>();"
                 );
-                builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                using (builder.BeginScope())
+                if (target.Multiple)
                 {
-                    builder.AppendLine($"var __serviceResult = __validator.{methodName}({arguments});");
+                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                    using (builder.BeginScope())
+                    {
+                        builder.AppendLine($"var __serviceResult = __validator.{methodName}({arguments});");
+                        builder.AppendLine("if (__serviceResult != null)");
+                        using (builder.BeginScope())
+                        {
+                            builder.AppendLine("__results.AddRange(__serviceResult);");
+                        }
+                    }
+                }
+                else
+                {
+                    builder.AppendLine($"var __serviceResult = {concrete.FieldName}.{methodName}({arguments});");
                     builder.AppendLine("if (__serviceResult != null)");
                     using (builder.BeginScope())
                     {

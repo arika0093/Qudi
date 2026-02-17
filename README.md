@@ -1539,10 +1539,10 @@ flowchart LR
 
 #### Use Composite pattern for Generic Types
 Although the above implementation works, it requires specifying the generic type each time (e.g. `ComponentValidator<Battery>`, `ComponentValidator<Screen>`), which is cumbersome.  
-By combining the Composite pattern you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type. Callers can then use a single `ComponentValidator` or non-generic `IComponentValidator` and call `Validate(component)` without specifying `T`.
+By using `[QudiDispatch]` you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type. Callers can then use a single `ComponentValidator` or non-generic `IComponentValidator` and call `Validate(component)` without specifying `T`. Set `Multiple = false` when you want dispatch to resolve a single `IComponentValidator<T>` per concrete runtime type instead of `IEnumerable<IComponentValidator<T>>`.
 
 ```csharp
-[QudiComposite]
+[QudiDispatch]
 public partial class ComponentValidator<T> : IComponentValidator<T> where T : IComponent
 {
     // Validate function will be generated to apply all registered
@@ -1587,7 +1587,6 @@ List<IComponent> components = [battery1, battery2, screen, keyboard];
 var validator = provider.GetRequiredService<ComponentValidator>();
 foreach (var component in components)
 {
-    //
     Console.WriteLine($"{component.Name} valid check: {validator.Validate(component)}");
 }
 
@@ -1638,7 +1637,7 @@ public class ScreenValidator : IComponentValidator<Screen>
 
 // -----------
 // usage
-[QudiComposite]
+[QudiDispatch]
 public partial class ComponentValidatorDispatcher<T> : IComponentValidator<T>
     where T : IComponent;
 

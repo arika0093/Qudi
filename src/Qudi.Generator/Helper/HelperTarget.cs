@@ -258,6 +258,11 @@ internal sealed record DispatchCompositeTarget
     public required EquatableArray<DispatchCompositeConstraintType> ConstraintTypes { get; init; }
 
     /// <summary>
+    /// Whether dispatch should target multiple services (IEnumerable) or a single service.
+    /// </summary>
+    public required bool Multiple { get; init; }
+
+    /// <summary>
     /// Composite method override settings declared by the user.
     /// </summary>
     public required EquatableArray<CompositeMethodOverride> CompositeMethodOverrides { get; init; }
