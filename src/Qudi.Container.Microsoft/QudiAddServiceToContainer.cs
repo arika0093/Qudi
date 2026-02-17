@@ -231,14 +231,30 @@ public static class QudiAddServiceToContainer
 
             foreach (var genericAsType in genericAsTypes)
             {
-                var candidates = requiredTypes
-                    .Where(t => t.GetGenericTypeDefinition() == genericAsType)
-                    .Distinct()
-                    .ToList();
+                List<Type> candidates;
+                
+                // For composites, materialize for all closed types that have implementations
+                if (registration.MarkAsComposite)
+                {
+                    candidates = closedRegistrations
+                        .Where(t => t.IsConstructedGenericType && t.GetGenericTypeDefinition() == genericAsType)
+                        .Distinct()
+                        .ToList();
+                }
+                else
+                {
+                    // For fallback validators, only materialize for required types
+                    candidates = requiredTypes
+                        .Where(t => t.GetGenericTypeDefinition() == genericAsType)
+                        .Distinct()
+                        .ToList();
+                }
 
                 foreach (var candidate in candidates)
                 {
-                    if (closedRegistrations.Contains(candidate))
+                    // For composites, always generate (don't skip if already exists)
+                    // For fallbacks, skip if closed registration already exists
+                    if (!registration.MarkAsComposite && closedRegistrations.Contains(candidate))
                     {
                         continue;
                     }

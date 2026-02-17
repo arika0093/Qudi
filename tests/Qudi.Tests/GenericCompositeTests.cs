@@ -139,6 +139,7 @@ public sealed partial class GenericCompositeTests
     }
 
     // ComponentValidator that aggregates all validators
+    // NOTE: This is NOT registered as IComponentValidator<T> to avoid circular dependency
     [DITransient]
     public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
         where T : IComponent
