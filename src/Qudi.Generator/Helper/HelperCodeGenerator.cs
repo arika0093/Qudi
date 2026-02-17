@@ -64,9 +64,24 @@ internal static class HelperCodeGenerator
     )
     {
         var helperName = BuildHelperInterfaceName(target.InterfaceHelperName, target.IsComposite);
-        var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
+        var genericArgs = target.GenericTypeArguments;
+        var genericParams = target.GenericTypeParameters;
+        
+        var helperInterfaceName = string.IsNullOrEmpty(genericArgs)
             ? helperName
-            : $"global::{target.InterfaceNamespace}.{helperName}";
+            : $"{helperName}{genericArgs}";
+        
+        var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
+            ? helperInterfaceName
+            : $"global::{target.InterfaceNamespace}.{helperInterfaceName}";
+        
+        var implementingTypeName = string.IsNullOrEmpty(genericArgs)
+            ? target.ImplementingTypeName
+            : $"{target.ImplementingTypeName}{genericArgs}";
+        
+        // Build where clauses if present
+        var whereClause = string.IsNullOrEmpty(genericParams) ? "" : $" {genericParams}";
+        
         // namespace
         var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
         builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
@@ -87,7 +102,7 @@ internal static class HelperCodeGenerator
             {
                 builder.AppendLine(
                     $$"""
-                    partial {{target.ImplementingTypeKeyword}} {{target.ImplementingTypeName}} : {{helperTypeName}}
+                    partial {{target.ImplementingTypeKeyword}} {{implementingTypeName}} : {{helperTypeName}}{{whereClause}}
                     {
                         private {{helperTypeName}}.__BaseImpl Base => __baseCache ??= new({{target.BaseParameterName}}, this);
 
@@ -104,7 +119,7 @@ internal static class HelperCodeGenerator
             {
                 builder.AppendLine(
                     $$"""
-                    partial {{target.ImplementingTypeKeyword}} {{target.ImplementingTypeName}} : {{helperTypeName}}
+                    partial {{target.ImplementingTypeKeyword}} {{implementingTypeName}} : {{helperTypeName}}{{whereClause}}
                     {
                         {{CodeTemplateContents.EditorBrowsableAttribute}}
                         global::System.Collections.Generic.IEnumerable<{{target.InterfaceName}}> {{helperTypeName}}.__InnerServices => {{target.BaseParameterName}};
@@ -116,7 +131,7 @@ internal static class HelperCodeGenerator
             {
                 builder.AppendLine(
                     $$"""
-                    partial {{target.ImplementingTypeKeyword}} {{target.ImplementingTypeName}} : {{helperTypeName}}
+                    partial {{target.ImplementingTypeKeyword}} {{implementingTypeName}} : {{helperTypeName}}{{whereClause}}
                     {
                         {{CodeTemplateContents.EditorBrowsableAttribute}}
                         {{target.InterfaceName}} {{helperTypeName}}.__Inner => {{target.BaseParameterName}};
@@ -166,12 +181,28 @@ internal static class HelperCodeGenerator
             helperAccessor = "__InnerServices";
         }
         var helperName = BuildHelperInterfaceName(interfaceHelperName, isComposite);
+        var genericArgs = helper.GenericTypeArguments;
+        var genericParams = helper.GenericTypeParameters;
 
-        // Generate interface
+        // Generate interface declaration with generic type parameters
+        // Note: interfaceName is already fully qualified and includes generic arguments if present
+        var helperInterfaceName = string.IsNullOrEmpty(genericArgs)
+            ? helperName
+            : $"{helperName}{genericArgs}";
+
+        // Build the interface declaration line
+        var interfaceDeclaration = $"public interface {helperInterfaceName} : {interfaceName}";
+        
+        // Add where clauses if present
+        if (!string.IsNullOrEmpty(genericParams))
+        {
+            interfaceDeclaration += $" {genericParams}";
+        }
+
         builder.AppendLine(
             $$"""
             {{CodeTemplateContents.EmbeddedAttributeUsage}}
-            public interface {{helperName}} : {{interfaceName}}
+            {{interfaceDeclaration}}
             """
         );
         using (builder.BeginScope())

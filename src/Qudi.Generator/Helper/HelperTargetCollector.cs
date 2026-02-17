@@ -196,6 +196,12 @@ internal static class HelperTargetCollector
                 isDecorator && constructorTarget is not null
                     ? constructorTarget.BaseParameterName
                     : string.Empty;
+            
+            // Extract generic type information from the interface
+            var genericParams = CodeGenerationUtility.GetGenericTypeParameters(iface);
+            var genericConstraints = CodeGenerationUtility.GetGenericConstraints(iface);
+            var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(iface);
+            
             var target = new HelperInterfaceTarget
             {
                 InterfaceName = interfaceName,
@@ -207,6 +213,8 @@ internal static class HelperTargetCollector
                 IsDecorator = isDecorator,
                 IsComposite = isComposite,
                 UseIntercept = useIntercept,
+                GenericTypeParameters = genericConstraints, // Store the where clauses
+                GenericTypeArguments = genericArgs,
             };
             interfaceTargets.Add(target);
         }
@@ -583,6 +591,11 @@ internal static class HelperTargetCollector
             return null;
         }
 
+        // Extract generic type information from the implementing type
+        var genericParams = CodeGenerationUtility.GetGenericTypeParameters(typeSymbol);
+        var genericConstraints = CodeGenerationUtility.GetGenericConstraints(typeSymbol);
+        var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(typeSymbol);
+
         return new HelperImplementingTarget
         {
             ImplementingTypeName = typeName,
@@ -600,6 +613,8 @@ internal static class HelperTargetCollector
             IsDecorator = isDecorator,
             IsComposite = isComposite,
             UseIntercept = useIntercept,
+            GenericTypeParameters = genericConstraints, // Store the where clauses
+            GenericTypeArguments = genericArgs,
         };
     }
 

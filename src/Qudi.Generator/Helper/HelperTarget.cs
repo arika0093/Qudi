@@ -51,6 +51,16 @@ internal sealed record HelperInterfaceTarget
     /// Whether intercept-style helpers should be generated.
     /// </summary>
     public required bool UseIntercept { get; init; }
+
+    /// <summary>
+    /// Generic type parameters with constraints (e.g., "T where T : IComponent").
+    /// </summary>
+    public required string GenericTypeParameters { get; init; }
+
+    /// <summary>
+    /// Generic type arguments for use in constructed types (e.g., "<T>").
+    /// </summary>
+    public required string GenericTypeArguments { get; init; }
 }
 
 /// <summary>
@@ -144,6 +154,16 @@ internal sealed record HelperImplementingTarget
     /// Whether intercept-style helpers should be generated.
     /// </summary>
     public required bool UseIntercept { get; init; }
+
+    /// <summary>
+    /// Generic type parameters with constraints (e.g., "T where T : IComponent").
+    /// </summary>
+    public required string GenericTypeParameters { get; init; }
+
+    /// <summary>
+    /// Generic type arguments for use in constructed types (e.g., "<T>").
+    /// </summary>
+    public required string GenericTypeArguments { get; init; }
 }
 
 /// <summary>

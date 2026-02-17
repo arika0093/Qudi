@@ -87,11 +87,6 @@ internal static class RegistrationAttrParser
             return null;
         }
 
-        if ((asDecorator || asComposite) && typeSymbol.TypeParameters.Length > 0)
-        {
-            return null;
-        }
-
         // parse attribute
         var attribute = context.Attributes[0];
         // fully qualified namespace
