@@ -121,10 +121,12 @@ internal static class CompositeDispatchCodeGenerator
 
         // TODO: support async Task methods that use Any/All behavior (requires changing method signature to return Task<bool> or similar, or adding a separate method for this behavior).
         var asyncModifier =
-            returnType == Task && overrideBehavior != CompositeResultBehavior.All
+            returnType == Task && overrideBehavior == CompositeResultBehavior.Sequential
                 ? "async "
                 : string.Empty;
-        builder.AppendLine($"public partial {asyncModifier}{returnType} {member.Name}({parameters})");
+        var isPartialRequired = overrideBehavior.HasValue;
+        var partialModifier = isPartialRequired ? "partial " : string.Empty;
+        builder.AppendLine($"public {partialModifier}{asyncModifier}{returnType} {member.Name}({parameters})");
         using (builder.BeginScope())
         {
             if (method.DispatchParameterIndex < 0)
