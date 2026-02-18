@@ -74,11 +74,16 @@ public class ScreenValidator : IComponentValidator<Screen>
 // -----------
 // usage
 [QudiDispatch]
-public partial class ComponentValidatorDispatcher<T> : IComponentValidator<T>
-    where T : IComponent
+// if there are only use single validators for each type, you can specify Multiple = false
+// to receive the service directly instead of an enumerable,
+// and the dispatch method will call that single validator without needing to loop over an enumerable.
+// [QudiDispatch(Multiple = false)]
+public partial class ComponentValidatorDispatcher : IComponentValidator<IComponent>
 {
+    // you can specify the composite method behavior (Any/All) with an attribute,
+    // or leave it as the default (All) if that's what you want.
     // [CompositeMethod(Result = CompositeResult.Any)]
-    // public partial bool Validate(T component);
+    // public partial bool Validate(IComponent component);
 }
 
 [DITransient]

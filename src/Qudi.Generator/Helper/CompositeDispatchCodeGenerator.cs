@@ -44,14 +44,17 @@ internal static class CompositeDispatchCodeGenerator
             );
             using (builder.BeginScope())
             {
+                // recieved dependencies for each concrete type, 
+                // either as the service itself or as an enumerable if multiple.
                 foreach (var concreteType in target.ConcreteTypes)
                 {
                     builder.AppendLine(
                         $"private readonly {BuildDispatchDependencyType(concreteType.ConstructedInterfaceTypeName, target.Multiple)} {concreteType.FieldName};"
                     );
                 }
-
                 builder.AppendLine("");
+
+                // constructor with dependencies for each concrete type.
                 builder.AppendLine(
                     $"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}({BuildConstructorParameters(target)})"
                 );
@@ -63,6 +66,7 @@ internal static class CompositeDispatchCodeGenerator
                     }
                 }
 
+                // each dispatch method, which switches on the dispatch parameter to call the appropriate concrete implementation(s).
                 foreach (var method in target.Methods)
                 {
                     builder.AppendLine("");
@@ -115,11 +119,12 @@ internal static class CompositeDispatchCodeGenerator
 
         var overrideBehavior = TryGetCompositeOverride(target, method);
 
+        // TODO: support async Task methods that use Any/All behavior (requires changing method signature to return Task<bool> or similar, or adding a separate method for this behavior).
         var asyncModifier =
             returnType == Task && overrideBehavior != CompositeResultBehavior.All
                 ? "async "
                 : string.Empty;
-        builder.AppendLine($"public {asyncModifier}{returnType} {member.Name}({parameters})");
+        builder.AppendLine($"public partial {asyncModifier}{returnType} {member.Name}({parameters})");
         using (builder.BeginScope())
         {
             if (method.DispatchParameterIndex < 0)
