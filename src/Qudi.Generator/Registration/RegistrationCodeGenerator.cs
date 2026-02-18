@@ -257,7 +257,7 @@ internal static class RegistrationCodeGenerator
                 var usePublicLiteral = reg.UsePublic ? "true" : "false";
                 var markAsDecoratorLiteral = reg.MarkAsDecorator ? "true" : "false";
                 var markAsCompositeLiteral = reg.MarkAsComposite ? "true" : "false";
-                var markAsCompositeDispatcherLiteral = reg.MarkAsCompositeDispatcher
+                var markAsDispatcherLiteral = reg.MarkAsDispatcher
                     ? "true"
                     : "false";
                 var exportLiteral = reg.Export ? "true" : "false";
@@ -275,7 +275,7 @@ internal static class RegistrationCodeGenerator
                         Order = {{reg.Order}},
                         MarkAsDecorator = {{markAsDecoratorLiteral}},
                         MarkAsComposite = {{markAsCompositeLiteral}},
-                        MarkAsCompositeDispatcher = {{markAsCompositeDispatcherLiteral}},
+                        MarkAsDispatcher = {{markAsDispatcherLiteral}},
                         Export = {{exportLiteral}},
                         AssemblyName = "{{projectInfo.AssemblyName}}",
                         Namespace = "{{reg.Namespace}}",

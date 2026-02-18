@@ -66,7 +66,7 @@ public sealed record TypeRegistrationInfo
     /// Whether this composite should be dispatched by generated code instead of
     /// using the composite inner-service factory.
     /// </summary>
-    public bool MarkAsCompositeDispatcher { get; init; }
+    public bool MarkAsDispatcher { get; init; }
 
     /// <summary>
     /// Whether to export this type for visualization.
