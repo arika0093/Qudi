@@ -1792,40 +1792,108 @@ When using it, you can simply call `ComponentValidator.Validate(...)` without wo
 
 ```mermaid
 flowchart LR
-    IComponentValidator_T_["IComponentValidator#lt;T#gt;"]
+    NullComponentValidator_T_["NullComponentValidator#lt;T#gt;"]
     BatteryValidator["BatteryValidator"]
     IComponentValidator_Battery_["IComponentValidator#lt;Battery#gt;"]
     BatteryAnotherValidator["BatteryAnotherValidator"]
     ScreenValidator["ScreenValidator"]
     IComponentValidator_Screen_["IComponentValidator#lt;Screen#gt;"]
     ComponentValidator["ComponentValidator"]
+    IComponentValidator_IComponent_["IComponentValidator#lt;IComponent#gt;"]
     ComponentValidatorDispatcher["ComponentValidatorDispatcher"]
-    IComponentValidator_Keyboard_["IComponentValidator#lt;Keyboard#gt;"] 
-    NullComponentValidator_Keyboard_["NullComponentValidator#lt;Keyboard#gt;"]
-    ComponentValidator --> IComponentValidator_T_
+    IComponentValidator_Keyboard_["IComponentValidator#lt;Keyboard#gt;"]
     IComponentValidator_Battery_ --> BatteryValidator
     IComponentValidator_Battery_ --> BatteryAnotherValidator
     IComponentValidator_Screen_ --> ScreenValidator
-    IComponentValidator_T_ --> ComponentValidatorDispatcher
+    ComponentValidator --> IComponentValidator_IComponent_
+    IComponentValidator_IComponent_ --> ComponentValidatorDispatcher
     ComponentValidatorDispatcher -.->|"*"| IComponentValidator_Battery_
     ComponentValidatorDispatcher -.->|"*"| IComponentValidator_Screen_
     ComponentValidatorDispatcher -.->|"*"| IComponentValidator_Keyboard_
-    IComponentValidator_Keyboard_ --> NullComponentValidator_Keyboard_
+    IComponentValidator_Keyboard_ --> NullComponentValidator_T_
+    classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;
+    class IComponentValidator_Keyboard_ missing;
     classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
-    class IComponentValidator_T_ interface;
     class IComponentValidator_Battery_ interface;
     class IComponentValidator_Screen_ interface;
-    class IComponentValidator_Keyboard_ interface;
+    class IComponentValidator_IComponent_ interface;
     classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
     class NullComponentValidator_T_ cls;
     class BatteryValidator cls;
     class BatteryAnotherValidator cls;
     class ScreenValidator cls;
     class ComponentValidator cls;
-    class NullComponentValidator_Keyboard_ cls;
-    class ComponentValidatorDispatcher_Keyboard_ cls;
-    classDef composite fill:#f8d7da,stroke:#c62828,stroke-width:2px,color:#000;
-    class ComponentValidatorDispatcher composite;
+    classDef dispatcher fill:#fff2b3,stroke:#f6c445,stroke-width:2px,color:#000;
+    class ComponentValidatorDispatcher dispatcher;
+
+```
+
+Of course, you can also combine it with decorators (wow, it's too complicated!).
+
+```csharp
+[QudiDispatch]
+public partial class ComponentDispatcher : IComponentValidator<IComponent>;
+
+[QudiDecorator]
+public partial class ComponentValidatorDecorator(IComponentValidator<IComponent> inner)
+    : IComponentValidator<IComponent>
+{
+    public bool Validate(IComponent component)
+    {
+        Console.WriteLine($"Validating component: {component.Name}");
+        var result = inner.Validate(component);
+        Console.WriteLine($"Validation result: {result}");
+        return result;
+    }
+}
+
+[DITransient]
+public class ComponentValidator(IComponentValidator<IComponent> validator)
+{
+    public bool Validate(IComponent component) => validator.Validate(component);
+}
+
+```
+
+```mermaid
+flowchart LR
+    NullComponentValidator_T_["NullComponentValidator#lt;T#gt;"]
+    BatteryValidator["BatteryValidator"]
+    IComponentValidator_Battery_["IComponentValidator#lt;Battery#gt;"]
+    BatteryAnotherValidator["BatteryAnotherValidator"]
+    ScreenValidator["ScreenValidator"]
+    IComponentValidator_Screen_["IComponentValidator#lt;Screen#gt;"]
+    ComponentValidator["ComponentValidator"]
+    IComponentValidator_IComponent_["IComponentValidator#lt;IComponent#gt;"]
+    ComponentValidatorDecorator["ComponentValidatorDecorator"]
+    ComponentValidatorDispatcher["ComponentValidatorDispatcher"]
+    IComponentValidator_Keyboard_["IComponentValidator#lt;Keyboard#gt;"]
+    IComponentValidator_Battery_ --> BatteryValidator
+    IComponentValidator_Battery_ --> BatteryAnotherValidator
+    IComponentValidator_Screen_ --> ScreenValidator
+    ComponentValidator --> IComponentValidator_IComponent_
+    IComponentValidator_IComponent_ --> ComponentValidatorDecorator
+    ComponentValidatorDecorator --> ComponentValidatorDispatcher
+    ComponentValidatorDispatcher -.->|"*"| IComponentValidator_Battery_
+    ComponentValidatorDispatcher -.->|"*"| IComponentValidator_Screen_
+    ComponentValidatorDispatcher -.->|"*"| IComponentValidator_Keyboard_
+    IComponentValidator_Keyboard_ --> NullComponentValidator_T_
+    classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;
+    class IComponentValidator_Keyboard_ missing;
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IComponentValidator_Battery_ interface;
+    class IComponentValidator_Screen_ interface;
+    class IComponentValidator_IComponent_ interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class NullComponentValidator_T_ cls;
+    class BatteryValidator cls;
+    class BatteryAnotherValidator cls;
+    class ScreenValidator cls;
+    class ComponentValidator cls;
+    classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;
+    class ComponentValidatorDecorator decorator;
+    classDef dispatcher fill:#fff2b3,stroke:#f6c445,stroke-width:2px,color:#000;
+    class ComponentValidatorDispatcher dispatcher;
 
 ```
 
