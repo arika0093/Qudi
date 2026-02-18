@@ -1537,13 +1537,14 @@ flowchart LR
 
 ```
 
-#### Use Composite pattern for Generic Types
+#### Use Dispatch for Generic Composite
 Although the above implementation works, it requires specifying the generic type each time (e.g. `ComponentValidator<Battery>`, `ComponentValidator<Screen>`), which is cumbersome.  
-By using `[QudiDispatch]` you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type. Callers can then use a single `ComponentValidator` or non-generic `IComponentValidator` and call `Validate(component)` without specifying `T`. Set `Multiple = false` when you want dispatch to resolve a single `IComponentValidator<T>` per concrete runtime type instead of `IEnumerable<IComponentValidator<T>>`.
+By using `[QudiDispatch]` you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type.  
+Callers can then use a single `ComponentValidator` or non-generic `IComponentValidator` and call `Validate(component)` without specifying `T`. Set `Multiple = false` when you want dispatch to resolve a single `IComponentValidator<T>` per concrete runtime type instead of `IEnumerable<IComponentValidator<T>>`.
 
 ```csharp
 [QudiDispatch]
-public partial class ComponentValidator<T> : IComponentValidator<T> where T : IComponent
+public partial class ComponentDispatcher : IComponentValidator<IComponent>
 {
     // Validate function will be generated to apply all registered
     // IComponentValidator<T> implementations for the specified T.
@@ -1638,8 +1639,7 @@ public class ScreenValidator : IComponentValidator<Screen>
 // -----------
 // usage
 [QudiDispatch]
-public partial class ComponentValidatorDispatcher<T> : IComponentValidator<T>
-    where T : IComponent;
+public partial class ComponentValidatorDispatcher : IComponentValidator<IComponent>;
 
 [DITransient]
 public class ComponentValidator(IComponentValidator<IComponent> validator)
@@ -1678,6 +1678,55 @@ public class Keyboard : IComponent
 {
     public string Name => "Keyboard";
     public int KeyCount { get; set; }
+}
+```
+
+</details>
+
+<details>
+<summary>Generated Code Snippets</summary>
+
+```csharp
+#nullable enable
+public partial class ComponentValidatorDispatcher
+{
+    private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Battery>> _batteryValidators;
+    private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Screen>> _screenValidators;
+    private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Keyboard>> _keyboardValidators;
+    
+    public ComponentValidatorDispatcher(global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Battery>> batteryValidators, global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Screen>> screenValidators, global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Keyboard>> keyboardValidators)
+    {
+        _batteryValidators = batteryValidators;
+        _screenValidators = screenValidators;
+        _keyboardValidators = keyboardValidators;
+    }
+    
+    public partial bool Validate(global::IComponent component)
+    {
+        switch (component)
+        {
+            case global::Battery __arg:
+                foreach (var __validator in _batteryValidators)
+                {
+                    if (__validator.Validate(__arg)) return true;
+                }
+                return false;
+            case global::Screen __arg:
+                foreach (var __validator in _screenValidators)
+                {
+                    if (__validator.Validate(__arg)) return true;
+                }
+                return false;
+            case global::Keyboard __arg:
+                foreach (var __validator in _keyboardValidators)
+                {
+                    if (__validator.Validate(__arg)) return true;
+                }
+                return false;
+            default:
+                return false;
+        }
+    }
 }
 ```
 
