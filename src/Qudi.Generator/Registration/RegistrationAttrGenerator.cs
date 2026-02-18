@@ -137,6 +137,25 @@ internal static class RegistrationAttrGenerator
             }
 
             /// <summary>
+            /// Shorthand attribute for dispatch registration.
+            /// A dispatch routes calls by runtime argument type for generic interfaces.
+            /// </summary>
+            {{CodeTemplateContents.EmbeddedAttributeUsage}}
+            {{AttributeClassUsage}}
+            public sealed class QudiDispatchAttribute : QudiCoreAttribute
+            {
+                /// <summary>
+                /// Dispatch target type. If omitted, the generator infers it from the implemented interface generic argument.
+                /// </summary>
+                public Type? Target { get; set; }
+
+                /// <summary>
+                /// Whether dispatch should resolve multiple implementations (default) or a single implementation.
+                /// </summary>
+                public bool Multiple { get; set; } = true;
+            }
+
+            /// <summary>
             /// Specifies how a composite method should handle results from multiple implementations.
             /// </summary>
             {{CodeTemplateContents.EmbeddedAttributeUsage}}

@@ -1,4 +1,6 @@
 #!/usr/bin/env dotnet
+// #:package Qudi@*
+// #:package Qudi.Visualizer@*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;

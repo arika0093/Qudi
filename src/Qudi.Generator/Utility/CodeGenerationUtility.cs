@@ -114,7 +114,9 @@ internal static class CodeGenerationUtility
             // Add type constraints
             foreach (var constraint in typeParam.ConstraintTypes)
             {
-                constraints.Add(constraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                constraints.Add(
+                    constraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                );
             }
 
             // Add constructor constraint

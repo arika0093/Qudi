@@ -150,12 +150,8 @@ public sealed class CompositeTests
         CompositeSequentialAsyncService.ExecutionOrder.Count.ShouldBe(2);
 
         // Parse timestamps and verify sequential order
-        var aTicks = long.Parse(
-            CompositeSequentialAsyncService.ExecutionOrder[0].Split(':')[2]
-        );
-        var bTicks = long.Parse(
-            CompositeSequentialAsyncService.ExecutionOrder[1].Split(':')[2]
-        );
+        var aTicks = long.Parse(CompositeSequentialAsyncService.ExecutionOrder[0].Split(':')[2]);
+        var bTicks = long.Parse(CompositeSequentialAsyncService.ExecutionOrder[1].Split(':')[2]);
 
         // B should execute after A (timestamp should be later)
         bTicks.ShouldBeGreaterThan(aTicks);

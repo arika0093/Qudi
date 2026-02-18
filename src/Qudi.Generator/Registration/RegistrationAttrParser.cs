@@ -17,6 +17,7 @@ internal static class RegistrationAttrParser
     private const string QudiTransientAttribute = $"Qudi.DITransientAttribute";
     private const string QudiDecoratorAttribute = $"Qudi.QudiDecoratorAttribute";
     private const string QudiCompositeAttribute = $"Qudi.QudiCompositeAttribute";
+    private const string QudiDispatchAttribute = $"Qudi.QudiDispatchAttribute";
 
     public static IncrementalValueProvider<
         ImmutableArray<RegistrationSpec?>
@@ -52,6 +53,11 @@ internal static class RegistrationAttrParser
             static (node, _) => true,
             static (context, _) => CreateFromAttribute(context, asComposite: true)
         );
+        var dispatchProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
+            QudiDispatchAttribute,
+            static (node, _) => true,
+            static (context, _) => CreateFromAttribute(context, asDispatch: true)
+        );
 
         var qudiRegistrations = qudiProvider.Collect();
         var singletonCollections = singletonProvider.Collect();
@@ -59,12 +65,14 @@ internal static class RegistrationAttrParser
         var scopedCollections = scopedProvider.Collect();
         var decoratorCollections = decoratorProvider.Collect();
         var compositeCollections = compositeProvider.Collect();
+        var dispatchCollections = dispatchProvider.Collect();
         return qudiRegistrations
             .CombineAndMerge(singletonCollections)
             .CombineAndMerge(transientCollections)
             .CombineAndMerge(scopedCollections)
             .CombineAndMerge(decoratorCollections)
-            .CombineAndMerge(compositeCollections);
+            .CombineAndMerge(compositeCollections)
+            .CombineAndMerge(dispatchCollections);
     }
 
     /// <summary>
@@ -74,7 +82,8 @@ internal static class RegistrationAttrParser
         GeneratorAttributeSyntaxContext context,
         string? lifetime = null,
         bool asDecorator = false,
-        bool asComposite = false
+        bool asComposite = false,
+        bool asDispatch = false
     )
     {
         // filter some invalid cases
@@ -117,8 +126,13 @@ internal static class RegistrationAttrParser
 
         var isDecorator = asDecorator || spec.MarkAsDecorator;
         var isComposite = asComposite || spec.MarkAsComposite;
+        var isDispatchComposite = asDispatch;
+        // Dispatch entries are marked as dispatcher registrations so container layering can skip composite wrapping.
+        var isCompositeDispatcher = isDispatchComposite;
         var effectiveLifetime =
-            (isDecorator || isComposite) ? "Transient" : lifetime ?? spec.Lifetime;
+            (isDecorator || isComposite || isDispatchComposite)
+                ? "Transient"
+                : lifetime ?? spec.Lifetime;
 
         return spec with
         {
@@ -129,6 +143,7 @@ internal static class RegistrationAttrParser
             Lifetime = effectiveLifetime,
             MarkAsDecorator = isDecorator,
             MarkAsComposite = isComposite,
+            MarkAsDispatcher = isCompositeDispatcher,
         };
     }
 
@@ -180,4 +195,6 @@ internal static class RegistrationAttrParser
 
         return false;
     }
+
+    // Composite dispatch registration is handled by generated types.
 }

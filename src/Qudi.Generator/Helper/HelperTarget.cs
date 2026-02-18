@@ -185,6 +185,117 @@ internal sealed record HelperGenerationInput
     /// Types that should implement helper interfaces.
     /// </summary>
     public required EquatableArray<HelperImplementingTarget> ImplementingTargets { get; init; }
+
+    /// <summary>
+    /// Dispatch-based composite targets.
+    /// </summary>
+    public required EquatableArray<DispatchCompositeTarget> DispatchCompositeTargets { get; init; }
+}
+
+/// <summary>
+/// Represents a dispatch-based composite target.
+/// </summary>
+internal sealed record DispatchCompositeTarget
+{
+    /// <summary>
+    /// Implementing type name.
+    /// </summary>
+    public required string ImplementingTypeName { get; init; }
+
+    /// <summary>
+    /// Implementing type namespace.
+    /// </summary>
+    public required string ImplementingTypeNamespace { get; init; }
+
+    /// <summary>
+    /// Implementing type keyword (class/struct/record).
+    /// </summary>
+    public required string ImplementingTypeKeyword { get; init; }
+
+    /// <summary>
+    /// Implementing type accessibility.
+    /// </summary>
+    public required string ImplementingTypeAccessibility { get; init; }
+
+    /// <summary>
+    /// Containing type chain for nested types.
+    /// </summary>
+    public required EquatableArray<ContainingTypeInfo> ContainingTypes { get; init; }
+
+    /// <summary>
+    /// Fully qualified interface name.
+    /// </summary>
+    public required string InterfaceName { get; init; }
+
+    /// <summary>
+    /// Sanitized helper interface name.
+    /// </summary>
+    public required string InterfaceHelperName { get; init; }
+
+    /// <summary>
+    /// Methods to dispatch.
+    /// </summary>
+    public required EquatableArray<DispatchCompositeMethod> Methods { get; init; }
+
+    /// <summary>
+    /// Generic type parameters with constraints.
+    /// </summary>
+    public required string GenericTypeParameters { get; init; }
+
+    /// <summary>
+    /// Generic type arguments string.
+    /// </summary>
+    public required string GenericTypeArguments { get; init; }
+
+    /// <summary>
+    /// Concrete type metadata used for dispatcher fields and constructor parameters.
+    /// </summary>
+    public required EquatableArray<DispatchCompositeConcreteType> ConcreteTypes { get; init; }
+
+    /// <summary>
+    /// Constraint type metadata used to emit closed dispatchers.
+    /// </summary>
+    public required EquatableArray<DispatchCompositeConstraintType> ConstraintTypes { get; init; }
+
+    /// <summary>
+    /// Whether dispatch should target multiple services (IEnumerable) or a single service.
+    /// </summary>
+    public required bool Multiple { get; init; }
+
+    /// <summary>
+    /// Composite method override settings declared by the user.
+    /// </summary>
+    public required EquatableArray<CompositeMethodOverride> CompositeMethodOverrides { get; init; }
+}
+
+/// <summary>
+/// Method metadata for dispatch composites.
+/// </summary>
+internal sealed record DispatchCompositeMethod
+{
+    public required HelperMember Member { get; init; }
+    public required int DispatchParameterIndex { get; init; }
+}
+
+/// <summary>
+/// Concrete type metadata for dispatch composites.
+/// </summary>
+internal sealed record DispatchCompositeConcreteType
+{
+    public required string TypeName { get; init; }
+    public required string FieldName { get; init; }
+    public required string ParameterName { get; init; }
+    public required string ConstructedInterfaceTypeName { get; init; }
+}
+
+/// <summary>
+/// Constraint type metadata for dispatch composites.
+/// </summary>
+internal sealed record DispatchCompositeConstraintType
+{
+    public required string TypeName { get; init; }
+    public required string Suffix { get; init; }
+    public required string ConstructedInterfaceTypeName { get; init; }
 }
 
 /// <summary>

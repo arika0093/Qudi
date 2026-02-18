@@ -219,7 +219,9 @@ public sealed class SequentialServiceA : ISequentialAsyncService
     public async Task ExecuteAsync(string input)
     {
         await Task.Delay(50);
-        CompositeSequentialAsyncService.ExecutionOrder.Add($"A:{input}:{System.DateTime.UtcNow.Ticks}");
+        CompositeSequentialAsyncService.ExecutionOrder.Add(
+            $"A:{input}:{System.DateTime.UtcNow.Ticks}"
+        );
     }
 }
 
@@ -229,7 +231,9 @@ public sealed class SequentialServiceB : ISequentialAsyncService
     public async Task ExecuteAsync(string input)
     {
         await Task.Delay(50);
-        CompositeSequentialAsyncService.ExecutionOrder.Add($"B:{input}:{System.DateTime.UtcNow.Ticks}");
+        CompositeSequentialAsyncService.ExecutionOrder.Add(
+            $"B:{input}:{System.DateTime.UtcNow.Ticks}"
+        );
     }
 }
 

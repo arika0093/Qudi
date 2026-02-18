@@ -60,4 +60,3 @@ internal record ProjectDependencyInfo
     /// </summary>
     public required string ProjectHash { get; init; }
 }
-

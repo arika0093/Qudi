@@ -15,7 +15,8 @@ internal static class RegistrationCodeGenerator
     private const string TRList = $"{List}<{TRInfo}>";
     private const string TRResult = $"{IReadOnlyList}<{TRInfo}>";
     private const string VisitedHashSet = "global::System.Collections.Generic.HashSet<long>";
-    private const string WithDependenciesDeclare = $"public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)";
+    private const string WithDependenciesDeclare =
+        $"public static partial void WithDependencies({TRList} collection, {VisitedHashSet} visited, bool fromOther)";
 
     /// <summary>
     /// Generates the internal and self registrations file (depends only on registrations and basicInfo).
@@ -256,6 +257,7 @@ internal static class RegistrationCodeGenerator
                 var usePublicLiteral = reg.UsePublic ? "true" : "false";
                 var markAsDecoratorLiteral = reg.MarkAsDecorator ? "true" : "false";
                 var markAsCompositeLiteral = reg.MarkAsComposite ? "true" : "false";
+                var markAsDispatcherLiteral = reg.MarkAsDispatcher ? "true" : "false";
                 var exportLiteral = reg.Export ? "true" : "false";
                 builder.AppendLine(
                     $$"""
@@ -271,6 +273,7 @@ internal static class RegistrationCodeGenerator
                         Order = {{reg.Order}},
                         MarkAsDecorator = {{markAsDecoratorLiteral}},
                         MarkAsComposite = {{markAsCompositeLiteral}},
+                        MarkAsDispatcher = {{markAsDispatcherLiteral}},
                         Export = {{exportLiteral}},
                         AssemblyName = "{{projectInfo.AssemblyName}}",
                         Namespace = "{{reg.Namespace}}",

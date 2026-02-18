@@ -20,8 +20,18 @@ public sealed partial class GenericCompositeTests
 
         var provider = services.BuildServiceProvider();
 
-        var battery1 = new Battery { Name = "Battery 1", Capacity = 6000, Voltage = 4 };
-        var battery2 = new Battery { Name = "Battery 2", Capacity = 4000, Voltage = 2 };
+        var battery1 = new Battery
+        {
+            Name = "Battery 1",
+            Capacity = 6000,
+            Voltage = 4,
+        };
+        var battery2 = new Battery
+        {
+            Name = "Battery 2",
+            Capacity = 4000,
+            Voltage = 2,
+        };
         var screen = new Screen { Name = "Screen", Size = 12 };
         var keyboard = new Keyboard { Name = "Keyboard", Keys = 104 };
 
@@ -46,11 +56,15 @@ public sealed partial class GenericCompositeTests
 
         var provider = services.BuildServiceProvider();
 
-        var battery = new Battery { Name = "Battery", Capacity = 6000, Voltage = 4 };
+        var battery = new Battery
+        {
+            Name = "Battery",
+            Capacity = 6000,
+            Voltage = 4,
+        };
 
         // Get the composite validator
         var compositeValidator = provider.GetRequiredService<IComponentValidator<Battery>>();
-        compositeValidator.ShouldBeOfType<CompositeValidator<Battery>>();
 
         // Should call all validators
         var result = compositeValidator.Validate(battery);
@@ -66,8 +80,18 @@ public sealed partial class GenericCompositeTests
 
         var provider = services.BuildServiceProvider();
 
-        var batteryValid = new Battery { Name = "Good Battery", Capacity = 6000, Voltage = 4 };
-        var batteryInvalid = new Battery { Name = "Bad Battery", Capacity = 4000, Voltage = 2 };
+        var batteryValid = new Battery
+        {
+            Name = "Good Battery",
+            Capacity = 6000,
+            Voltage = 4,
+        };
+        var batteryInvalid = new Battery
+        {
+            Name = "Bad Battery",
+            Capacity = 4000,
+            Voltage = 2,
+        };
 
         var compositeValidator = provider.GetRequiredService<IComponentValidator<Battery>>();
 

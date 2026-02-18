@@ -75,7 +75,9 @@ internal static class CompositeCodeGenerator
     {
         var typeName = property.ReturnTypeName;
         var propertyName = property.IsIndexer ? "this" : property.Name;
-        var parameters = property.IsIndexer ? HelperCodeGeneratorUtility.BuildParameterList(property.Parameters) : "";
+        var parameters = property.IsIndexer
+            ? HelperCodeGeneratorUtility.BuildParameterList(property.Parameters)
+            : "";
         var indexerSuffix = property.IsIndexer ? $"[{parameters}]" : "";
         var interfaceName = property.DeclaringInterfaceName;
 
@@ -84,11 +86,15 @@ internal static class CompositeCodeGenerator
         {
             if (property.HasGetter)
             {
-                builder.AppendLine($"get => throw new {NotSupportedException}(\"{propertyName} is not supported in this composite.\");");
+                builder.AppendLine(
+                    $"get => throw new {NotSupportedException}(\"{propertyName} is not supported in this composite.\");"
+                );
             }
             if (property.HasSetter)
             {
-                builder.AppendLine($"set => throw new {NotSupportedException}(\"{propertyName} is not supported in this composite.\");");
+                builder.AppendLine(
+                    $"set => throw new {NotSupportedException}(\"{propertyName} is not supported in this composite.\");"
+                );
             }
         }
     }
@@ -107,30 +113,48 @@ internal static class CompositeCodeGenerator
         var isTask = returnType == Task;
 
         // Add async modifier for Sequential task execution
-        var asyncModifier = isTask && method.ResultBehavior == CompositeResultBehavior.Sequential
-            ? "async "
-            : "";
+        var asyncModifier =
+            isTask && method.ResultBehavior == CompositeResultBehavior.Sequential ? "async " : "";
 
-        builder.AppendLine($"public partial {asyncModifier}{returnType} {method.Name}({parameters})");
+        builder.AppendLine(
+            $"public partial {asyncModifier}{returnType} {method.Name}({parameters})"
+        );
         using (builder.BeginScope())
         {
             if (isVoid)
             {
-                AppendCompositeVoidMethodBody(builder, method.Name, innerServicesAccessor, arguments);
+                AppendCompositeVoidMethodBody(
+                    builder,
+                    method.Name,
+                    innerServicesAccessor,
+                    arguments
+                );
                 return;
             }
 
             if (isBool)
             {
                 var useAnd = method.ResultBehavior != CompositeResultBehavior.Any;
-                AppendCompositeBoolMethodBody(builder, method.Name, innerServicesAccessor, arguments, useAnd);
+                AppendCompositeBoolMethodBody(
+                    builder,
+                    method.Name,
+                    innerServicesAccessor,
+                    arguments,
+                    useAnd
+                );
                 return;
             }
 
             if (isTask)
             {
                 var behavior = method.ResultBehavior;
-                AppendCompositeTaskMethodBody(builder, method.Name, innerServicesAccessor, arguments, behavior);
+                AppendCompositeTaskMethodBody(
+                    builder,
+                    method.Name,
+                    innerServicesAccessor,
+                    arguments,
+                    behavior
+                );
                 return;
             }
 
@@ -249,9 +273,14 @@ internal static class CompositeCodeGenerator
         return "object";
     }
 
-    private static void AppendCompositeUnsupportedMethod(IndentedStringBuilder builder, string methodName)
+    private static void AppendCompositeUnsupportedMethod(
+        IndentedStringBuilder builder,
+        string methodName
+    )
     {
-        builder.AppendLine($"throw new {NotSupportedException}(\"{methodName} is not supported in this composite.\");");
+        builder.AppendLine(
+            $"throw new {NotSupportedException}(\"{methodName} is not supported in this composite.\");"
+        );
     }
 
     private static void AppendCompositeVoidMethodBody(
@@ -317,7 +346,9 @@ internal static class CompositeCodeGenerator
         else
         {
             // Parallel execution: collect all tasks and await together
-            builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{Task}>();");
+            builder.AppendLine(
+                $"var __tasks = new global::System.Collections.Generic.List<{Task}>();"
+            );
             builder.AppendLine($"foreach (var __service in {helperAccessor})");
             using (builder.BeginScope())
             {

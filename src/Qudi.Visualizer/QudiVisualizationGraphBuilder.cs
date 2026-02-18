@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Qudi.Core.Internal;
 
 namespace Qudi.Visualizer;
 
@@ -12,6 +13,10 @@ internal static class QudiVisualizationGraphBuilder
         var nodes = new Dictionary<string, QudiVisualizationNode>(StringComparer.Ordinal);
         var edges = new List<QudiVisualizationEdge>();
         var registeredTypes = new HashSet<Type>();
+        var availableTypes = GenericConstraintUtility.CollectLoadableTypes(
+            allRegistrations.Select(r => r.Type.Assembly).Distinct().ToList()
+        );
+        var constraintCandidateCache = new Dictionary<Type, List<Type>>();
 
         // Build internal assemblies set
         var internalAssemblies = allRegistrations
@@ -186,7 +191,13 @@ internal static class QudiVisualizationGraphBuilder
             }
 
             // Process dependencies
-            foreach (var required in registration.RequiredTypes.Distinct())
+            var expandedRequiredTypes = ExpandRequiredTypes(
+                registration,
+                availableTypes,
+                constraintCandidateCache
+            );
+
+            foreach (var required in expandedRequiredTypes.Distinct())
             {
                 // Check if this is a collection type (IEnumerable<T>, IList<T>, etc.)
                 var elementType = TryGetCollectionElementType(required);
@@ -727,6 +738,207 @@ internal static class QudiVisualizationGraphBuilder
         }
 
         return null;
+    }
+
+    private static IReadOnlyList<Type> ExpandRequiredTypes(
+        TypeRegistrationInfo registration,
+        IReadOnlyList<Type> availableTypes,
+        IDictionary<Type, List<Type>> constraintCandidateCache
+    )
+    {
+        var requiredTypes =
+            registration.RequiredTypes.Count > 0
+                ? registration.RequiredTypes
+                : GetConstructorRequiredTypes(registration.Type);
+
+        var expanded = new List<Type>();
+
+        foreach (var required in requiredTypes)
+        {
+            if (!required.ContainsGenericParameters)
+            {
+                expanded.Add(required);
+                continue;
+            }
+
+            if (!registration.Type.IsGenericTypeDefinition)
+            {
+                expanded.Add(required);
+                continue;
+            }
+
+            if (!TryGetSingleGenericParameter(registration.Type, out var genericParameter))
+            {
+                expanded.Add(required);
+                continue;
+            }
+
+            var candidates = GetConstraintCandidates(
+                registration.Type,
+                genericParameter,
+                availableTypes,
+                constraintCandidateCache
+            );
+
+            var anyClosed = false;
+            foreach (var candidate in candidates)
+            {
+                var mapping = new Dictionary<int, Type>
+                {
+                    [genericParameter.GenericParameterPosition] = candidate,
+                };
+                var closed = TryCloseGenericType(required, mapping);
+                if (closed != null)
+                {
+                    expanded.Add(closed);
+                    anyClosed = true;
+                }
+            }
+
+            if (!anyClosed)
+            {
+                expanded.Add(required);
+            }
+        }
+
+        return expanded;
+    }
+
+    private static IReadOnlyList<Type> GetConstructorRequiredTypes(Type type)
+    {
+        return type.GetConstructors()
+            .SelectMany(c => c.GetParameters())
+            .Select(p => p.ParameterType)
+            .Distinct()
+            .ToList();
+    }
+
+    private static Type? TryCloseGenericType(Type type, IReadOnlyDictionary<int, Type> mapping)
+    {
+        if (type.IsGenericParameter)
+        {
+            return mapping.TryGetValue(type.GenericParameterPosition, out var mapped)
+                ? mapped
+                : null;
+        }
+
+        if (type.IsArray)
+        {
+            var element = TryCloseGenericType(type.GetElementType()!, mapping);
+            return element?.MakeArrayType();
+        }
+
+        if (type.IsByRef)
+        {
+            var element = TryCloseGenericType(type.GetElementType()!, mapping);
+            return element?.MakeByRefType();
+        }
+
+        if (type.IsGenericType)
+        {
+            var genericDef = type.GetGenericTypeDefinition();
+            var arguments = type.GetGenericArguments();
+            var closedArguments = new Type[arguments.Length];
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                var closed = TryCloseGenericType(arguments[i], mapping);
+                if (closed is null)
+                {
+                    return null;
+                }
+
+                closedArguments[i] = closed;
+            }
+
+            try
+            {
+                return genericDef.MakeGenericType(closedArguments);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        return type;
+    }
+
+    /// <summary>
+    /// Only open generic type definitions with exactly one generic parameter are expanded
+    /// (for example, IHandler&lt;T&gt;). Multi-parameter generics are intentionally not expanded.
+    /// </summary>
+    private static bool TryGetSingleGenericParameter(
+        Type openGenericType,
+        out Type genericParameter
+    )
+    {
+        genericParameter = typeof(object);
+        if (!openGenericType.IsGenericTypeDefinition)
+        {
+            return false;
+        }
+
+        var genericArguments = openGenericType.GetGenericArguments();
+        if (genericArguments.Length != 1)
+        {
+            return false;
+        }
+
+        genericParameter = genericArguments[0];
+        return genericParameter.IsGenericParameter;
+    }
+
+    private static List<Type> GetConstraintCandidates(
+        Type openGenericType,
+        Type genericParameter,
+        IReadOnlyList<Type> availableTypes,
+        IDictionary<Type, List<Type>> cache
+    )
+    {
+        // Cache key assumes Build() uses a single availableTypes set and genericParameter
+        // consistently derived from openGenericType.
+        if (cache.TryGetValue(openGenericType, out var cached))
+        {
+            return cached;
+        }
+
+        var constraints = genericParameter.GetGenericParameterConstraints();
+        if (constraints.Length == 0)
+        {
+            cache[openGenericType] = [];
+            return [];
+        }
+
+        var candidates = new List<Type>();
+
+        foreach (var candidate in availableTypes)
+        {
+            if (candidate.IsInterface || candidate.IsAbstract)
+            {
+                continue;
+            }
+
+            if (candidate.ContainsGenericParameters || candidate.IsGenericTypeDefinition)
+            {
+                continue;
+            }
+
+            if (
+                !GenericConstraintUtility.SatisfiesConstraints(
+                    candidate,
+                    genericParameter,
+                    constraints
+                )
+            )
+            {
+                continue;
+            }
+
+            candidates.Add(candidate);
+        }
+
+        cache[openGenericType] = candidates;
+        return candidates;
     }
 
     /// <summary>

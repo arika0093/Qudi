@@ -302,7 +302,7 @@ Here we’ll implement a decorator that adds decorative output before and after 
 Create a class that accepts `IPokemon` in the constructor and also implements `IPokemon`, like the following.
 
 ```csharp
-[QudiDecorator]
+[QudiDecorator] // add [QudiDecorator] attribute and mark as partial class
 public partial class PokemonDecorator(IPokemon decorated) : IPokemon
 {
     public void DisplayInfo()
@@ -439,7 +439,7 @@ var provider = services.BuildServiceProvider();
 var displayService = provider.GetRequiredService<IPokemon>();
 displayService.DisplayInfo();
 
-[QudiComposite]
+[QudiComposite] // add [QudiComposite] attribute and mark as partial class
 public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPokemon
 {
     // all methods of IPokemon will be implemented
@@ -545,8 +545,6 @@ flowchart LR
     class DisplayPokemonService composite;
 
 ```
-
-By using `[QudiComposite]`, you can provide multiple implementations together as a single interface.
 
 By default, composites are called after decorators, but in this case, we want the opposite.
 Let's specify the order explicitly to achieve the expected behavior.
@@ -665,6 +663,9 @@ flowchart LR
 
 ```
 
+That was a bit long, but those are Qudi's main features.  
+Of course, you can also use only the simple attribute-based registration. 😉
+
 
 ## Installation
 Install `Qudi` from NuGet.
@@ -699,9 +700,9 @@ dotnet add package Qudi.Container.Microsoft
   * [Keyed Registration](#keyed-registration)
   * [Conditional Registration](#conditional-registration)
 * **Advanced**
-  * [Generic Registration](#generic-registration)
   * [Decorator Pattern](#decorator-pattern)
   * [Composite Pattern](#composite-pattern)
+  * [Generic Registration](#generic-registration)
 * **Visualization**
   * [Visualize Registration](#visualize-registration)
 * **Customization**
@@ -891,7 +892,9 @@ flowchart LR
 
 ```
 
-then, specify the rules to apply each condition as an argument of the `AddQudiServices` method.
+By default, "Development" is active in `DEBUG` build and "Production" is active in `RELEASE` build.
+You can also specify conditions in the argument of `AddQudiServices` as needed.
+
 
 ```csharp
 builder.Services.AddQudiServices(conf => {
@@ -906,151 +909,7 @@ builder.Services.AddQudiServices(conf => {
 ```
 
 > [!NOTE]
-> If you want to switch processing dynamically according to conditions during runtime, consider using Strategy Pattern or [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
-
-
-### Generic Registration
-#### Open Generic Registration
-You can register open generic types using Qudi attributes.
-
-```csharp
-[DISingleton]
-public class GenericRepository<T> : IRepository<T>
-{
-    public void Add(T entity) { /* ... */ }
-    public T Get(int id) { /* ... */ }
-}
-```
-
-Then, just use it normally in the dependent project.
-
-```csharp
-[DISingleton]
-public class UserService(IRepository<User> userRepository)
-{
-    public void CreateUser(User user) => userRepository.Add(user);
-}
-```
-
-#### Constrained Generic Registration
-You can also restrict it to specific interfaces.
-
-```csharp
-[DITransient]
-public class SpecificGenericService<T> : ISpecificService<T> where T : ISpecificInterface
-{
-    public void DoSomething(T item) { /* ... */ }
-}
-```
-
-and you can also register specialized implementations for specific types.  
-This allows you to provide a default generic implementation while also providing specialized implementations for specific types.
-
-```csharp
-// components
-public interface IComponent;
-public class Battery : IComponent { /* ... */ }
-public class Screen : IComponent { /* ... */ }
-public class Keyboard : IComponent { /* ... */ }
-
-// validator
-public interface IComponentValidator<T> where T : IComponent
-{
-    bool Validate(T component);
-}
-
-// -----------
-// default(fallback) implementation
-[DITransient]
-public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
-{
-    public bool Validate(T component) => true; // always valid
-}
-
-// specialized implementation for Battery
-[DITransient]
-public class BatteryValidator : IComponentValidator<Battery>
-{
-    public bool Validate(Battery component) { /* specific validation logic */ }
-}
-
-// and for Screen
-[DITransient]
-public class ScreenValidator : IComponentValidator<Screen>
-{
-    public bool Validate(Screen component) { /* specific validation logic */ }
-}
-
-// -----------
-// usage
-public class ComponentValidator<T>(IComponentValidator<T> validator) where T : IComponent
-{
-    public bool Check(T component) => validator.Validate(component);
-}
-```
-
-If multiple registrations are made for the same type, you can resolve them all by using `IEnumerable<IComponentValidator<T>>` on the usage side.
-
-```csharp
-[DITransient]
-public class BatteryValidator : IComponentValidator<Battery>
-{
-    public bool Validate(Battery component) { /* specific validation logic */ }
-}
-
-[DITransient]
-public class BatteryAnotherValidator : IComponentValidator<Battery>
-{
-    public bool Validate(Battery component) { /* another validation logic */ }
-}
-
-// -----------
-// usage
-public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
-    where T : IComponent
-{
-    public bool Check(T component)
-    {
-        foreach (var validator in validators)
-        {
-            if (!validator.Validate(component))
-                return false;
-        }
-        return true;
-    }
-}
-```
-
-```mermaid
-flowchart LR
-    Qudi_Examples_GenericRegistration_NullComponentValidator_T_["NullComponentValidator#lt;T#gt;"]
-    Qudi_Examples_GenericRegistration_BatteryValidator["BatteryValidator"]
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_["IComponentValidator#lt;Battery#gt;"]
-    Qudi_Examples_GenericRegistration_BatteryAnotherValidator["BatteryAnotherValidator"]
-    Qudi_Examples_GenericRegistration_ScreenValidator["ScreenValidator"]
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_["IComponentValidator#lt;Screen#gt;"]
-    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor["GenericRegistrationExecutor"]
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_["IComponentValidator#lt;Keyboard#gt;"]
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryValidator
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryAnotherValidator
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ --> Qudi_Examples_GenericRegistration_ScreenValidator
-    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_
-    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_
-    Qudi_Examples_GenericRegistration_GenericRegistrationExecutor -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_
-    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ --> Qudi_Examples_GenericRegistration_NullComponentValidator_T_
-    classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;
-    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ missing;
-    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
-    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ interface;
-    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ interface;
-    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
-    class Qudi_Examples_GenericRegistration_NullComponentValidator_T_ cls;
-    class Qudi_Examples_GenericRegistration_BatteryValidator cls;
-    class Qudi_Examples_GenericRegistration_BatteryAnotherValidator cls;
-    class Qudi_Examples_GenericRegistration_ScreenValidator cls;
-    class Qudi_Examples_GenericRegistration_GenericRegistrationExecutor cls;
-
-```
+> If you want to switch processing dynamically according to conditions during runtime, consider using [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
 
 ### Decorator Pattern
 #### Overview
@@ -1533,6 +1392,387 @@ public interface IService_MyComposite : IService
 
 </details>
 
+
+### Generic Registration
+#### Open Generic Registration
+You can register open generic types using Qudi attributes.
+
+```csharp
+[DISingleton]
+public class GenericRepository<T> : IRepository<T>
+{
+    public void Add(T entity) { /* ... */ }
+    public T Get(int id) { /* ... */ }
+}
+```
+
+Then, just use it normally in the dependent project.
+
+```csharp
+[DISingleton]
+public class UserService(IRepository<User> userRepository)
+{
+    public void CreateUser(User user) => userRepository.Add(user);
+}
+```
+
+#### Constrained Generic Registration
+You can also restrict it to specific interfaces.
+
+```csharp
+[DITransient]
+public class SpecificGenericService<T> : ISpecificService<T> where T : ISpecificInterface
+{
+    public void DoSomething(T item) { /* ... */ }
+}
+```
+
+and you can also register specialized implementations for specific types.  
+This allows you to provide a default generic implementation while also providing specialized implementations for specific types.
+
+```csharp
+// default(fallback) implementation
+[DITransient]
+public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
+{
+    public bool Validate(T component) => true; // always valid
+}
+
+// specialized implementation for Battery
+[DITransient]
+public class BatteryValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* specific validation logic */ }
+}
+```
+
+<details>
+<summary>Example Code Snippets</summary>
+
+```csharp
+// components
+public interface IComponent;
+public class Battery : IComponent { /* ... */ }
+public class Screen : IComponent { /* ... */ }
+public class Keyboard : IComponent { /* ... */ }
+
+// validator
+public interface IComponentValidator<T> where T : IComponent
+{
+    bool Validate(T component);
+}
+
+// -----------
+// default(fallback) implementation
+[DITransient]
+public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
+{
+    public bool Validate(T component) => true; // always valid
+}
+
+// specialized implementation for Battery
+[DITransient]
+public class BatteryValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* specific validation logic */ }
+}
+
+[DITransient]
+public class BatteryAnotherValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* another validation logic */ }
+}
+
+// and for Screen
+[DITransient]
+public class ScreenValidator : IComponentValidator<Screen>
+{
+    public bool Validate(Screen component) { /* specific validation logic */ }
+}
+
+// -----------
+// usage
+[DITransient]
+public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
+    where T : IComponent
+{
+    public bool Check(T component)
+    {
+        foreach (var validator in validators)
+        {
+            if (!validator.Validate(component))
+                return false;
+        }
+        return true;
+    }
+}
+```
+
+</details>
+
+```mermaid
+flowchart LR
+    Qudi_Examples_GenericRegistration_NullComponentValidator_T_["NullComponentValidator#lt;T#gt;"]
+    Qudi_Examples_GenericRegistration_BatteryValidator["BatteryValidator"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_["IComponentValidator#lt;Battery#gt;"]
+    Qudi_Examples_GenericRegistration_BatteryAnotherValidator["BatteryAnotherValidator"]
+    Qudi_Examples_GenericRegistration_ScreenValidator["ScreenValidator"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_["IComponentValidator#lt;Screen#gt;"]
+    Qudi_Examples_GenericRegistration_ComponentValidator["ComponentValidator"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_["IComponentValidator#lt;Keyboard#gt;"]
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryValidator
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ --> Qudi_Examples_GenericRegistration_BatteryAnotherValidator
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ --> Qudi_Examples_GenericRegistration_ScreenValidator
+    Qudi_Examples_GenericRegistration_ComponentValidator -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_
+    Qudi_Examples_GenericRegistration_ComponentValidator -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_
+    Qudi_Examples_GenericRegistration_ComponentValidator -.->|"*"| Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_
+    Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ --> Qudi_Examples_GenericRegistration_NullComponentValidator_T_
+    classDef missing stroke:#c00,stroke-width:2px,stroke-dasharray:5 5;
+    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Keyboard_ missing;
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Battery_ interface;
+    class Qudi_Examples_GenericRegistration_IComponentValidator_Qudi_Examples_GenericRegistration_Screen_ interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class Qudi_Examples_GenericRegistration_NullComponentValidator_T_ cls;
+    class Qudi_Examples_GenericRegistration_BatteryValidator cls;
+    class Qudi_Examples_GenericRegistration_BatteryAnotherValidator cls;
+    class Qudi_Examples_GenericRegistration_ScreenValidator cls;
+    class Qudi_Examples_GenericRegistration_ComponentValidator cls;
+
+```
+
+#### Use Dispatch for Generic Composite
+Although the above implementation works, it requires specifying the generic type each time (e.g. `ComponentValidator<Battery>`, `ComponentValidator<Screen>`), which is cumbersome.  
+By using `[QudiDispatch]` you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type.  
+Callers can then use a single `ComponentValidator` or non-generic `IComponentValidator` and call `Validate(component)` without specifying `T`. Set `Multiple = false` when you want dispatch to resolve a single `IComponentValidator<T>` per concrete runtime type instead of `IEnumerable<IComponentValidator<T>>`.
+
+```csharp
+[QudiDispatch]
+public partial class ComponentDispatcher : IComponentValidator<IComponent>
+{
+    // Validate function will be generated to apply all registered
+    // IComponentValidator<T> implementations for the specified T.
+}
+
+[DITransient]
+public class ComponentValidator(IComponentValidator<IComponent> validator)
+{
+    // here, not require to specify T, and the composite will automatically dispatch
+    // to the correct validators based on the runtime type of the component.
+    public bool Validate(IComponent component) => validator.Validate(component);
+}
+```
+
+<details>
+<summary>Sample Code Snippets</summary>
+
+```csharp
+#!/usr/bin/env dotnet
+#:package Qudi@*
+#:package Qudi.Visualizer@*
+using Microsoft.Extensions.DependencyInjection;
+using Qudi;
+
+var battery1 = new Battery { Capacity = 3000, Voltage = 3 };
+var battery2 = new Battery { Capacity = 2000, Voltage = 3 };
+var screen = new Screen { ResolutionX = 1920, ResolutionY = 1080 };
+var keyboard = new Keyboard { KeyCount = 104 };
+
+var services = new ServiceCollection();
+services.AddQudiServices(conf =>
+{
+    conf.EnableVisualizationOutput();
+});
+
+var provider = services.BuildServiceProvider();
+List<IComponent> components = [battery1, battery2, screen, keyboard];
+var validator = provider.GetRequiredService<ComponentValidator>();
+foreach (var component in components)
+{
+    Console.WriteLine($"{component.Name} valid check: {validator.Validate(component)}");
+}
+
+// -----------
+// impl
+[DITransient]
+public class NullComponentValidator<T> : IComponentValidator<T>
+    where T : IComponent
+{
+    public bool Validate(T component)
+    {
+        Console.WriteLine($"> No specific validator for {component.Name}, automatically valid.");
+        return true;
+    }
+}
+
+[DITransient]
+public class BatteryValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component)
+    {
+        Console.WriteLine($"> Validating battery with capacity: {component.Capacity}");
+        return component.Capacity >= 3000;
+    }
+}
+
+[DITransient]
+public class BatteryAnotherValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component)
+    {
+        Console.WriteLine($"> Validating battery with voltage: {component.Voltage}");
+        return component.Voltage >= 3;
+    }
+}
+
+[DITransient]
+public class ScreenValidator : IComponentValidator<Screen>
+{
+    public bool Validate(Screen component)
+    {
+        Console.WriteLine(
+            $"> Validating screen with resolution: {component.ResolutionX}x{component.ResolutionY}"
+        );
+        return component.ResolutionX >= 1920 && component.ResolutionY >= 1080;
+    }
+}
+
+// -----------
+// usage
+[QudiDispatch]
+public partial class ComponentValidatorDispatcher : IComponentValidator<IComponent>;
+
+[DITransient]
+public class ComponentValidator(IComponentValidator<IComponent> validator)
+{
+    public bool Validate(IComponent component) => validator.Validate(component);
+}
+
+// -----------
+// decl
+public interface IComponentValidator<T>
+    where T : IComponent
+{
+    bool Validate(T component);
+}
+
+public interface IComponent
+{
+    string Name { get; }
+}
+
+public class Battery : IComponent
+{
+    public string Name => "Battery";
+    public int Capacity { get; set; }
+    public int Voltage { get; set; }
+}
+
+public class Screen : IComponent
+{
+    public string Name => "Screen";
+    public int ResolutionX { get; set; }
+    public int ResolutionY { get; set; }
+}
+
+public class Keyboard : IComponent
+{
+    public string Name => "Keyboard";
+    public int KeyCount { get; set; }
+}
+```
+
+</details>
+
+<details>
+<summary>Generated Code Snippets</summary>
+
+```csharp
+#nullable enable
+public partial class ComponentValidatorDispatcher
+{
+    private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Battery>> _batteryValidators;
+    private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Screen>> _screenValidators;
+    private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Keyboard>> _keyboardValidators;
+    
+    public ComponentValidatorDispatcher(global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Battery>> batteryValidators, global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Screen>> screenValidators, global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Keyboard>> keyboardValidators)
+    {
+        _batteryValidators = batteryValidators;
+        _screenValidators = screenValidators;
+        _keyboardValidators = keyboardValidators;
+    }
+    
+    public bool Validate(global::IComponent component)
+    {
+        switch (component)
+        {
+            case global::Battery __arg:
+                foreach (var __validator in _batteryValidators)
+                {
+                    if (!__validator.Validate(__arg)) return false;
+                }
+                return true;
+            case global::Screen __arg:
+                foreach (var __validator in _screenValidators)
+                {
+                    if (!__validator.Validate(__arg)) return false;
+                }
+                return true;
+            case global::Keyboard __arg:
+                foreach (var __validator in _keyboardValidators)
+                {
+                    if (!__validator.Validate(__arg)) return false;
+                }
+                return true;
+            default:
+                return true;
+        }
+    }
+}
+```
+
+</details>
+
+When using it, you can simply call `ComponentValidator.Validate(...)` without worrying about `<T>` at all.
+
+```mermaid
+flowchart LR
+    IComponentValidator_T_["IComponentValidator#lt;T#gt;"]
+    BatteryValidator["BatteryValidator"]
+    IComponentValidator_Battery_["IComponentValidator#lt;Battery#gt;"]
+    BatteryAnotherValidator["BatteryAnotherValidator"]
+    ScreenValidator["ScreenValidator"]
+    IComponentValidator_Screen_["IComponentValidator#lt;Screen#gt;"]
+    ComponentValidator["ComponentValidator"]
+    ComponentValidatorDispatcher_T_["ComponentValidatorDispatcher#lt;T#gt;"]
+    IComponentValidator_Keyboard_["IComponentValidator#lt;Keyboard#gt;"] 
+    NullComponentValidator_Keyboard_["NullComponentValidator#lt;Keyboard#gt;"]
+    ComponentValidator --> IComponentValidator_T_
+    IComponentValidator_Battery_ --> BatteryValidator
+    IComponentValidator_Battery_ --> BatteryAnotherValidator
+    IComponentValidator_Screen_ --> ScreenValidator
+    IComponentValidator_T_ --> ComponentValidatorDispatcher_T_
+    ComponentValidatorDispatcher_T_ -.->|"*"| IComponentValidator_Battery_
+    ComponentValidatorDispatcher_T_ -.->|"*"| IComponentValidator_Screen_
+    ComponentValidatorDispatcher_T_ -.->|"*"| IComponentValidator_Keyboard_
+    IComponentValidator_Keyboard_ --> NullComponentValidator_Keyboard_
+    classDef interface fill:#c8e6c9,stroke:#4caf50,stroke-width:2px,color:#000;
+    class IComponentValidator_T_ interface;
+    class IComponentValidator_Battery_ interface;
+    class IComponentValidator_Screen_ interface;
+    class IComponentValidator_Keyboard_ interface;
+    classDef cls fill:#bbdefb,stroke:#2196f3,stroke-width:2px,color:#000;
+    class NullComponentValidator_T_ cls;
+    class BatteryValidator cls;
+    class BatteryAnotherValidator cls;
+    class ScreenValidator cls;
+    class ComponentValidator cls;
+    class NullComponentValidator_Keyboard_ cls;
+    class ComponentValidatorDispatcher_Keyboard_ cls;
+    classDef composite fill:#f8d7da,stroke:#c62828,stroke-width:2px,color:#000;
+    class ComponentValidatorDispatcher_T_ composite;
+
+```
 
 ## Visualize Registration
 ### Setup
