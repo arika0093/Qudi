@@ -166,6 +166,11 @@ internal sealed record HelperImplementingTarget
     public required string GenericTypeArguments { get; init; }
 
     /// <summary>
+    /// Generic type arguments for helper interfaces (e.g., "<T>").
+    /// </summary>
+    public required string InterfaceGenericTypeArguments { get; init; }
+
+    /// <summary>
     /// Composite methods declared in the target class that should be auto-implemented.
     /// </summary>
     public required EquatableArray<CompositeMethodOverride> CompositeMethodOverrides { get; init; }

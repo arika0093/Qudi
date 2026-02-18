@@ -258,8 +258,8 @@ internal static class HelperTargetCollector
                     : string.Empty;
 
             // Extract generic type information from the interface
-            var genericConstraints = CodeGenerationUtility.GetGenericConstraints(iface);
-            var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(iface);
+            var genericConstraints = CodeGenerationUtility.GetHelperGenericConstraints(iface);
+            var genericArgs = CodeGenerationUtility.GetHelperGenericTypeArguments(iface);
 
             var target = new HelperInterfaceTarget
             {
@@ -695,6 +695,9 @@ internal static class HelperTargetCollector
         // Extract generic type information from the implementing type
         var genericConstraints = CodeGenerationUtility.GetGenericConstraints(typeSymbol);
         var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(typeSymbol);
+        var interfaceGenericArgs = CodeGenerationUtility.GetHelperGenericTypeArguments(
+            interfaceSymbol
+        );
 
         return new HelperImplementingTarget
         {
@@ -715,6 +718,7 @@ internal static class HelperTargetCollector
             UseIntercept = useIntercept,
             GenericTypeParameters = genericConstraints, // Store the where clauses
             GenericTypeArguments = genericArgs,
+            InterfaceGenericTypeArguments = interfaceGenericArgs,
             CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>([]),
         };
     }

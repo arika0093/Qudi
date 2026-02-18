@@ -74,11 +74,12 @@ internal static class HelperCodeGenerator
             target.IsComposite
         );
         var genericArgs = target.GenericTypeArguments;
+        var interfaceGenericArgs = target.InterfaceGenericTypeArguments;
         var genericParams = target.GenericTypeParameters;
 
-        var helperInterfaceName = string.IsNullOrEmpty(genericArgs)
+        var helperInterfaceName = string.IsNullOrEmpty(interfaceGenericArgs)
             ? helperName
-            : $"{helperName}{genericArgs}";
+            : $"{helperName}{interfaceGenericArgs}";
 
         var helperTypeName = string.IsNullOrEmpty(target.InterfaceNamespace)
             ? helperInterfaceName
