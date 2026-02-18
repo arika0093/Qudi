@@ -145,6 +145,11 @@ internal static class RegistrationAttrGenerator
             public sealed class QudiDispatchAttribute : QudiCoreAttribute
             {
                 /// <summary>
+                /// Dispatch target type. If omitted, the generator infers it from the implemented interface generic argument.
+                /// </summary>
+                public Type? Target { get; set; }
+
+                /// <summary>
                 /// Whether dispatch should resolve multiple implementations (default) or a single implementation.
                 /// </summary>
                 public bool Multiple { get; set; } = true;
