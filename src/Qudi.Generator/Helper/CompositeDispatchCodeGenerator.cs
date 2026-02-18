@@ -19,41 +19,11 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeTarget target
     )
     {
-        // Generate two parts:
-        // 1) Open-generic composite helper so DI can inject IEnumerable<IInterface<T>>.
-        // 2) Closed dispatchers per constraint (e.g., IComponent) to enable AOT-safe dispatch.
-        // Emit support for open-generic composite (inner-services enumerable only).
-        AppendOpenGenericCompositeSupport(builder, target);
-        // Emit closed dispatchers for constraint types (e.g., IComponent).
-        AppendConstraintDispatchers(builder, target);
-    }
-
-    private static void AppendOpenGenericCompositeSupport(
-        IndentedStringBuilder builder,
-        DispatchCompositeTarget target
-    )
-    {
-        // For open generics we keep the composite helper interface, but only store
-        // IEnumerable<TInterface> to avoid forcing concrete type dependencies.
-        var genericArgs = target.GenericTypeArguments;
-        var genericParams = target.GenericTypeParameters;
-        var whereClause = string.IsNullOrEmpty(genericParams) ? "" : $" {genericParams}";
-
-        var typeName = string.IsNullOrEmpty(genericArgs)
-            ? target.ImplementingTypeName
-            : $"{target.ImplementingTypeName}{genericArgs}";
-
-        var helperName = HelperCodeGeneratorUtility.BuildHelperInterfaceName(
-            target.InterfaceHelperName,
-            isComposite: true
-        );
-        var helperInterfaceName = string.IsNullOrEmpty(genericArgs)
-            ? helperName
-            : $"{helperName}{genericArgs}";
-
-        var helperTypeName = string.IsNullOrEmpty(target.ImplementingTypeNamespace)
-            ? helperInterfaceName
-            : $"global::{target.ImplementingTypeNamespace}.{helperInterfaceName}";
+        var constraint = target.ConstraintTypes.FirstOrDefault();
+        if (constraint is null)
+        {
+            return;
+        }
 
         var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
         builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
@@ -70,69 +40,7 @@ internal static class CompositeDispatchCodeGenerator
             }
 
             builder.AppendLine(
-                $"{target.ImplementingTypeAccessibility} partial {target.ImplementingTypeKeyword} {typeName} : {helperTypeName}{whereClause}"
-            );
-            using (builder.BeginScope())
-            {
-                builder.AppendLine(
-                    $"private readonly {IEnumerable}<{target.InterfaceName}> __innerServices;"
-                );
-                builder.AppendLine("");
-                builder.AppendLine(
-                    $"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}({IEnumerable}<{target.InterfaceName}> innerServices)"
-                );
-                using (builder.BeginScope())
-                {
-                    builder.AppendLine("__innerServices = innerServices;");
-                }
-
-                builder.AppendLine("");
-                builder.AppendLine(CodeTemplateContents.EditorBrowsableAttribute);
-                builder.AppendLine(
-                    $"{IEnumerable}<{target.InterfaceName}> {helperTypeName}.__InnerServices => __innerServices;"
-                );
-            }
-
-            for (var i = 0; i < containingTypes.Length; i++)
-            {
-                builder.DecreaseIndent();
-                builder.AppendLine("}");
-            }
-        }
-    }
-
-    private static void AppendConstraintDispatchers(
-        IndentedStringBuilder builder,
-        DispatchCompositeTarget target
-    )
-    {
-        if (target.ConstraintTypes.Count == 0)
-        {
-            return;
-        }
-
-        // For each constraint, generate a closed dispatcher that resolves concrete validators.
-        foreach (var constraint in target.ConstraintTypes)
-        {
-            AppendDispatcherForConstraint(builder, target, constraint);
-        }
-    }
-
-    private static void AppendDispatcherForConstraint(
-        IndentedStringBuilder builder,
-        DispatchCompositeTarget target,
-        DispatchCompositeConstraintType constraint
-    )
-    {
-        // Closed dispatcher implements the constraint-closed interface
-        // (e.g., IComponentValidator<IComponent>).
-        var className = $"{target.ImplementingTypeName}__Dispatch_{constraint.Suffix}";
-        var useNamespace = !string.IsNullOrEmpty(target.ImplementingTypeNamespace);
-        builder.AppendLineIf(useNamespace, $"namespace {target.ImplementingTypeNamespace}");
-        using (builder.BeginScopeIf(useNamespace))
-        {
-            builder.AppendLine(
-                $"internal sealed class {className} : {constraint.ConstructedInterfaceTypeName}"
+                $"{target.ImplementingTypeAccessibility} partial {target.ImplementingTypeKeyword} {target.ImplementingTypeName}"
             );
             using (builder.BeginScope())
             {
@@ -144,23 +52,28 @@ internal static class CompositeDispatchCodeGenerator
                 }
 
                 builder.AppendLine("");
-                builder.AppendLine($"public {className}({BuildConstructorParameters(target)})");
+                builder.AppendLine(
+                    $"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}({BuildConstructorParameters(target)})"
+                );
                 using (builder.BeginScope())
                 {
                     foreach (var concreteType in target.ConcreteTypes)
                     {
-                        builder.AppendLine(
-                            $"{concreteType.FieldName} = {concreteType.ParameterName};"
-                        );
+                        builder.AppendLine($"{concreteType.FieldName} = {concreteType.ParameterName};");
                     }
                 }
 
                 foreach (var method in target.Methods)
                 {
                     builder.AppendLine("");
-                    // Dispatch method uses runtime type matching to forward to concrete validators.
                     AppendDispatchMethod(builder, target, method, constraint);
                 }
+            }
+
+            for (var i = 0; i < containingTypes.Length; i++)
+            {
+                builder.DecreaseIndent();
+                builder.AppendLine("}");
             }
         }
     }

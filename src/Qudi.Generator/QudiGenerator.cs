@@ -18,15 +18,6 @@ public sealed partial class QudiGenerator : IIncrementalGenerator
         var registrations = RegistrationAttrParser.QudiAttributeRegistration(context);
 
         var helperTargets = HelperTargetCollector.CollectTargets(context);
-        // Dispatch composites generate extra registrations (closed dispatchers for constraint types).
-        var dispatchRegistrations = helperTargets.Select(
-            static (targets, _) =>
-                DispatchCompositeRegistrationBuilder.Build(targets.DispatchCompositeTargets)
-        );
-
-        // Merge dispatch registrations into the normal registration pipeline.
-        registrations = registrations.CombineAndMerge(dispatchRegistrations);
-
         var projectBasicInfo = DependsCollector.QudiProjectBasicInfo(context);
         var projectInfo = DependsCollector.QudiProjectInfo(context);
 

@@ -452,7 +452,7 @@ public static class QudiAddServiceToContainer
 
     /// <summary>
     /// Dispatch composite fallback materialization intentionally supports only open generics
-    /// with a single type parameter, mirroring HelperTargetCollector.TryCreateDispatchCompositeTarget.
+    /// with a single type parameter, mirroring the generator dispatch target collector constraints.
     /// </summary>
     private static bool TryGetSingleGenericParameter(
         Type openGenericType,

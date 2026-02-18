@@ -56,7 +56,7 @@ internal static class RegistrationAttrParser
         var dispatchProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
             QudiDispatchAttribute,
             static (node, _) => true,
-            static (context, _) => CreateFromAttribute(context, asComposite: true)
+            static (context, _) => CreateFromAttribute(context, asDispatch: true)
         );
 
         var qudiRegistrations = qudiProvider.Collect();
@@ -82,7 +82,8 @@ internal static class RegistrationAttrParser
         GeneratorAttributeSyntaxContext context,
         string? lifetime = null,
         bool asDecorator = false,
-        bool asComposite = false
+        bool asComposite = false,
+        bool asDispatch = false
     )
     {
         // filter some invalid cases
@@ -125,11 +126,13 @@ internal static class RegistrationAttrParser
 
         var isDecorator = asDecorator || spec.MarkAsDecorator;
         var isComposite = asComposite || spec.MarkAsComposite;
-        // Dispatch composites are registered via generated concrete dispatcher types,
-        // not via the original open-generic composite registration.
-        var isCompositeDispatcher = false;
+        var isDispatchComposite = asDispatch;
+        // Dispatch entries are marked as dispatcher registrations so container layering can skip composite wrapping.
+        var isCompositeDispatcher = isDispatchComposite;
         var effectiveLifetime =
-            (isDecorator || isComposite) ? "Transient" : lifetime ?? spec.Lifetime;
+            (isDecorator || isComposite || isDispatchComposite)
+                ? "Transient"
+                : lifetime ?? spec.Lifetime;
 
         return spec with
         {

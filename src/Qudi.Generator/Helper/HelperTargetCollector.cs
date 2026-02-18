@@ -150,6 +150,29 @@ internal static class HelperTargetCollector
         };
         var typeKeyword = $"{(isRecord ? "record " : "")}{typeKind}";
 
+        if (isDispatch)
+        {
+            var dispatchTarget = TryCreateDirectDispatchTarget(
+                context,
+                attribute,
+                typeSymbol,
+                typeName,
+                typeNamespace,
+                typeKeyword,
+                containingTypesList,
+                dispatchMultiple
+            );
+
+            return dispatchTarget is null
+                ? blankInput
+                : new HelperGenerationInput
+                {
+                    InterfaceTargets = new EquatableArray<HelperInterfaceTarget>([]),
+                    ImplementingTargets = new EquatableArray<HelperImplementingTarget>([]),
+                    DispatchCompositeTargets = new EquatableArray<DispatchCompositeTarget>([dispatchTarget]),
+                };
+        }
+
         // Exclude System built-in types (IDisposable, IEquatable<T>, etc.) from auto-registration
         IEnumerable<INamedTypeSymbol> interfaces =
             asTypes.Length > 0
@@ -227,25 +250,6 @@ internal static class HelperTargetCollector
                         compositeMethodOverrides
                     ),
                 };
-            }
-            else if (isComposite && prunedInterfaces.Length == 1)
-            {
-                // Dispatch composites: no user-defined constructor, single generic interface.
-                var dispatchTarget = TryCreateDispatchCompositeTarget(
-                    context,
-                    typeSymbol,
-                    iface,
-                    typeName,
-                    typeNamespace,
-                    typeKeyword,
-                    containingTypesList,
-                    members,
-                    dispatchMultiple
-                );
-                if (dispatchTarget is not null)
-                {
-                    dispatchTargets.Add(dispatchTarget);
-                }
             }
             var decoratorParameterName =
                 isDecorator && constructorTarget is not null
@@ -928,72 +932,67 @@ internal static class HelperTargetCollector
         };
     }
 
-    private static DispatchCompositeTarget? TryCreateDispatchCompositeTarget(
+    private static DispatchCompositeTarget? TryCreateDirectDispatchTarget(
         GeneratorAttributeSyntaxContext context,
+        AttributeData attribute,
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol interfaceSymbol,
         string typeName,
         string typeNamespace,
         string typeKeyword,
         List<ContainingTypeInfo> containingTypes,
-        ImmutableArray<HelperMember> members,
         bool multiple
     )
     {
-        if (!typeSymbol.IsGenericType || typeSymbol.TypeParameters.Length != 1)
-        {
-            return null;
-        }
-
-        if (
-            !interfaceSymbol.IsGenericType
-            || interfaceSymbol.TypeArguments.Length != 1
-            || interfaceSymbol.TypeArguments[0] is not ITypeParameterSymbol ifaceParam
-        )
-        {
-            return null;
-        }
-
-        var typeParam = typeSymbol.TypeParameters[0];
-        if (!SymbolEqualityComparer.Default.Equals(ifaceParam, typeParam))
-        {
-            return null;
-        }
-
-        // Dispatch composite uses generated constructor; skip if user already defined one.
+        // Dispatch uses generated constructor; skip if user already defined one.
         if (typeSymbol.InstanceConstructors.Any(ctor => !ctor.IsImplicitlyDeclared))
         {
             return null;
         }
 
-        // Require constraints so we can enumerate valid dispatch targets.
-        if (typeParam.ConstraintTypes.IsEmpty)
+        var explicitTarget = SGAttributeParser.GetValue<ITypeSymbol>(attribute, "Target") as INamedTypeSymbol;
+
+        var candidateInterfaces = typeSymbol
+            .AllInterfaces
+            .OfType<INamedTypeSymbol>()
+            .Where(i => i.IsGenericType && i.TypeArguments.Length == 1)
+            .Where(i =>
+                explicitTarget is null
+                || SymbolEqualityComparer.Default.Equals(i.TypeArguments[0], explicitTarget)
+            )
+            .ToImmutableArray();
+
+        // Target omitted: infer only when exactly one generic interface is implemented.
+        if (candidateInterfaces.Length != 1)
         {
             return null;
         }
 
-        // Concrete types come from constraint matching within the current compilation.
-        var concreteTypes = CollectConcreteTypes(context.SemanticModel.Compilation, typeParam);
+        var dispatchInterface = candidateInterfaces[0];
+
+        if (dispatchInterface.TypeArguments[0] is not INamedTypeSymbol dispatchTargetType)
+        {
+            return null;
+        }
+
+        if (explicitTarget is not null && !SymbolEqualityComparer.Default.Equals(dispatchTargetType, explicitTarget))
+        {
+            return null;
+        }
+
+        var members = CollectInterfaceMembers(dispatchInterface).ToImmutableArray();
+        var dispatchMethods = CollectDispatchCompositeMethods(dispatchInterface, members, dispatchTargetType);
+
+        var concreteTypes = CollectConcreteTypes(context.SemanticModel.Compilation, dispatchTargetType);
         if (concreteTypes.IsDefaultOrEmpty)
         {
             return null;
         }
 
-        var dispatchMethods = CollectDispatchCompositeMethods(interfaceSymbol, members, typeParam);
-
-        var compositeMethodOverrides = CollectCompositeMethodOverrides(
-            context,
-            typeSymbol,
-            members
-        );
-
-        // Create a field/parameter per concrete type so dispatchers can inject
-        // IEnumerable<IComponentValidator<Concrete>> for each matching type.
         var concreteTypeInfos = new List<DispatchCompositeConcreteType>();
         var usedFieldNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var concreteType in concreteTypes)
         {
-            var constructedInterface = interfaceSymbol.OriginalDefinition.Construct(concreteType);
+            var constructedInterface = dispatchInterface.OriginalDefinition.Construct(concreteType);
             var constructedInterfaceName = constructedInterface.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat
             );
@@ -1036,37 +1035,11 @@ internal static class HelperTargetCollector
             );
         }
 
-        var genericConstraints = CodeGenerationUtility.GetGenericConstraints(typeSymbol);
-        var genericArgs = CodeGenerationUtility.GetGenericTypeArguments(typeSymbol);
-        var interfaceHelperName = SanitizeIdentifier(
-            interfaceSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+        var compositeMethodOverrides = CollectCompositeMethodOverrides(
+            context,
+            typeSymbol,
+            members
         );
-
-        // Dispatchers are generated for each constraint type (e.g., IComponent) so
-        // the container can resolve IComponentValidator<IComponent> directly.
-        var constraintTypeInfos = new List<DispatchCompositeConstraintType>();
-        foreach (var constraint in typeParam.ConstraintTypes.OfType<INamedTypeSymbol>())
-        {
-            if (constraint.SpecialType == SpecialType.System_Object)
-            {
-                continue;
-            }
-
-            var constraintInterface = interfaceSymbol.OriginalDefinition.Construct(constraint);
-            var suffix = SanitizeIdentifier(
-                constraint.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
-            );
-            constraintTypeInfos.Add(
-                new DispatchCompositeConstraintType
-                {
-                    TypeName = constraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    Suffix = suffix,
-                    ConstructedInterfaceTypeName = constraintInterface.ToDisplayString(
-                        SymbolDisplayFormat.FullyQualifiedFormat
-                    ),
-                }
-            );
-        }
 
         return new DispatchCompositeTarget
         {
@@ -1077,18 +1050,27 @@ internal static class HelperTargetCollector
             ContainingTypes = new EquatableArray<ContainingTypeInfo>(
                 containingTypes.ToImmutableArray()
             ),
-            InterfaceName = interfaceSymbol.ToDisplayString(
+            InterfaceName = dispatchInterface.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat
             ),
-            InterfaceHelperName = interfaceHelperName,
+            InterfaceHelperName = SanitizeIdentifier(
+                dispatchInterface.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+            ),
             Methods = new EquatableArray<DispatchCompositeMethod>(dispatchMethods),
-            GenericTypeParameters = genericConstraints,
-            GenericTypeArguments = genericArgs,
+            GenericTypeParameters = string.Empty,
+            GenericTypeArguments = string.Empty,
             ConcreteTypes = new EquatableArray<DispatchCompositeConcreteType>(
                 concreteTypeInfos.ToImmutableArray()
             ),
             ConstraintTypes = new EquatableArray<DispatchCompositeConstraintType>(
-                constraintTypeInfos.ToImmutableArray()
+                [
+                    new DispatchCompositeConstraintType
+                    {
+                        TypeName = dispatchTargetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                        Suffix = SanitizeIdentifier(dispatchTargetType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)),
+                        ConstructedInterfaceTypeName = dispatchInterface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                    },
+                ]
             ),
             Multiple = multiple,
             CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>(
@@ -1100,31 +1082,24 @@ internal static class HelperTargetCollector
     /// <summary>
     /// Collects concrete types from <paramref name="compilation"/> by scanning only
     /// <c>compilation.Assembly.GlobalNamespace</c>.
-    /// This current-compilation-only scope is intentional to keep discovery predictable
-    /// and avoid introducing external assembly dependencies during source generation.
     /// </summary>
     private static ImmutableArray<INamedTypeSymbol> CollectConcreteTypes(
         Compilation compilation,
-        ITypeParameterSymbol typeParam
+        INamedTypeSymbol dispatchTargetType
     )
     {
-        var constraints = typeParam.ConstraintTypes;
-        if (constraints.IsEmpty)
-        {
-            return ImmutableArray<INamedTypeSymbol>.Empty;
-        }
-
         var allTypes = new List<INamedTypeSymbol>();
         CollectTypes(compilation.Assembly.GlobalNamespace, allTypes);
 
-        var results = allTypes
+        return allTypes
             .Where(type => type.TypeKind is TypeKind.Class or TypeKind.Struct)
             .Where(type => !type.IsAbstract && !type.IsGenericType)
-            .Where(type => SatisfiesConstraints(type, typeParam, constraints))
+            .Where(type =>
+                SymbolEqualityComparer.Default.Equals(type, dispatchTargetType)
+                || type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, dispatchTargetType))
+            )
             .Distinct(NamedTypeSymbolComparer.Instance)
             .ToImmutableArray();
-
-        return results;
     }
 
     private static void CollectTypes(INamespaceSymbol ns, List<INamedTypeSymbol> results)
@@ -1156,65 +1131,10 @@ internal static class HelperTargetCollector
         }
     }
 
-    private static bool SatisfiesConstraints(
-        INamedTypeSymbol candidate,
-        ITypeParameterSymbol typeParam,
-        ImmutableArray<ITypeSymbol> constraints
-    )
-    {
-        if (typeParam.HasReferenceTypeConstraint && candidate.IsValueType)
-        {
-            return false;
-        }
-
-        if (typeParam.HasValueTypeConstraint && !candidate.IsValueType)
-        {
-            return false;
-        }
-
-        if (
-            typeParam.HasConstructorConstraint
-            && !candidate.IsValueType
-            && candidate.InstanceConstructors.All(c => c.Parameters.Length > 0)
-        )
-        {
-            return false;
-        }
-
-        return constraints.All(constraint => IsAssignable(candidate, constraint));
-    }
-
-    private static bool IsAssignable(INamedTypeSymbol candidate, ITypeSymbol constraint)
-    {
-        if (SymbolEqualityComparer.Default.Equals(candidate, constraint))
-        {
-            return true;
-        }
-
-        if (constraint.TypeKind == TypeKind.Interface)
-        {
-            return candidate.AllInterfaces.Any(i =>
-                SymbolEqualityComparer.Default.Equals(i, constraint)
-            );
-        }
-
-        var current = candidate.BaseType;
-        while (current is not null)
-        {
-            if (SymbolEqualityComparer.Default.Equals(current, constraint))
-            {
-                return true;
-            }
-            current = current.BaseType;
-        }
-
-        return false;
-    }
-
     private static ImmutableArray<DispatchCompositeMethod> CollectDispatchCompositeMethods(
         INamedTypeSymbol interfaceSymbol,
         ImmutableArray<HelperMember> members,
-        ITypeParameterSymbol typeParam
+        ITypeSymbol dispatchType
     )
     {
         var methods = interfaceSymbol
@@ -1278,7 +1198,7 @@ internal static class HelperTargetCollector
                 for (var i = 0; i < methodSymbol.Parameters.Length; i++)
                 {
                     var parameterType = methodSymbol.Parameters[i].Type;
-                    if (SymbolEqualityComparer.Default.Equals(parameterType, typeParam))
+                    if (SymbolEqualityComparer.Default.Equals(parameterType, dispatchType))
                     {
                         index = i;
                         break;
