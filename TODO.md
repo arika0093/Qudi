@@ -1,3 +1,13 @@
+## Issues
+I need your help with the following content:
+
+- Attribute-based registration itself is an anti-pattern because it creates a dependency on a specific library.
+    - Collecting via attributes may be unavoidable by nature, but the registration process could be handled in the Add... methods.
+- Duplicate handling and registration strategy. See: https://github.com/loresoft/Injectio
+- Enable ValidateOnBuild by default in MS.DI
+- Specifying order (Order) is also questionable...
+- memo: https://www.reddit.com/r/csharp/comments/1jqgslc/attribute_based_di_autoregistration/
+
 ## Generics
 ### G001: Multiple Implementations with Generics
 By resolving `IComponentValidator<IComponent>`, we can perform validation for all components sequentially as shown below.
