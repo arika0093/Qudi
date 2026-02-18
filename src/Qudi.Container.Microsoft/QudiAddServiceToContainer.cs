@@ -57,16 +57,11 @@ public static class QudiAddServiceToContainer
         // Composite dispatchers are generated as normal registrations (no layered composite factory),
         // so keep them in the base registration list.
         var registrations = materialized
-            .Where(t =>
-                !t.MarkAsDecorator
-                && (!t.MarkAsComposite || t.MarkAsDispatcher)
-            )
+            .Where(t => !t.MarkAsDecorator && (!t.MarkAsComposite || t.MarkAsDispatcher))
             .ToList();
         // Layered composites are handled by the composite factory (descriptor wrapping).
         var layeredRegistrations = materialized
-            .Where(t =>
-                t.MarkAsDecorator || (t.MarkAsComposite && !t.MarkAsDispatcher)
-            )
+            .Where(t => t.MarkAsDecorator || (t.MarkAsComposite && !t.MarkAsDispatcher))
             // Higher order is applied later (outer), so process lower order first.
             .OrderBy(t => t.Order)
             // Keep composites ahead of decorators when Order is the same so decorators wrap composites.
@@ -200,8 +195,7 @@ public static class QudiAddServiceToContainer
     {
         List<Type>? availableTypes = null;
         IReadOnlyList<Type> GetAvailableTypes() =>
-            availableTypes
-            ??= GenericConstraintUtility.CollectLoadableTypes(
+            availableTypes ??= GenericConstraintUtility.CollectLoadableTypes(
                 registrations.Select(r => r.Type.Assembly).Distinct().ToList()
             );
         var closedRegistrations = registrations
@@ -399,7 +393,13 @@ public static class QudiAddServiceToContainer
                 continue;
             }
 
-            if (!GenericConstraintUtility.SatisfiesConstraints(candidate, genericParameter, constraints))
+            if (
+                !GenericConstraintUtility.SatisfiesConstraints(
+                    candidate,
+                    genericParameter,
+                    constraints
+                )
+            )
             {
                 continue;
             }
@@ -416,7 +416,13 @@ public static class QudiAddServiceToContainer
                     continue;
                 }
 
-                if (!GenericConstraintUtility.SatisfiesConstraints(constraint, genericParameter, constraints))
+                if (
+                    !GenericConstraintUtility.SatisfiesConstraints(
+                        constraint,
+                        genericParameter,
+                        constraints
+                    )
+                )
                 {
                     continue;
                 }
@@ -468,7 +474,6 @@ public static class QudiAddServiceToContainer
         genericParameter = genericArguments[0];
         return genericParameter.IsGenericParameter;
     }
-
 
     private static IEnumerable<Type> CollectAllTypes(Type type)
     {

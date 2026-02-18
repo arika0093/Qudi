@@ -20,7 +20,11 @@ internal static class HelperCodeGenerator
         var implementingTargets = input.ImplementingTargets;
         var dispatchTargets = input.DispatchCompositeTargets;
 
-        if (interfaceTargets.Count == 0 && implementingTargets.Count == 0 && dispatchTargets.Count == 0)
+        if (
+            interfaceTargets.Count == 0
+            && implementingTargets.Count == 0
+            && dispatchTargets.Count == 0
+        )
         {
             return;
         }
@@ -48,7 +52,10 @@ internal static class HelperCodeGenerator
             }
             foreach (var target in dispatchTargets)
             {
-                CompositeDispatchCodeGenerator.AppendDispatchCompositeImplementation(builder, target);
+                CompositeDispatchCodeGenerator.AppendDispatchCompositeImplementation(
+                    builder,
+                    target
+                );
                 builder.AppendLine("");
             }
 

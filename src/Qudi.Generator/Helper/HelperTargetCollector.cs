@@ -24,21 +24,24 @@ internal static class HelperTargetCollector
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) => CreateTargets(ctx, isDecorator: true, isComposite: false, isDispatch: false)
+                static (ctx, _) =>
+                    CreateTargets(ctx, isDecorator: true, isComposite: false, isDispatch: false)
             )
             .Select(static (targets, _) => targets);
         var compositeTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiCompositeAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) => CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: false)
+                static (ctx, _) =>
+                    CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: false)
             )
             .Select(static (targets, _) => targets);
         var dispatchTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDispatchAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) => CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: true)
+                static (ctx, _) =>
+                    CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: true)
             )
             .Select(static (targets, _) => targets);
         return decoratorTargets
@@ -47,7 +50,12 @@ internal static class HelperTargetCollector
             .Combine(dispatchTargets.Collect())
             .Select(
                 static (targets, _) =>
-                    MergeTargets(targets.Left.Left.Concat(targets.Left.Right).Concat(targets.Right).ToImmutableArray())
+                    MergeTargets(
+                        targets
+                            .Left.Left.Concat(targets.Left.Right)
+                            .Concat(targets.Right)
+                            .ToImmutableArray()
+                    )
             );
     }
 
@@ -81,7 +89,10 @@ internal static class HelperTargetCollector
             return blankInput;
         }
 
-        var attributeName = isDecorator ? QudiDecoratorAttribute : isDispatch ? QudiDispatchAttribute : QudiCompositeAttribute;
+        var attributeName =
+            isDecorator ? QudiDecoratorAttribute
+            : isDispatch ? QudiDispatchAttribute
+            : QudiCompositeAttribute;
         var attribute = context
             .Attributes.Where(attr =>
                 SymbolEqualityComparer.Default.Equals(
@@ -280,7 +291,9 @@ internal static class HelperTargetCollector
     {
         var interfaceTargets = targets.SelectMany(t => t.InterfaceTargets).ToImmutableArray();
         var implementingTargets = targets.SelectMany(t => t.ImplementingTargets).ToImmutableArray();
-        var dispatchTargets = targets.SelectMany(t => t.DispatchCompositeTargets).ToImmutableArray();
+        var dispatchTargets = targets
+            .SelectMany(t => t.DispatchCompositeTargets)
+            .ToImmutableArray();
 
         var mergedInterfaces = MergeInterfaceTargets(interfaceTargets);
         var mergedImplementing = MergeImplementingTargets(implementingTargets, mergedInterfaces);
@@ -966,11 +979,7 @@ internal static class HelperTargetCollector
             return null;
         }
 
-        var dispatchMethods = CollectDispatchCompositeMethods(
-            interfaceSymbol,
-            members,
-            typeParam
-        );
+        var dispatchMethods = CollectDispatchCompositeMethods(interfaceSymbol, members, typeParam);
 
         var compositeMethodOverrides = CollectCompositeMethodOverrides(
             context,
@@ -997,7 +1006,8 @@ internal static class HelperTargetCollector
                 baseName = "Type";
             }
 
-            var fieldName = $"_{char.ToLowerInvariant(baseName[0])}{baseName.Substring(1)}Validators";
+            var fieldName =
+                $"_{char.ToLowerInvariant(baseName[0])}{baseName.Substring(1)}Validators";
             if (!usedFieldNames.Add(fieldName))
             {
                 var suffix = 1;
@@ -1064,7 +1074,9 @@ internal static class HelperTargetCollector
             ImplementingTypeNamespace = typeNamespace,
             ImplementingTypeKeyword = typeKeyword,
             ImplementingTypeAccessibility = GetAccessibility(typeSymbol.DeclaredAccessibility),
-            ContainingTypes = new EquatableArray<ContainingTypeInfo>(containingTypes.ToImmutableArray()),
+            ContainingTypes = new EquatableArray<ContainingTypeInfo>(
+                containingTypes.ToImmutableArray()
+            ),
             InterfaceName = interfaceSymbol.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat
             ),
@@ -1234,7 +1246,9 @@ internal static class HelperTargetCollector
 
                     if (
                         !string.Equals(
-                            symbolParameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                            symbolParameter.Type.ToDisplayString(
+                                SymbolDisplayFormat.FullyQualifiedFormat
+                            ),
                             memberParameter.TypeName,
                             StringComparison.Ordinal
                         )
@@ -1272,13 +1286,13 @@ internal static class HelperTargetCollector
                 }
             }
 
-            results.Add(new DispatchCompositeMethod { Member = member, DispatchParameterIndex = index });
+            results.Add(
+                new DispatchCompositeMethod { Member = member, DispatchParameterIndex = index }
+            );
         }
 
         return results.ToImmutableArray();
     }
-
-
 }
 
 internal sealed class NamedTypeSymbolComparer : IEqualityComparer<INamedTypeSymbol>

@@ -17,7 +17,11 @@ public static class GenericConstraintUtility
     /// <param name="genericParameter">The generic parameter with constraints to check.</param>
     /// <param name="constraints">The array of constraint types.</param>
     /// <returns>True if the candidate satisfies all constraints; otherwise, false.</returns>
-    public static bool SatisfiesConstraints(Type candidate, Type genericParameter, Type[] constraints)
+    public static bool SatisfiesConstraints(
+        Type candidate,
+        Type genericParameter,
+        Type[] constraints
+    )
     {
         var attributes = genericParameter.GenericParameterAttributes;
 

@@ -923,7 +923,13 @@ internal static class QudiVisualizationGraphBuilder
                 continue;
             }
 
-            if (!GenericConstraintUtility.SatisfiesConstraints(candidate, genericParameter, constraints))
+            if (
+                !GenericConstraintUtility.SatisfiesConstraints(
+                    candidate,
+                    genericParameter,
+                    constraints
+                )
+            )
             {
                 continue;
             }
@@ -934,7 +940,6 @@ internal static class QudiVisualizationGraphBuilder
         cache[openGenericType] = candidates;
         return candidates;
     }
-
 
     /// <summary>
     /// Build a subgraph starting from a specific root type.

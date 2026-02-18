@@ -144,9 +144,7 @@ internal static class CompositeDispatchCodeGenerator
                 }
 
                 builder.AppendLine("");
-                builder.AppendLine(
-                    $"public {className}({BuildConstructorParameters(target)})"
-                );
+                builder.AppendLine($"public {className}({BuildConstructorParameters(target)})");
                 using (builder.BeginScope())
                 {
                     foreach (var concreteType in target.ConcreteTypes)
@@ -243,7 +241,13 @@ internal static class CompositeDispatchCodeGenerator
 
             if (isVoid)
             {
-                AppendDispatchVoid(builder, target, member.Name, dispatchArguments, dispatchParamName);
+                AppendDispatchVoid(
+                    builder,
+                    target,
+                    member.Name,
+                    dispatchArguments,
+                    dispatchParamName
+                );
                 return;
             }
 
@@ -350,11 +354,15 @@ internal static class CompositeDispatchCodeGenerator
                     {
                         if (useAny)
                         {
-                            builder.AppendLine($"if (__validator.{methodName}({arguments})) return true;");
+                            builder.AppendLine(
+                                $"if (__validator.{methodName}({arguments})) return true;"
+                            );
                         }
                         else
                         {
-                            builder.AppendLine($"if (!__validator.{methodName}({arguments})) return false;");
+                            builder.AppendLine(
+                                $"if (!__validator.{methodName}({arguments})) return false;"
+                            );
                         }
                     }
                     builder.AppendLine(useAny ? "return false;" : "return true;");
@@ -408,7 +416,9 @@ internal static class CompositeDispatchCodeGenerator
                         builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
                         using (builder.BeginScope())
                         {
-                            builder.AppendLine($"__tasks.Add(__validator.{methodName}({arguments}));");
+                            builder.AppendLine(
+                                $"__tasks.Add(__validator.{methodName}({arguments}));"
+                            );
                         }
                         if (behavior == CompositeResultBehavior.Any)
                         {
@@ -423,14 +433,21 @@ internal static class CompositeDispatchCodeGenerator
                 }
                 else
                 {
-                    if (behavior == CompositeResultBehavior.Any || behavior == CompositeResultBehavior.Sequential)
+                    if (
+                        behavior == CompositeResultBehavior.Any
+                        || behavior == CompositeResultBehavior.Sequential
+                    )
                     {
-                        builder.AppendLine($"await {concrete.FieldName}.{methodName}({arguments});");
+                        builder.AppendLine(
+                            $"await {concrete.FieldName}.{methodName}({arguments});"
+                        );
                         builder.AppendLine("return;");
                     }
                     else
                     {
-                        builder.AppendLine($"return {concrete.FieldName}.{methodName}({arguments});");
+                        builder.AppendLine(
+                            $"return {concrete.FieldName}.{methodName}({arguments});"
+                        );
                     }
                 }
                 builder.DecreaseIndent();
@@ -438,7 +455,11 @@ internal static class CompositeDispatchCodeGenerator
 
             builder.AppendLine("default:");
             builder.IncreaseIndent();
-            builder.AppendLine(behavior == CompositeResultBehavior.Sequential ? "return;" : $"return {Task}.CompletedTask;");
+            builder.AppendLine(
+                behavior == CompositeResultBehavior.Sequential
+                    ? "return;"
+                    : $"return {Task}.CompletedTask;"
+            );
             builder.DecreaseIndent();
         }
     }
@@ -450,7 +471,13 @@ internal static class CompositeDispatchCodeGenerator
     {
         foreach (var overrideMethod in target.CompositeMethodOverrides)
         {
-            if (!string.Equals(overrideMethod.Name, method.Member.Name, System.StringComparison.Ordinal))
+            if (
+                !string.Equals(
+                    overrideMethod.Name,
+                    method.Member.Name,
+                    System.StringComparison.Ordinal
+                )
+            )
             {
                 continue;
             }
@@ -470,7 +497,13 @@ internal static class CompositeDispatchCodeGenerator
                     matches = false;
                     break;
                 }
-                if (!string.Equals(left.RefKindPrefix, right.RefKindPrefix, System.StringComparison.Ordinal))
+                if (
+                    !string.Equals(
+                        left.RefKindPrefix,
+                        right.RefKindPrefix,
+                        System.StringComparison.Ordinal
+                    )
+                )
                 {
                     matches = false;
                     break;
@@ -487,7 +520,6 @@ internal static class CompositeDispatchCodeGenerator
 
         return null;
     }
-
 
     private static void AppendDispatchEnumerable(
         IndentedStringBuilder builder,
@@ -514,7 +546,9 @@ internal static class CompositeDispatchCodeGenerator
                     builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
                     using (builder.BeginScope())
                     {
-                        builder.AppendLine($"var __serviceResult = __validator.{methodName}({arguments});");
+                        builder.AppendLine(
+                            $"var __serviceResult = __validator.{methodName}({arguments});"
+                        );
                         builder.AppendLine("if (__serviceResult != null)");
                         using (builder.BeginScope())
                         {
@@ -524,7 +558,9 @@ internal static class CompositeDispatchCodeGenerator
                 }
                 else
                 {
-                    builder.AppendLine($"var __serviceResult = {concrete.FieldName}.{methodName}({arguments});");
+                    builder.AppendLine(
+                        $"var __serviceResult = {concrete.FieldName}.{methodName}({arguments});"
+                    );
                     builder.AppendLine("if (__serviceResult != null)");
                     using (builder.BeginScope())
                     {
@@ -576,9 +612,10 @@ internal static class CompositeDispatchCodeGenerator
     {
         var openIndex = returnType.IndexOf('<');
         var typeName = openIndex >= 0 ? returnType.Substring(0, openIndex) : returnType;
-        return typeName is "global::System.Collections.Generic.IEnumerable"
-            or "global::System.Collections.Generic.ICollection"
-            or "global::System.Collections.Generic.IList";
+        return typeName
+            is "global::System.Collections.Generic.IEnumerable"
+                or "global::System.Collections.Generic.ICollection"
+                or "global::System.Collections.Generic.IList";
     }
 
     private static string BuildDispatchArguments(

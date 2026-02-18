@@ -257,9 +257,7 @@ internal static class RegistrationCodeGenerator
                 var usePublicLiteral = reg.UsePublic ? "true" : "false";
                 var markAsDecoratorLiteral = reg.MarkAsDecorator ? "true" : "false";
                 var markAsCompositeLiteral = reg.MarkAsComposite ? "true" : "false";
-                var markAsDispatcherLiteral = reg.MarkAsDispatcher
-                    ? "true"
-                    : "false";
+                var markAsDispatcherLiteral = reg.MarkAsDispatcher ? "true" : "false";
                 var exportLiteral = reg.Export ? "true" : "false";
                 builder.AppendLine(
                     $$"""

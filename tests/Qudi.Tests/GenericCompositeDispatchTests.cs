@@ -70,13 +70,9 @@ public sealed partial class GenericCompositeTests
         public bool Validate(IComponent component) => validator.Validate(component);
     }
 
-    public interface ISingleComponent
-    {
-    }
+    public interface ISingleComponent { }
 
-    public sealed class SingleDevice : ISingleComponent
-    {
-    }
+    public sealed class SingleDevice : ISingleComponent { }
 
     public interface ISingleComponentValidator<T>
         where T : ISingleComponent
