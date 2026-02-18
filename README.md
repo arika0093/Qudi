@@ -700,9 +700,9 @@ dotnet add package Qudi.Container.Microsoft
   * [Keyed Registration](#keyed-registration)
   * [Conditional Registration](#conditional-registration)
 * **Advanced**
-  * [Generic Registration](#generic-registration)
   * [Decorator Pattern](#decorator-pattern)
   * [Composite Pattern](#composite-pattern)
+  * [Generic Registration](#generic-registration)
 * **Visualization**
   * [Visualize Registration](#visualize-registration)
 * **Customization**
@@ -1431,6 +1431,25 @@ and you can also register specialized implementations for specific types.
 This allows you to provide a default generic implementation while also providing specialized implementations for specific types.
 
 ```csharp
+// default(fallback) implementation
+[DITransient]
+public class NullComponentValidator<T> : IComponentValidator<T> where T : IComponent
+{
+    public bool Validate(T component) => true; // always valid
+}
+
+// specialized implementation for Battery
+[DITransient]
+public class BatteryValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* specific validation logic */ }
+}
+```
+
+<details>
+<summary>Example Code Snippets</summary>
+
+```csharp
 // components
 public interface IComponent;
 public class Battery : IComponent { /* ... */ }
@@ -1458,6 +1477,12 @@ public class BatteryValidator : IComponentValidator<Battery>
     public bool Validate(Battery component) { /* specific validation logic */ }
 }
 
+[DITransient]
+public class BatteryAnotherValidator : IComponentValidator<Battery>
+{
+    public bool Validate(Battery component) { /* another validation logic */ }
+}
+
 // and for Screen
 [DITransient]
 public class ScreenValidator : IComponentValidator<Screen>
@@ -1468,29 +1493,6 @@ public class ScreenValidator : IComponentValidator<Screen>
 // -----------
 // usage
 [DITransient]
-public class ComponentValidator<T>(IComponentValidator<T> validator) where T : IComponent
-{
-    public bool Check(T component) => validator.Validate(component);
-}
-```
-
-If multiple registrations are made for the same type, you can resolve them all by using `IEnumerable<IComponentValidator<T>>` on the usage side.
-
-```csharp
-[DITransient]
-public class BatteryValidator : IComponentValidator<Battery>
-{
-    public bool Validate(Battery component) { /* specific validation logic */ }
-}
-
-[DITransient]
-public class BatteryAnotherValidator : IComponentValidator<Battery>
-{
-    public bool Validate(Battery component) { /* another validation logic */ }
-}
-
-// -----------
-// usage
 public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
     where T : IComponent
 {
@@ -1505,6 +1507,8 @@ public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validator
     }
 }
 ```
+
+</details>
 
 ```mermaid
 flowchart LR
@@ -1577,10 +1581,7 @@ var keyboard = new Keyboard { KeyCount = 104 };
 var services = new ServiceCollection();
 services.AddQudiServices(conf =>
 {
-    conf.EnableVisualizationOutput(option =>
-    {
-        option.AddOutput("generics-composite.md");
-    });
+    conf.EnableVisualizationOutput();
 });
 
 var provider = services.BuildServiceProvider();
@@ -1701,30 +1702,30 @@ public partial class ComponentValidatorDispatcher
         _keyboardValidators = keyboardValidators;
     }
     
-    public partial bool Validate(global::IComponent component)
+    public bool Validate(global::IComponent component)
     {
         switch (component)
         {
             case global::Battery __arg:
                 foreach (var __validator in _batteryValidators)
                 {
-                    if (__validator.Validate(__arg)) return true;
+                    if (!__validator.Validate(__arg)) return false;
                 }
-                return false;
+                return true;
             case global::Screen __arg:
                 foreach (var __validator in _screenValidators)
                 {
-                    if (__validator.Validate(__arg)) return true;
+                    if (!__validator.Validate(__arg)) return false;
                 }
-                return false;
+                return true;
             case global::Keyboard __arg:
                 foreach (var __validator in _keyboardValidators)
                 {
-                    if (__validator.Validate(__arg)) return true;
+                    if (!__validator.Validate(__arg)) return false;
                 }
-                return false;
+                return true;
             default:
-                return false;
+                return true;
         }
     }
 }
