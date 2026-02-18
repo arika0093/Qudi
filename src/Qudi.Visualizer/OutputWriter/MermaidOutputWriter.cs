@@ -169,6 +169,24 @@ internal static class MermaidOutputWriter
             }
         }
 
+        // Add styles for dispatcher nodes
+        var dispatcherNodes = graph
+            .Nodes.Where(n => n.Kind == "dispatcher" && n.IsConditionMatched && !n.IsExternal)
+            .ToList();
+        if (dispatcherNodes.Count > 0)
+        {
+            sb.AppendLine(
+                "    classDef dispatcher fill:#fff2b3,stroke:#f6c445,stroke-width:2px,color:#000;"
+            );
+            foreach (var node in dispatcherNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} dispatcher;");
+                }
+            }
+        }
+
         // Add styles for condition-unmatched interface nodes
         var unmatchedInterfaceNodes = graph
             .Nodes.Where(n =>
@@ -245,6 +263,24 @@ internal static class MermaidOutputWriter
                 if (ids.TryGetValue(node.Id, out var id))
                 {
                     sb.AppendLine($"    class {id} unmatchedComposite;");
+                }
+            }
+        }
+
+        // Add styles for condition-unmatched dispatcher nodes
+        var unmatchedDispatcherNodes = graph
+            .Nodes.Where(n => n.Kind == "dispatcher" && !n.IsConditionMatched)
+            .ToList();
+        if (unmatchedDispatcherNodes.Count > 0)
+        {
+            sb.AppendLine(
+                "    classDef unmatchedDispatcher fill:#f5f5f5,stroke:#f6c445,stroke-width:1px,stroke-dasharray:3 3,color:#999;"
+            );
+            foreach (var node in unmatchedDispatcherNodes)
+            {
+                if (ids.TryGetValue(node.Id, out var id))
+                {
+                    sb.AppendLine($"    class {id} unmatchedDispatcher;");
                 }
             }
         }

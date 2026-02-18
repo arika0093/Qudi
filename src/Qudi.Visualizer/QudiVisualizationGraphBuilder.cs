@@ -537,7 +537,12 @@ internal static class QudiVisualizationGraphBuilder
 
         foreach (var nodeId in nodes.Values.Select(node => node.Id).ToList())
         {
-            var nodeType = FindTypeFromNodeId(nodeId, allRegistrations, availableTypes);
+            var nodeType = FindTypeFromNodeId(
+                nodeId,
+                allRegistrations,
+                availableTypes,
+                candidateServiceTypes
+            );
             if (
                 nodeType == null
                 || !candidateServiceTypes.Contains(nodeType)
@@ -617,7 +622,8 @@ internal static class QudiVisualizationGraphBuilder
     private static Type? FindTypeFromNodeId(
         string nodeId,
         IReadOnlyList<TypeRegistrationInfo> registrations,
-        IReadOnlyList<Type> availableTypes
+        IReadOnlyList<Type> availableTypes,
+        IReadOnlyCollection<Type> candidateServiceTypes
     )
     {
         // Try to find the type from registrations
@@ -658,15 +664,17 @@ internal static class QudiVisualizationGraphBuilder
             }
         }
 
-        foreach (var candidate in availableTypes)
+        var availableMatch = availableTypes.FirstOrDefault(candidate =>
+            QudiVisualizationAnalyzer.ToFullDisplayName(candidate) == nodeId
+        );
+        if (availableMatch != null)
         {
-            if (QudiVisualizationAnalyzer.ToFullDisplayName(candidate) == nodeId)
-            {
-                return candidate;
-            }
+            return availableMatch;
         }
 
-        return null;
+        return candidateServiceTypes.FirstOrDefault(candidate =>
+            QudiVisualizationAnalyzer.ToFullDisplayName(candidate) == nodeId
+        );
     }
 
     private static void AddNode(
