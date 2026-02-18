@@ -1828,6 +1828,9 @@ flowchart LR
 
 ```
 
+> [!WARNING]
+> Currently, dispatch only works for types that exist within the same project. This is due to limitations in the implementation of the Source Generator.
+
 ## Visualize Registration
 ### Setup
 Qudi collects registration information and generates code.
