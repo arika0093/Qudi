@@ -104,9 +104,8 @@ internal static class HelperTargetCollector
         var asTypes = GetExplicitAsTypes(attribute);
         var useIntercept =
             isDecorator && (SGAttributeParser.GetValue<bool?>(attribute, "UseIntercept") ?? false);
-        var dispatchMultiple = isDispatch
-            ? (SGAttributeParser.GetValue<bool?>(attribute, "Multiple") ?? true)
-            : true;
+        var dispatchMultiple =
+            !isDispatch || (SGAttributeParser.GetValue<bool?>(attribute, "Multiple") ?? true);
 
         // Collect nested class information (from innermost to outermost)
         var containingTypesList = new List<ContainingTypeInfo>();
