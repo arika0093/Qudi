@@ -108,6 +108,7 @@ internal static class QudiVisualizationGraphBuilder
             var implId = QudiVisualizationAnalyzer.ToFullDisplayName(implType);
             var isDecorator = registration.MarkAsDecorator;
             var isComposite = registration.MarkAsComposite;
+            var isDispatcher = registration.MarkAsDispatcher;
             var isMatched = view.IsMatched;
 
             // Skip self-registration (AddSingleton<Service> pattern)
@@ -125,6 +126,10 @@ internal static class QudiVisualizationGraphBuilder
                 {
                     AddNode(nodes, implType, "decorator", isMatched, false);
                 }
+                else if (isDispatcher)
+                {
+                    AddNode(nodes, implType, "dispatcher", isMatched, false);
+                }
                 else if (isComposite)
                 {
                     AddNode(nodes, implType, "composite", isMatched, false);
@@ -137,6 +142,18 @@ internal static class QudiVisualizationGraphBuilder
                 // Add service nodes and edges (if it's a decorator, we will connect it to the decorated service later in the dependencies section)
                 foreach (var serviceType in view.ServiceTypes)
                 {
+                    if (serviceType == implType)
+                    {
+                        // Avoid self-loop edges when self is part of service types.
+                        continue;
+                    }
+
+                    if (serviceType.IsGenericTypeDefinition)
+                    {
+                        // Open-generic services are rendered via closed-service links instead.
+                        continue;
+                    }
+
                     var serviceId = QudiVisualizationAnalyzer.ToFullDisplayName(serviceType);
                     AddNode(nodes, serviceType, "service", isMatched, false);
 
@@ -502,7 +519,12 @@ internal static class QudiVisualizationGraphBuilder
 
         foreach (var registration in allRegistrations)
         {
-            foreach (var requiredType in registration.RequiredTypes)
+            var expandedRequiredTypes = ExpandRequiredTypes(
+                registration,
+                availableTypes,
+                constraintCandidateCache
+            );
+            foreach (var requiredType in expandedRequiredTypes)
             {
                 candidateServiceTypes.Add(requiredType);
                 var elementType = TryGetCollectionElementType(requiredType);
@@ -515,7 +537,7 @@ internal static class QudiVisualizationGraphBuilder
 
         foreach (var nodeId in nodes.Values.Select(node => node.Id).ToList())
         {
-            var nodeType = FindTypeFromNodeId(nodeId, allRegistrations);
+            var nodeType = FindTypeFromNodeId(nodeId, allRegistrations, availableTypes);
             if (
                 nodeType == null
                 || !candidateServiceTypes.Contains(nodeType)
@@ -594,7 +616,8 @@ internal static class QudiVisualizationGraphBuilder
 
     private static Type? FindTypeFromNodeId(
         string nodeId,
-        IReadOnlyList<TypeRegistrationInfo> registrations
+        IReadOnlyList<TypeRegistrationInfo> registrations,
+        IReadOnlyList<Type> availableTypes
     )
     {
         // Try to find the type from registrations
@@ -632,6 +655,14 @@ internal static class QudiVisualizationGraphBuilder
             if (matchingRequiredElementType != null)
             {
                 return matchingRequiredElementType;
+            }
+        }
+
+        foreach (var candidate in availableTypes)
+        {
+            if (QudiVisualizationAnalyzer.ToFullDisplayName(candidate) == nodeId)
+            {
+                return candidate;
             }
         }
 
@@ -706,7 +737,10 @@ internal static class QudiVisualizationGraphBuilder
     {
         // Ensure composites/decorators keep their visual style even if they were added earlier
         // as generic implementations.
-        if ((newKind == "composite" || newKind == "decorator") && existingKind == "implementation")
+        if (
+            (newKind == "composite" || newKind == "decorator" || newKind == "dispatcher")
+            && existingKind == "implementation"
+        )
         {
             return true;
         }
