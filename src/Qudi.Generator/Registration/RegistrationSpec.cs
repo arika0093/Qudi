@@ -43,7 +43,7 @@ internal sealed record RegistrationSpec
     public bool MarkAsComposite { get; init; }
 
     // Whether to mark this composite as dispatch-based (no inner-service ctor).
-    public bool MarkAsCompositeDispatcher { get; init; }
+    public bool MarkAsDispatcher { get; init; }
 
     // Whether to export this type for visualization.
     public bool Export { get; init; }

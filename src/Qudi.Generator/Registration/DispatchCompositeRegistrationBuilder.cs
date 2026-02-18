@@ -58,7 +58,7 @@ internal static class DispatchCompositeRegistrationBuilder
                         MarkAsDecorator = false,
                         MarkAsComposite = false,
                         // Mark dispatcher so container avoids layered composite handling.
-                        MarkAsCompositeDispatcher = true,
+                        MarkAsDispatcher = true,
                         Export = false,
                     }
                 );

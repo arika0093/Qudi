@@ -59,13 +59,13 @@ public static class QudiAddServiceToContainer
         var registrations = materialized
             .Where(t =>
                 !t.MarkAsDecorator
-                && (!t.MarkAsComposite || t.MarkAsCompositeDispatcher)
+                && (!t.MarkAsComposite || t.MarkAsDispatcher)
             )
             .ToList();
         // Layered composites are handled by the composite factory (descriptor wrapping).
         var layeredRegistrations = materialized
             .Where(t =>
-                t.MarkAsDecorator || (t.MarkAsComposite && !t.MarkAsCompositeDispatcher)
+                t.MarkAsDecorator || (t.MarkAsComposite && !t.MarkAsDispatcher)
             )
             // Higher order is applied later (outer), so process lower order first.
             .OrderBy(t => t.Order)
@@ -229,7 +229,7 @@ public static class QudiAddServiceToContainer
                 continue;
             }
 
-            if (registration.MarkAsCompositeDispatcher)
+            if (registration.MarkAsDispatcher)
             {
                 // Dispatch composites stay open-generic here; the generator emits closed dispatcher
                 // registrations so the container doesn't need to synthesize them.
@@ -256,7 +256,7 @@ public static class QudiAddServiceToContainer
 
                 // For composites, materialize for all closed types that have implementations.
                 // Dispatch composites are handled by generated dispatcher registrations instead.
-                if (registration.MarkAsComposite && !registration.MarkAsCompositeDispatcher)
+                if (registration.MarkAsComposite && !registration.MarkAsDispatcher)
                 {
                     candidates = closedRegistrations
                         .Where(t =>

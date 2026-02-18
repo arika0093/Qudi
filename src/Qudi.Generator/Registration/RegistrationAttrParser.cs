@@ -140,7 +140,7 @@ internal static class RegistrationAttrParser
             Lifetime = effectiveLifetime,
             MarkAsDecorator = isDecorator,
             MarkAsComposite = isComposite,
-            MarkAsCompositeDispatcher = isCompositeDispatcher,
+            MarkAsDispatcher = isCompositeDispatcher,
         };
     }
 
