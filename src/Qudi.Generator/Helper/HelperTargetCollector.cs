@@ -169,7 +169,9 @@ internal static class HelperTargetCollector
                 {
                     InterfaceTargets = new EquatableArray<HelperInterfaceTarget>([]),
                     ImplementingTargets = new EquatableArray<HelperImplementingTarget>([]),
-                    DispatchCompositeTargets = new EquatableArray<DispatchCompositeTarget>([dispatchTarget]),
+                    DispatchCompositeTargets = new EquatableArray<DispatchCompositeTarget>([
+                        dispatchTarget,
+                    ]),
                 };
         }
 
@@ -949,11 +951,11 @@ internal static class HelperTargetCollector
             return null;
         }
 
-        var explicitTarget = SGAttributeParser.GetValue<ITypeSymbol>(attribute, "Target") as INamedTypeSymbol;
+        var explicitTarget =
+            SGAttributeParser.GetValue<ITypeSymbol>(attribute, "Target") as INamedTypeSymbol;
 
         var candidateInterfaces = typeSymbol
-            .AllInterfaces
-            .OfType<INamedTypeSymbol>()
+            .AllInterfaces.OfType<INamedTypeSymbol>()
             .Where(i => i.IsGenericType && i.TypeArguments.Length == 1)
             .Where(i =>
                 explicitTarget is null
@@ -974,15 +976,25 @@ internal static class HelperTargetCollector
             return null;
         }
 
-        if (explicitTarget is not null && !SymbolEqualityComparer.Default.Equals(dispatchTargetType, explicitTarget))
+        if (
+            explicitTarget is not null
+            && !SymbolEqualityComparer.Default.Equals(dispatchTargetType, explicitTarget)
+        )
         {
             return null;
         }
 
         var members = CollectInterfaceMembers(dispatchInterface).ToImmutableArray();
-        var dispatchMethods = CollectDispatchCompositeMethods(dispatchInterface, members, dispatchTargetType);
+        var dispatchMethods = CollectDispatchCompositeMethods(
+            dispatchInterface,
+            members,
+            dispatchTargetType
+        );
 
-        var concreteTypes = CollectConcreteTypes(context.SemanticModel.Compilation, dispatchTargetType);
+        var concreteTypes = CollectConcreteTypes(
+            context.SemanticModel.Compilation,
+            dispatchTargetType
+        );
         if (concreteTypes.IsDefaultOrEmpty)
         {
             return null;
@@ -1062,16 +1074,22 @@ internal static class HelperTargetCollector
             ConcreteTypes = new EquatableArray<DispatchCompositeConcreteType>(
                 concreteTypeInfos.ToImmutableArray()
             ),
-            ConstraintTypes = new EquatableArray<DispatchCompositeConstraintType>(
-                [
-                    new DispatchCompositeConstraintType
-                    {
-                        TypeName = dispatchTargetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                        Suffix = SanitizeIdentifier(dispatchTargetType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)),
-                        ConstructedInterfaceTypeName = dispatchInterface.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    },
-                ]
-            ),
+            ConstraintTypes = new EquatableArray<DispatchCompositeConstraintType>([
+                new DispatchCompositeConstraintType
+                {
+                    TypeName = dispatchTargetType.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    ),
+                    Suffix = SanitizeIdentifier(
+                        dispatchTargetType.ToDisplayString(
+                            SymbolDisplayFormat.MinimallyQualifiedFormat
+                        )
+                    ),
+                    ConstructedInterfaceTypeName = dispatchInterface.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    ),
+                },
+            ]),
             Multiple = multiple,
             CompositeMethodOverrides = new EquatableArray<CompositeMethodOverride>(
                 compositeMethodOverrides
@@ -1096,7 +1114,9 @@ internal static class HelperTargetCollector
             .Where(type => !type.IsAbstract && !type.IsGenericType)
             .Where(type =>
                 SymbolEqualityComparer.Default.Equals(type, dispatchTargetType)
-                || type.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, dispatchTargetType))
+                || type.AllInterfaces.Any(i =>
+                    SymbolEqualityComparer.Default.Equals(i, dispatchTargetType)
+                )
             )
             .Distinct(NamedTypeSymbolComparer.Instance)
             .ToImmutableArray();

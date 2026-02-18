@@ -190,3 +190,104 @@ public sealed class QudiAttributeSample : IQudiAttributeSample
 {
     public string Value => "by-qudi-attribute";
 }
+
+public interface IAsTypesSelfOnlySample
+{
+    string Id { get; }
+}
+
+[Qudi(AsTypesFallback = AsTypesFallback.Self)]
+public sealed class AsTypesSelfOnlySample : IAsTypesSelfOnlySample
+{
+    public string Id => "self-only";
+}
+
+public interface IAsTypesInterfacesOnlySample
+{
+    string Id { get; }
+}
+
+[Qudi(AsTypesFallback = AsTypesFallback.Interfaces)]
+public sealed class AsTypesInterfacesOnlySample : IAsTypesInterfacesOnlySample
+{
+    public string Id => "interfaces-only";
+}
+
+public interface IAsTypesSelfWithInterfaceSample
+{
+    string Id { get; }
+}
+
+[Qudi(AsTypesFallback = AsTypesFallback.SelfWithInterface)]
+public sealed class AsTypesSelfWithInterfaceSample : IAsTypesSelfWithInterfaceSample
+{
+    public string Id => "self-with-interface";
+}
+
+public interface IDuplicateAddSample
+{
+    string Id { get; }
+}
+
+[Qudi(Duplicate = DuplicateHandling.Add, Order = 0)]
+public sealed class DuplicateAddSampleFirst : IDuplicateAddSample
+{
+    public string Id => "add-first";
+}
+
+[Qudi(Duplicate = DuplicateHandling.Add, Order = 1)]
+public sealed class DuplicateAddSampleSecond : IDuplicateAddSample
+{
+    public string Id => "add-second";
+}
+
+public interface IDuplicateSkipSample
+{
+    string Id { get; }
+}
+
+[Qudi(Duplicate = DuplicateHandling.Skip, Order = 0)]
+public sealed class DuplicateSkipSampleFirst : IDuplicateSkipSample
+{
+    public string Id => "skip-first";
+}
+
+[Qudi(Duplicate = DuplicateHandling.Skip, Order = 1)]
+public sealed class DuplicateSkipSampleSecond : IDuplicateSkipSample
+{
+    public string Id => "skip-second";
+}
+
+public interface IDuplicateReplaceSample
+{
+    string Id { get; }
+}
+
+[Qudi(Duplicate = DuplicateHandling.Replace, Order = 0)]
+public sealed class DuplicateReplaceSampleFirst : IDuplicateReplaceSample
+{
+    public string Id => "replace-first";
+}
+
+[Qudi(Duplicate = DuplicateHandling.Replace, Order = 1)]
+public sealed class DuplicateReplaceSampleSecond : IDuplicateReplaceSample
+{
+    public string Id => "replace-second";
+}
+
+public interface IDuplicateThrowSample
+{
+    string Id { get; }
+}
+
+[Qudi(Duplicate = DuplicateHandling.Throw, Order = 0, When = ["ThrowTest"])]
+public sealed class DuplicateThrowSampleFirst : IDuplicateThrowSample
+{
+    public string Id => "throw-first";
+}
+
+[Qudi(Duplicate = DuplicateHandling.Throw, Order = 1, When = ["ThrowTest"])]
+public sealed class DuplicateThrowSampleSecond : IDuplicateThrowSample
+{
+    public string Id => "throw-second";
+}

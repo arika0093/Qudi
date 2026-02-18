@@ -60,7 +60,8 @@ public sealed partial class GenericCompositeTests
     public partial class ComponentValidatorDispatcher : IComponentValidator<IComponent>;
 
     [QudiDispatch(Target = typeof(ISingleComponent), Multiple = false)]
-    public partial class SingleComponentValidatorDispatcher : ISingleComponentValidator<ISingleComponent>;
+    public partial class SingleComponentValidatorDispatcher
+        : ISingleComponentValidator<ISingleComponent>;
 
     [DITransient]
     public class ComponentValidator(IComponentValidator<IComponent> validator)

@@ -268,6 +268,8 @@ internal static class RegistrationCodeGenerator
                         When = new {{List}}<string> { {{when}} },
                         RequiredTypes = new {{List}}<global::System.Type> { {{requiredTypes}} },
                         AsTypes = new {{List}}<global::System.Type> { {{asTypes}} },
+                        Duplicate = (global::Qudi.DuplicateHandling){{reg.Duplicate}},
+                        AsTypesFallback = (global::Qudi.AsTypesFallback){{reg.AsTypesFallback}},
                         UsePublic = {{usePublicLiteral}},
                         Key = {{(reg.KeyLiteral is null ? "null" : reg.KeyLiteral)}},
                         Order = {{reg.Order}},

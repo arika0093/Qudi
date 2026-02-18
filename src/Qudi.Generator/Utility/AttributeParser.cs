@@ -48,6 +48,36 @@ internal static class SGAttributeParser
         return null;
     }
 
+    /// <summary>
+    /// Get a named argument value as int from an attribute (supports enum values).
+    /// </summary>
+    public static int? GetValueAsInt(AttributeData attribute, string name)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key != name)
+            {
+                continue;
+            }
+
+            if (argument.Value.Value is int intValue)
+            {
+                return intValue;
+            }
+
+            if (argument.Value.Value is null)
+            {
+                return null;
+            }
+
+            if (argument.Value.Value is IConvertible convertible)
+            {
+                return Convert.ToInt32(convertible, CultureInfo.InvariantCulture);
+            }
+        }
+        return null;
+    }
+
     private static string TypedConstantToLiteral(TypedConstant constant)
     {
         if (constant.IsNull)

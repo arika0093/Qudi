@@ -10,6 +10,8 @@ namespace Qudi.Generator.Registration;
 internal static class RegistrationAttrParser
 {
     private const string DefaultLifetime = "Singleton";
+    private const int DefaultDuplicate = 3; // DuplicateHandling.Add
+    private const int DefaultAsTypesFallback = 2; // AsTypesFallback.SelfWithInterface
 
     private const string QudiAttribute = $"Qudi.QudiAttribute";
     private const string QudiSingletonAttribute = $"Qudi.DISingletonAttribute";
@@ -116,14 +118,6 @@ internal static class RegistrationAttrParser
                 .Where(t => !ContainsTypeParameters(t))
                 .Select(t => CodeGenerationUtility.ToTypeOfLiteral(t))
         );
-        // default AsTypes to all implemented interfaces if not specified
-        // Exclude System built-in types (IDisposable, IEquatable<T>, etc.) to avoid unwanted registrations
-        var defaultAsTypes = new EquatableArray<string>(
-            typeSymbol
-                .AllInterfaces.Where(i => !CodeGenerationUtility.IsSystemBuiltInType(i))
-                .Select(CodeGenerationUtility.ToTypeOfLiteral)
-        );
-
         var isDecorator = asDecorator || spec.MarkAsDecorator;
         var isComposite = asComposite || spec.MarkAsComposite;
         var isDispatchComposite = asDispatch;
@@ -139,7 +133,7 @@ internal static class RegistrationAttrParser
             TypeName = typeFullName,
             Namespace = DetermineNamespace(typeSymbol),
             RequiredTypes = requiredTypes,
-            AsTypes = spec.AsTypes.Count > 0 ? spec.AsTypes : defaultAsTypes,
+            AsTypes = spec.AsTypes,
             Lifetime = effectiveLifetime,
             MarkAsDecorator = isDecorator,
             MarkAsComposite = isComposite,
@@ -158,6 +152,9 @@ internal static class RegistrationAttrParser
             Lifetime = SGAttributeParser.GetValue<string>(attr, "Lifetime") ?? DefaultLifetime,
             When = SGAttributeParser.GetValues<string>(attr, "When"),
             AsTypes = SGAttributeParser.GetValueAsTypes(attr, "AsTypes"),
+            Duplicate = SGAttributeParser.GetValueAsInt(attr, "Duplicate") ?? DefaultDuplicate,
+            AsTypesFallback =
+                SGAttributeParser.GetValueAsInt(attr, "AsTypesFallback") ?? DefaultAsTypesFallback,
             UsePublic = SGAttributeParser.GetValue<bool?>(attr, "UsePublic") ?? true,
             KeyLiteral = SGAttributeParser.GetValueAsLiteral(attr, "Key"),
             Order = SGAttributeParser.GetValue<int?>(attr, "Order") ?? 0,

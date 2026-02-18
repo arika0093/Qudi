@@ -44,7 +44,7 @@ internal static class CompositeDispatchCodeGenerator
             );
             using (builder.BeginScope())
             {
-                // recieved dependencies for each concrete type, 
+                // recieved dependencies for each concrete type,
                 // either as the service itself or as an enumerable if multiple.
                 foreach (var concreteType in target.ConcreteTypes)
                 {
@@ -62,7 +62,9 @@ internal static class CompositeDispatchCodeGenerator
                 {
                     foreach (var concreteType in target.ConcreteTypes)
                     {
-                        builder.AppendLine($"{concreteType.FieldName} = {concreteType.ParameterName};");
+                        builder.AppendLine(
+                            $"{concreteType.FieldName} = {concreteType.ParameterName};"
+                        );
                     }
                 }
 
@@ -126,7 +128,9 @@ internal static class CompositeDispatchCodeGenerator
                 : string.Empty;
         var isPartialRequired = overrideBehavior.HasValue;
         var partialModifier = isPartialRequired ? "partial " : string.Empty;
-        builder.AppendLine($"public {partialModifier}{asyncModifier}{returnType} {member.Name}({parameters})");
+        builder.AppendLine(
+            $"public {partialModifier}{asyncModifier}{returnType} {member.Name}({parameters})"
+        );
         using (builder.BeginScope())
         {
             if (method.DispatchParameterIndex < 0)

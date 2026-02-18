@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Qudi.Core.Internal;
 
 namespace Qudi.Visualizer;
 
@@ -76,10 +77,10 @@ internal static class QudiVisualizationAnalyzer
             .Registrations.Where(r => IsApplicable(r, configuration.Conditions))
             .Select(registration =>
             {
-                var serviceTypes =
-                    registration.AsTypes.Count > 0
-                        ? registration.AsTypes.Distinct().ToList()
-                        : [registration.Type];
+                var serviceTypes = RegistrationTypeUtility
+                    .GetEffectiveAsTypes(registration)
+                    .Distinct()
+                    .ToList();
 
                 return new RegistrationView(
                     registration,

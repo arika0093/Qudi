@@ -24,6 +24,12 @@ internal sealed record RegistrationSpec
     // The types to register the service as.
     public EquatableArray<string> AsTypes { get; init; } = new([]);
 
+    // Duplicate registration handling strategy.
+    public int Duplicate { get; init; }
+
+    // AsTypes fallback strategy when AsTypes is omitted.
+    public int AsTypesFallback { get; init; }
+
     // Required types for this registration.
     public EquatableArray<string> RequiredTypes { get; init; } = new([]);
 

@@ -33,6 +33,16 @@ public sealed record TypeRegistrationInfo
     public IReadOnlyList<Type> AsTypes { get; init; } = [];
 
     /// <summary>
+    /// Specifies how to handle duplicate registrations.
+    /// </summary>
+    public DuplicateHandling Duplicate { get; init; } = DuplicateHandling.Add;
+
+    /// <summary>
+    /// Specifies how AsTypes is inferred when omitted.
+    /// </summary>
+    public AsTypesFallback AsTypesFallback { get; init; } = AsTypesFallback.SelfWithInterface;
+
+    /// <summary>
     /// Make this class accessible from other projects?
     /// </summary>
     public bool UsePublic { get; init; }

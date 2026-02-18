@@ -86,7 +86,7 @@ public static class QudiAddServiceToContainer
         var byService = layeredRegistrations
             .SelectMany(reg =>
             {
-                var serviceTypes = reg.AsTypes.Count > 0 ? reg.AsTypes : [reg.Type];
+                var serviceTypes = RegistrationTypeUtility.GetEffectiveAsTypes(reg);
                 return serviceTypes.Select(serviceType => (Service: serviceType, Reg: reg));
             })
             .GroupBy(x => x.Service)
@@ -199,7 +199,7 @@ public static class QudiAddServiceToContainer
                 registrations.Select(r => r.Type.Assembly).Distinct().ToList()
             );
         var closedRegistrations = registrations
-            .SelectMany(r => r.AsTypes)
+            .SelectMany(RegistrationTypeUtility.GetEffectiveAsTypes)
             .Where(t => !t.IsGenericTypeDefinition)
             .ToHashSet();
 
@@ -213,10 +213,11 @@ public static class QudiAddServiceToContainer
 
         foreach (var registration in registrations)
         {
+            var effectiveAsTypes = RegistrationTypeUtility.GetEffectiveAsTypes(registration);
             if (
                 registration.Key is not null
                 || !registration.Type.IsGenericTypeDefinition
-                || registration.AsTypes.Count == 0
+                || effectiveAsTypes.Count == 0
             )
             {
                 materialized.Add(registration);
@@ -231,8 +232,13 @@ public static class QudiAddServiceToContainer
                 continue;
             }
 
-            var genericAsTypes = registration
-                .AsTypes.Where(t => t.IsGenericTypeDefinition)
+            var candidateAsTypes =
+                registration.AsTypes.Count > 0
+                    ? registration.AsTypes
+                    : effectiveAsTypes.Where(t => t != registration.Type).ToList();
+
+            var genericAsTypes = candidateAsTypes
+                .Where(t => t.IsGenericTypeDefinition)
                 .Distinct()
                 .ToList();
 
@@ -319,8 +325,8 @@ public static class QudiAddServiceToContainer
                     List<Type> closedAsTypes;
                     try
                     {
-                        closedAsTypes = registration
-                            .AsTypes.Select(t =>
+                        closedAsTypes = effectiveAsTypes
+                            .Select(t =>
                                 t.IsGenericTypeDefinition
                                     ? t.MakeGenericType(candidate.GetGenericArguments())
                                     : t
@@ -513,7 +519,9 @@ public static class QudiAddServiceToContainer
             return true;
         }
 
-        return registration.AsTypes.Any(t => t.IsGenericTypeDefinition);
+        return RegistrationTypeUtility
+            .GetEffectiveAsTypes(registration)
+            .Any(t => t.IsGenericTypeDefinition);
     }
 
     private static void RegisterService(
@@ -524,71 +532,92 @@ public static class QudiAddServiceToContainer
         // Register implementation first, then map interfaces to the same instance path.
         var lifetime = ConvertLifetime(registration.Lifetime);
         var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
+        var serviceTypes = RegistrationTypeUtility.GetEffectiveAsTypes(registration);
+        var registerSelf = ShouldRegisterSelf(registration);
 
         object Factory(IServiceProvider sp) =>
             ActivatorUtilities.CreateInstance(sp, registration.Type);
 
-        if (registration.AsTypes.Count == 0)
+        if (serviceTypes.Count == 0 && !registerSelf)
         {
-            if (isOpenGeneric)
-            {
-                services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
-            }
-            else
-            {
-                services.Add(ServiceDescriptor.Describe(registration.Type, Factory, lifetime));
-            }
             return;
         }
 
         if (registration.Key is null)
         {
-            if (isOpenGeneric)
+            if (registerSelf)
             {
-                services.Add(new ServiceDescriptor(registration.Type, registration.Type, lifetime));
-            }
-            else
-            {
-                services.Add(ServiceDescriptor.Describe(registration.Type, Factory, lifetime));
+                var selfDescriptor = isOpenGeneric
+                    ? new ServiceDescriptor(registration.Type, registration.Type, lifetime)
+                    : ServiceDescriptor.Describe(registration.Type, Factory, lifetime);
+                AddDescriptorWithDuplicateHandling(services, selfDescriptor, registration);
             }
 
-            if (isOpenGeneric || registration.AsTypes.Any(t => t.IsGenericTypeDefinition))
+            if (serviceTypes.Count == 0)
             {
-                foreach (var asType in registration.AsTypes)
+                return;
+            }
+
+            if (isOpenGeneric || serviceTypes.Any(t => t.IsGenericTypeDefinition))
+            {
+                foreach (var asType in serviceTypes)
                 {
                     if (asType == registration.Type)
                     {
                         continue;
                     }
 
-                    services.Add(new ServiceDescriptor(asType, registration.Type, lifetime));
+                    var descriptor = new ServiceDescriptor(asType, registration.Type, lifetime);
+                    AddDescriptorWithDuplicateHandling(services, descriptor, registration);
                 }
 
                 return;
             }
 
-            foreach (var asType in registration.AsTypes)
+            foreach (var asType in serviceTypes)
             {
                 if (asType == registration.Type)
                 {
                     continue;
                 }
 
-                services.Add(
-                    ServiceDescriptor.Describe(
+                var descriptor = registerSelf
+                    ? ServiceDescriptor.Describe(
                         asType,
                         sp => sp.GetRequiredService(registration.Type),
                         lifetime
                     )
-                );
+                    : new ServiceDescriptor(asType, registration.Type, lifetime);
+                AddDescriptorWithDuplicateHandling(services, descriptor, registration);
             }
 
             return;
         }
 
-        foreach (var asType in registration.AsTypes)
+        if (
+            registration.AsTypes.Count == 0
+            && serviceTypes.Count == 1
+            && serviceTypes[0] == registration.Type
+        )
         {
-            AddKeyedService(services, asType, registration.Type, registration.Key, lifetime);
+            // Preserve legacy behavior: concrete-only registrations ignore keyed registration.
+            var selfDescriptor = isOpenGeneric
+                ? new ServiceDescriptor(registration.Type, registration.Type, lifetime)
+                : ServiceDescriptor.Describe(registration.Type, Factory, lifetime);
+            AddDescriptorWithDuplicateHandling(services, selfDescriptor, registration);
+            return;
+        }
+
+        foreach (var asType in serviceTypes)
+        {
+            AddKeyedServiceWithDuplicateHandling(
+                services,
+                asType,
+                registration.Type,
+                registration.Key,
+                lifetime,
+                registration
+            );
         }
     }
 
@@ -792,5 +821,118 @@ public static class QudiAddServiceToContainer
                     "Unsupported service lifetime."
                 );
         }
+    }
+
+    private static bool ShouldRegisterSelf(TypeRegistrationInfo registration)
+    {
+        if (registration.AsTypes.Count > 0)
+        {
+            return true;
+        }
+
+        return registration.AsTypesFallback != AsTypesFallback.Interfaces;
+    }
+
+    private static void AddKeyedServiceWithDuplicateHandling(
+        IServiceCollection services,
+        Type serviceType,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+            Type implementationType,
+        object key,
+        ServiceLifetime lifetime,
+        TypeRegistrationInfo registration
+    )
+    {
+        if (!ShouldAddDescriptor(services, serviceType, key, registration))
+        {
+            return;
+        }
+
+        AddKeyedService(services, serviceType, implementationType, key, lifetime);
+    }
+
+    private static void AddDescriptorWithDuplicateHandling(
+        IServiceCollection services,
+        ServiceDescriptor descriptor,
+        TypeRegistrationInfo registration
+    )
+    {
+        if (!ShouldAddDescriptor(services, descriptor.ServiceType, null, registration))
+        {
+            return;
+        }
+
+        services.Add(descriptor);
+    }
+
+    private static bool ShouldAddDescriptor(
+        IServiceCollection services,
+        Type serviceType,
+        object? key,
+        TypeRegistrationInfo registration
+    )
+    {
+        var matches = FindDescriptorIndexes(services, serviceType, key);
+        if (matches.Count == 0)
+        {
+            return true;
+        }
+
+        switch (registration.Duplicate)
+        {
+            case DuplicateHandling.Skip:
+                return false;
+            case DuplicateHandling.Throw:
+                throw new InvalidOperationException(
+                    $"Duplicate registration detected for '{serviceType}'."
+                );
+            case DuplicateHandling.Replace:
+                for (var i = matches.Count - 1; i >= 0; i--)
+                {
+                    services.RemoveAt(matches[i]);
+                }
+                return true;
+            case DuplicateHandling.Add:
+            default:
+                return true;
+        }
+    }
+
+    private static List<int> FindDescriptorIndexes(
+        IServiceCollection services,
+        Type serviceType,
+        object? key
+    )
+    {
+        var indexes = new List<int>();
+        for (var i = 0; i < services.Count; i++)
+        {
+            var descriptor = services[i];
+            if (descriptor.ServiceType != serviceType)
+            {
+                continue;
+            }
+
+            if (key is null)
+            {
+                if (!descriptor.IsKeyedService)
+                {
+                    indexes.Add(i);
+                }
+                continue;
+            }
+
+            if (!descriptor.IsKeyedService)
+            {
+                continue;
+            }
+
+            if (Equals(descriptor.ServiceKey, key))
+            {
+                indexes.Add(i);
+            }
+        }
+
+        return indexes;
     }
 }

@@ -29,10 +29,10 @@ internal static class QudiVisualizationGraphBuilder
         var registrationViews = allRegistrations
             .Select(registration =>
             {
-                var serviceTypes =
-                    registration.AsTypes.Count > 0
-                        ? registration.AsTypes.Distinct().ToList()
-                        : [registration.Type];
+                var serviceTypes = RegistrationTypeUtility
+                    .GetEffectiveAsTypes(registration)
+                    .Distinct()
+                    .ToList();
 
                 var isMatched =
                     registration.When.Count == 0
@@ -605,9 +605,11 @@ internal static class QudiVisualizationGraphBuilder
                 return registration.Type;
             }
 
-            var matchingAsType = registration.AsTypes.FirstOrDefault(asType =>
-                QudiVisualizationAnalyzer.ToFullDisplayName(asType) == nodeId
-            );
+            var matchingAsType = RegistrationTypeUtility
+                .GetEffectiveAsTypes(registration)
+                .FirstOrDefault(asType =>
+                    QudiVisualizationAnalyzer.ToFullDisplayName(asType) == nodeId
+                );
             if (matchingAsType != null)
             {
                 return matchingAsType;
