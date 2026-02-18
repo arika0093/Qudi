@@ -4,4 +4,3 @@
 // TODO: Support more DI containers (e.g. Autofac, DryIoc, etc.)
 // TODO: Provide a code fix that automatically generates the Intercept method description if [QudiDecorator(UseIntercept=true)] is used.
 // TODO: Generics Decorator support
-// TODO: Implement Qudi.Visualizer
