@@ -8,10 +8,10 @@
 
 ## Features
 * **Attribute-based**: [[DISingleton]](#simple-usage), [[DITransient]](#simple-usage), etc.
-* **No-Dependency**: [No dependency](#any-di-container-support) on specific DI containers, it just collects information.
-* **Customize**: [Order](#control-registration-order), [Duplicate](#registration-handling), [AsTypes](#registration-handling), [Key](#keyed-registration), [Condition](#conditional-registration), etc.
+* **No-Dependency**: [No dependency](#any-di-container-support) on specific DI containers, it just [collects information](#collecting-class-information).
+* **Customize**: [Order](#registration-order), [Duplicate](#duplicate-handling), [AsTypes](#types-to-register), [Key](#keyed-registration), [Condition](#conditional-registration), etc.
 * **Support**: [Multiple Projects](#in-multiple-projects), [Decorator](#decorator-pattern), [Composite](#composite-pattern), [Generic types](#generic-registration).
-* **Visualization**:  A little [bonus](#visualize-registration) feature 😎
+* **Visualization**: [Console visualizer](#visualize-registration), [Export to file](#export-registration-diagram) 😎
 
 ## Getting Started
 ### First Step
@@ -717,7 +717,9 @@ dotnet add package Qudi.Container.Microsoft
   * [Filtering Registration](#filtering-registration)
   * [Use Collected Information Directly](#use-collected-information-directly)
 
-### Simple Usage
+## Simple Usage
+### Overview
+
 Just mark your classes with the following attributes:
 ```csharp
 using Qudi;
@@ -742,81 +744,6 @@ services.AddQudiServices();
 ```
 
 That's it! Your services are now registered in the DI container.
-
-### Registration Handling
-
-By default, the implementation type and all implemented interfaces are registered.
-
-```csharp
-[DITransient]
-public class MyService : IService, IOtherService;
-
-// This will be registered as:
-services.AddTransient<MyService>();
-services.AddTransient<IService, MyService>(provider => provider.GetRequiredService<MyService>());
-services.AddTransient<IOtherService, MyService>(provider => provider.GetRequiredService<MyService>());
-```
-
-To change this behavior, use the `AsTypesFallback` property.
-
-```csharp
-[DITransient(AsTypesFallback = AsTypesFallback.Self)]
-public class MyService : IService, IOtherService; // -> registered only as MyService, not as IService or IOtherService
-
-[DITransient(AsTypesFallback = AsTypesFallback.Interfaces)]
-public class MyService : IService, IOtherService; // -> registered only as IService and IOtherService, not as MyService
-```
-
-You can also explicitly specify the types to register with the `AsTypes` property.
-
-```csharp
-[DITransient(AsTypes = [ typeof(IService) ])]
-public class MyService : IService, IOtherService; // -> registered as MyService and IService, but not as IOtherService
-```
-
----
-
-By default, the registration order is not guaranteed, but you can explicitly control the registration order using the `Order` property.
-Default is `0`, and lower values are registered first.
-
-```csharp
-[DITransient(Order = -1)]
-public class FirstService : IService;
-// This service will be registered first.
-
-[DITransient] // Order=0 by default
-public class SecondService : IService;
-// This service will be registered second.
-
-[DITransient(Order = 1)]
-public class ThirdService : IService;
-// This service will be registered last.
-```
-
-You can use this to provide a default implementation by setting `int.MinValue`.
-
-```csharp
-// in MyApp.Core
-[DITransient(Order = int.MinValue)]
-public class DefaultDataRepository : IDataRepository;
-
-// in MyApp.Web
-[DITransient] // Order=0 by default
-public class MyDataRepository : IDataRepository;
-// user can override default implementation by registering later
-```
-
----
-
-When multiple implementations are registered at the same time, you can also specify the behavior of the later registration with attributes.
-
-```csharp
-[DITransient(Duplicate = DuplicateHandling.Throw)]   // throw InvalidOperationException when duplicate registration occurs
-[DITransient(Duplicate = DuplicateHandling.Skip)]    // skip registration when duplicate registration occurs
-[DITransient(Duplicate = DuplicateHandling.Replace)] // replace existing registration when duplicate registration occurs
-[DITransient(Duplicate = DuplicateHandling.Add)]     // register as multiple (default behavior)
-public class MyService : IService;
-```
 
 ### In Multiple Projects
 Dependency Injection is often performed across multiple projects in a solution.  
@@ -875,6 +802,81 @@ If you don't want to register implementations from other libraries, you can spec
 services.AddQudiServices(conf => {
     conf.UseSelfImplementsOnly();
 });
+```
+
+
+## Registration Handling
+### Types to Register
+
+By default, the implementation type and all implemented interfaces are registered.
+
+```csharp
+[DITransient]
+public class MyService : IService, IOtherService;
+
+// This will be registered as:
+services.AddTransient<MyService>();
+services.AddTransient<IService, MyService>(provider => provider.GetRequiredService<MyService>());
+services.AddTransient<IOtherService, MyService>(provider => provider.GetRequiredService<MyService>());
+```
+
+To change this behavior, use the `AsTypesFallback` property.
+
+```csharp
+[DITransient(AsTypesFallback = AsTypesFallback.Self)]
+public class MyService : IService, IOtherService; // -> registered only as MyService, not as IService or IOtherService
+
+[DITransient(AsTypesFallback = AsTypesFallback.Interfaces)]
+public class MyService : IService, IOtherService; // -> registered only as IService and IOtherService, not as MyService
+```
+
+You can also explicitly specify the types to register with the `AsTypes` property.
+
+```csharp
+[DITransient(AsTypes = [ typeof(IService) ])]
+public class MyService : IService, IOtherService; // -> registered as MyService and IService, but not as IOtherService
+```
+
+### Registration Order
+By default, the registration order is not guaranteed, but you can explicitly control the registration order using the `Order` property.
+Default is `0`, and lower values are registered first.
+
+```csharp
+[DITransient(Order = -1)]
+public class FirstService : IService;
+// This service will be registered first.
+
+[DITransient] // Order=0 by default
+public class SecondService : IService;
+// This service will be registered second.
+
+[DITransient(Order = 1)]
+public class ThirdService : IService;
+// This service will be registered last.
+```
+
+You can use this to provide a default implementation by setting `int.MinValue`.
+
+```csharp
+// in MyApp.Core
+[DITransient(Order = int.MinValue)]
+public class DefaultDataRepository : IDataRepository;
+
+// in MyApp.Web
+[DITransient] // Order=0 by default
+public class MyDataRepository : IDataRepository;
+// user can override default implementation by registering later
+```
+
+### Duplicate Handling
+When multiple implementations are registered at the same time, you can also specify the behavior of the later registration with attributes.
+
+```csharp
+[DITransient(Duplicate = DuplicateHandling.Throw)]   // throw InvalidOperationException when duplicate registration occurs
+[DITransient(Duplicate = DuplicateHandling.Skip)]    // skip registration when duplicate registration occurs
+[DITransient(Duplicate = DuplicateHandling.Replace)] // replace existing registration when duplicate registration occurs
+[DITransient(Duplicate = DuplicateHandling.Add)]     // register as multiple (default behavior)
+public class MyService : IService;
 ```
 
 ### Keyed Registration
@@ -962,8 +964,9 @@ builder.Services.AddQudiServices(conf => {
 > [!NOTE]
 > If you want to switch processing dynamically according to conditions during runtime, consider using [Feature Flags](https://learn.microsoft.com/en-us/azure/azure-app-configuration/feature-management-dotnet-reference).
 
-### Decorator Pattern
-#### Overview
+
+## Decorator Pattern
+### Overview
 Decorator pattern is a useful technique to add functionality to existing services without modifying their code.
 You can easily register decorator classes using the `[QudiDecorator]` attribute.
 
@@ -1030,7 +1033,7 @@ flowchart LR
 
 When you resolve `IMessageService`, the decorators will be applied in the order specified by the `Order` property.
 
-#### Using Auto Implementation
+### Using Auto Implementation
 The decorator pattern is useful, but when the target interface has many members, overriding every method becomes tedious.
 To solve this, mark the decorator class as `partial` and implement only the methods you need — the remaining methods will be delegated to the auto-generated code.
 
@@ -1093,7 +1096,7 @@ public interface IDecoratorHelper_IManyFeatureService : IManyFeatureService
 
 </details>
 
-#### Using Intercept
+### Using Intercept
 In addition to overriding individual methods, you can also use the `Intercept` method to perform operations for all method calls at once.
 This is useful for logging, performance measurement, and other cross-cutting concerns (AOP-like behavior).
 
@@ -1208,8 +1211,8 @@ The generated code creates a helper interface and a base implementation class th
 
 </details>
 
-### Composite Pattern
-#### Overview
+## Composite Pattern
+### Overview
 The composite pattern is a design pattern that allows you to treat individual objects and compositions of objects uniformly. You can easily register composite classes using the `[QudiComposite]` attribute.
 
 ```csharp
@@ -1245,7 +1248,7 @@ public class MessageSender(IMessageService messageService)
 }
 ```
 
-#### Combining Decorator and Composite
+### Combining Decorator and Composite
 By combining the decorator pattern and the composite pattern, you can create powerful and flexible service compositions.  
 For example, you can create a logging decorator that wraps around a composite service to log messages before and after sending them.
 
@@ -1308,7 +1311,7 @@ flowchart LR
 
 ```
 
-#### Auto Implementation for Composite
+### Auto Implementation for Composite
 you can also use auto implementation for composite classes to avoid boilerplate code when the target interface has many members.
 Unlike the decorator pattern, you need to explicitly specify how to handle the results of the combined implementations.
 
@@ -1444,8 +1447,8 @@ public interface IService_MyComposite : IService
 </details>
 
 
-### Generic Registration
-#### Open Generic Registration
+## Generic Registration
+### Open Generic Registration
 You can register open generic types using Qudi attributes.
 
 ```csharp
@@ -1467,7 +1470,7 @@ public class UserService(IRepository<User> userRepository)
 }
 ```
 
-#### Constrained Generic Registration
+### Constrained Generic Registration
 You can also restrict it to specific interfaces.
 
 ```csharp
@@ -1592,7 +1595,7 @@ flowchart LR
 
 ```
 
-#### Use Dispatch for Generic Composite
+### Use Dispatch for Generic Composite
 Although the above implementation works, it requires specifying the generic type each time (e.g. `ComponentValidator<Battery>`, `ComponentValidator<Screen>`), which is cumbersome.  
 By using `[QudiDispatch]` you can provide a non-generic dispatcher that automatically invokes all registered `IComponentValidator<T>` implementations for the runtime component type.  
 Callers can then use a single `ComponentValidator` or non-generic `IComponentValidator` and call `Validate(component)` without specifying `T`. Set `Multiple = false` when you want dispatch to resolve a single `IComponentValidator<T>` per concrete runtime type instead of `IEnumerable<IComponentValidator<T>>`.
