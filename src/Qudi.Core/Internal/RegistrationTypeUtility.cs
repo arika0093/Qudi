@@ -4,8 +4,14 @@ using System.Linq;
 
 namespace Qudi.Core.Internal;
 
+/// <summary>
+/// Utility class for processing type registration information.
+/// </summary>
 public static class RegistrationTypeUtility
 {
+    /// <summary>
+    /// Get the effective AsTypes for a registration, considering the AsTypesFallback strategy if AsTypes is not explicitly specified.
+    /// </summary>
     public static IReadOnlyList<Type> GetEffectiveAsTypes(TypeRegistrationInfo registration)
     {
         if (registration.AsTypes.Count > 0)
