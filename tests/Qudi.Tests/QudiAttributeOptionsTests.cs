@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -91,10 +92,23 @@ public sealed class QudiAttributeOptionsTests
     [Test]
     public void DuplicateHandling_Throw_ThrowsOnDuplicate()
     {
+        // NOTE: Should.Throw does not work here in AOT environment,
+        // so we need to catch the exception manually.
+        var throwed = false;
         var services = new ServiceCollection();
-        Should.Throw<InvalidOperationException>(() =>
+        try
         {
             services.AddQudiServices(builder => builder.SetCondition("ThrowTest"));
-        });
+            var provider = services.BuildServiceProvider();
+            var samples = provider
+                .GetRequiredService<IEnumerable<IDuplicateThrowSample>>()
+                .ToList();
+            samples.Count.ShouldBe(1);
+        }
+        catch (InvalidOperationException)
+        {
+            throwed = true;
+        }
+        throwed.ShouldBeTrue();
     }
 }
