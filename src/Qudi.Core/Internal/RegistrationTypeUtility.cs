@@ -35,6 +35,7 @@ public static class RegistrationTypeUtility
     {
         return type.GetInterfaces()
             .Where(i => !IsSystemBuiltInType(i))
+            .Where(i => !IsHelperInterface(i))
             .Select(EnsureOpenGenericDefinition)
             .Distinct()
             .ToList();
@@ -56,6 +57,13 @@ public static class RegistrationTypeUtility
     {
         var ns = type.Namespace;
         return ns != null && ns.StartsWith("System", StringComparison.Ordinal);
+    }
+
+    private static bool IsHelperInterface(Type type)
+    {
+        var name = type.Name;
+        return name.StartsWith("IDecoratorHelper_", StringComparison.Ordinal)
+            || name.StartsWith("ICompositeHelper_", StringComparison.Ordinal);
     }
 
     private static Type EnsureOpenGenericDefinition(Type type)
