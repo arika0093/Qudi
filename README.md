@@ -2107,13 +2107,25 @@ var registrations = QudiInternalRegistrations.FetchAll();
 ```
 
 ## Architecture
-This library performs the following tasks internally.
-
 ### Any DI Container Support
-Qudi is designed to be compatible with any DI container. It generates container-specific registration code based on the collected information, allowing it to work seamlessly with various DI frameworks.
+Qudi aims to be compatible with any DI container. (It would be a joke if it depended on the DI container itself to remove dependencies, right?)
+To achieve this, the information collection phase is separated from the actual registration phase to the DI container. By doing so, it collects information in a way that does not depend on the target DI container and makes it easier to support various DI containers.
 
 > [!NOTE]
 > Well, currently only extension methods for `Microsoft.Extensions.DependencyInjection` are supported, but in terms of functionality, it should be compatible with any DI container.
+
+### Why Attribute-Based Registration ?
+Attribute-based dependency injection is often regarded as an anti-pattern. Even an older article from 2014 states this (see: https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/). So why did we choose it?
+
+1. Because it’s simply convenient. I often keep class and model definitions together in the same .cs file (it’s easier to read that way). Attributes let you keep registration metadata right alongside the type.
+2. It covers ~90% of real-world use cases. In many projects you have one-to-one interfaces (or no interfaces at all), registration order rarely matters, and complex scenarios are uncommon. For most cases attribute-based registration is sufficient.
+3. When you need extensibility, source-generator “magic” makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
+4. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
+5. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
+
+---
+
+Below we explain how Qudi collects class information and performs registration into DI containers.
 
 ### Collecting class information
 First, the source generator scans classes annotated with attributes like `DISingleton` and `DITransient`. Based on the results, it generates code such as the following:
