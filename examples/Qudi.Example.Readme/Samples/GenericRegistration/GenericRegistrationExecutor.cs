@@ -80,40 +80,40 @@ public class ScreenValidator : IComponentValidator<Screen>
     }
 }
 
+[QudiDispatch]
+public partial class ComponentValidatorDispatcher : IComponentValidator<IComponent>
+{
+    // The generator will route calls to the appropriate IComponentValidator<T> based on the runtime type of the argument.
+    // If multiple validators are registered for a type, it will resolve all of them and call them in sequence.
+    // If no validators are registered for a type, it will use the NullComponentValidator<T> fallback implementation.
+}
+
 [DITransient(Export = true)]
-public class GenericRegistrationExecutor(
-    IEnumerable<IComponentValidator<Battery>> batteryValidators,
-    IEnumerable<IComponentValidator<Screen>> screenValidators,
-    IEnumerable<IComponentValidator<Keyboard>> keyboardValidators
-) : ISampleExecutor
+public class GenericRegistrationExecutor(IComponentValidator<IComponent> componentValidator) : ISampleExecutor
 {
     public string Name => "Generic Registration";
-    public string Description => "Open generic types with specialized implementations";
+    public string Description => "Open generic types with specialized implementations and use [QudiDispatch].";
     public string Namespace => typeof(GenericRegistrationExecutor).Namespace!;
 
     public void Execute()
     {
         Console.WriteLine("Validating components:");
 
-        // Get specialized validator for Battery
-        var battery = new Battery { Capacity = 5000 };
-        foreach (var validator in batteryValidators)
+        var components = new IComponent[]
         {
-            validator.Validate(battery);
+            new Battery { Capacity = 5000 },
+            new Battery { Capacity = 2500 },
+            new Battery { Capacity = 5555 },
+            new Screen { Size = 6 },
+            new Screen { Size = 4 },
+            new Keyboard { Keys = 104 }
+        };
+
+        foreach (var component in components)
+        {
+            var rst = componentValidator.Validate(component);
+            Console.WriteLine($"  --> Overall validation result: {(rst ? "✅ Valid" : "❌ Invalid")}\n");
         }
 
-        // Get specialized validator for Screen
-        var screen = new Screen { Size = 6 };
-        foreach (var validator in screenValidators)
-        {
-            validator.Validate(screen);
-        }
-
-        // Get default validator for Keyboard (no specialized implementation)
-        var keyboard = new Keyboard { Keys = 104 };
-        foreach (var validator in keyboardValidators)
-        {
-            validator.Validate(keyboard);
-        }
     }
 }

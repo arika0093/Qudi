@@ -3,8 +3,10 @@ digraph Qudi {
 node [shape=box, fontname="Consolas"];
   "Qudi.Examples.GenericRegistration.BatteryAnotherValidator" [label="BatteryAnotherValidator", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.GenericRegistration.BatteryValidator" [label="BatteryValidator", shape=box, style=filled, fillcolor="#bbdefb"];
+  "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" [label="ComponentValidatorDispatcher", shape=box, style=filled, fillcolor="#fff2b3", color="#f6c445"];
   "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" [label="GenericRegistrationExecutor", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" [label="IComponentValidator<Battery>", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
+  "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.IComponent>" [label="IComponentValidator<IComponent>", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" [label="IComponentValidator<Keyboard>", shape=box, style=dashed, color=red];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" [label="IComponentValidator<Screen>", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
   "Qudi.Examples.GenericRegistration.NullComponentValidator<T>" [label="NullComponentValidator<T>", shape=box, style=filled, fillcolor="#bbdefb"];
@@ -12,8 +14,10 @@ node [shape=box, fontname="Consolas"];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" -> "Qudi.Examples.GenericRegistration.BatteryValidator";
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" -> "Qudi.Examples.GenericRegistration.BatteryAnotherValidator";
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" -> "Qudi.Examples.GenericRegistration.ScreenValidator";
-  "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" [label="*", style=dashed];
-  "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" [label="*", style=dashed];
-  "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" [label="*", style=dashed];
+  "Qudi.Examples.GenericRegistration.GenericRegistrationExecutor" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.IComponent>";
+  "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.IComponent>" -> "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher";
+  "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" [label="*", style=dashed];
+  "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" [label="*", style=dashed];
+  "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" [label="*", style=dashed];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" -> "Qudi.Examples.GenericRegistration.NullComponentValidator<T>";
 }
