@@ -190,6 +190,7 @@ public static class QudiContainerRegistrationEngine
                     Lifetime = lifetime,
                     DuplicateHandling = registration.Duplicate,
                     Kind = QudiServiceRegistrationKind.ImplementationType,
+                    Key = registration.Key,
                 }
             );
             return;
