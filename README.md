@@ -2115,9 +2115,9 @@ To achieve this, the information collection phase is separated from the actual r
 > Well, currently only extension methods for `Microsoft.Extensions.DependencyInjection` are supported, but in terms of functionality, it should be compatible with any DI container.
 
 ### Why Attribute-Based Registration ?
-Attribute-based dependency injection is often regarded as an anti-pattern. Even an older article from 2014 states this (see: https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/). So why did we choose it?
+Attribute-based dependency injection is often regarded as an anti-pattern. Even an [older article from 2014](https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/) states this. So why did we choose it?
 
-1. Because it’s simply convenient. I often keep class and model definitions together in the same .cs file (it’s easier to read that way). Attributes let you keep registration metadata right alongside the type.
+1. Because it’s simply convenient. I often keep class and model definitions together in the same .cs file (it’s easier to read that way). You can think of it as similar to that.
 2. It covers ~90% of real-world use cases. In many projects you have one-to-one interfaces (or no interfaces at all), registration order rarely matters, and complex scenarios are uncommon. For most cases attribute-based registration is sufficient.
 3. When you need extensibility, source-generator “magic” makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
 4. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
