@@ -4,6 +4,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Qudi.Core\Qudi.Core.csproj" />
+    <ProjectReference Include="..\Qudi.Container.Core\Qudi.Container.Core.csproj" />
   </ItemGroup>
 </Project>

@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
+using Qudi.Container.Core;
 using Qudi.Core.Internal;
 
 namespace Qudi.Container.Microsoft;
@@ -14,17 +13,6 @@ namespace Qudi.Container.Microsoft;
 /// </summary>
 public static class QudiAddServiceToContainer
 {
-    // caches for singleton and scoped instances
-    private static readonly ConditionalWeakTable<
-        IServiceScopeFactory,
-        ConditionalWeakTable<ServiceDescriptor, object>
-    > SingletonCache = new();
-
-    private static readonly ConditionalWeakTable<
-        IServiceProvider,
-        ConditionalWeakTable<ServiceDescriptor, object>
-    > ScopedCache = new();
-
     /// <summary>
     /// Registers Qudi-collected service definitions into <paramref name="services" />.
     /// </summary>
@@ -46,519 +34,409 @@ public static class QudiAddServiceToContainer
         }
 
         var registrationGraph = QudiRegistrationGraphBuilder.Build(configuration);
-        var registrations = registrationGraph.BaseRegistrations;
+        var adapter = new MicrosoftContainerRegistrationAdapter(services);
 
-        foreach (var registration in registrations)
-        {
-            RegisterService(services, registration);
-        }
-
-        ApplyLayeredRegistrations(services, registrationGraph.LayersByService);
+        QudiContainerRegistrationEngine.RegisterBaseServices(adapter, registrationGraph.BaseRegistrations);
+        QudiContainerRegistrationEngine.ApplyLayeredRegistrations(adapter, registrationGraph.LayersByService);
 
         return services;
     }
 
-    private static void ApplyLayeredRegistrations(
-        IServiceCollection services,
-        IReadOnlyDictionary<Type, IReadOnlyList<QudiRegistrationEntry>> layersByService
-    )
+    private sealed class MicrosoftContainerRegistrationAdapter(IServiceCollection services)
+                : IQudiContainerRegistrationAdapter,
+            IQudiLayeredRegistrationAdapter<ServiceDescriptor>
     {
-        foreach (var (serviceType, layers) in layersByService)
+        private static readonly ConditionalWeakTable<
+            IServiceScopeFactory,
+            ConditionalWeakTable<ServiceDescriptor, object>
+        > SingletonCache = new();
+
+        private static readonly ConditionalWeakTable<
+            IServiceProvider,
+            ConditionalWeakTable<ServiceDescriptor, object>
+        > ScopedCache = new();
+
+        private readonly IServiceCollection _services = services ?? throw new ArgumentNullException(nameof(services));
+
+        public bool SupportsKeyedLayers => false;
+
+        public bool TryAddService(QudiServiceRegistrationRequest request)
         {
-            if (layers.Count == 0)
+            if (!ShouldAddDescriptor(request.ServiceType, request.Key, request.DuplicateHandling))
             {
-                continue;
+                return false;
             }
 
-            if (layers.Any(r => r.Registration.Key is not null))
-            {
-                // Keyed decorators/composites are not supported yet.
-                continue;
-            }
+            var lifetime = ConvertLifetime(request.Lifetime);
 
-            var descriptorIndexes = new List<int>();
-            for (var i = 0; i < services.Count; i++)
+            if (request.Key is null)
             {
-                if (services[i].ServiceType == serviceType)
+                ServiceDescriptor descriptor = request.Kind switch
                 {
-                    descriptorIndexes.Add(i);
-                }
-            }
-
-            var currentDescriptors = descriptorIndexes.Select(i => services[i]).ToList();
-            if (descriptorIndexes.Count == 0 && !layers.Any(r => r.Registration.MarkAsComposite))
-            {
-                continue;
-            }
-
-            for (var i = layers.Count - 1; i >= 0; i--)
-            {
-                var layer = layers[i].Registration;
-                if (layer.MarkAsDecorator)
-                {
-                    currentDescriptors = currentDescriptors
-                        .Select(d => DescribeDecoratedDescriptor(serviceType, d, layer))
-                        .ToList();
-                    continue;
-                }
-
-                if (layer.MarkAsComposite)
-                {
-                    currentDescriptors =
-                    [
-                        DescribeCompositeDescriptor(serviceType, layer, currentDescriptors),
-                    ];
-                }
-            }
-
-            // Remove existing descriptors for this service type (from last to first index)
-            for (var i = descriptorIndexes.Count - 1; i >= 0; i--)
-            {
-                services.RemoveAt(descriptorIndexes[i]);
-            }
-
-            foreach (var descriptor in currentDescriptors)
-            {
-                services.Add(descriptor);
-            }
-        }
-    }
-
-    private static ServiceDescriptor DescribeCompositeDescriptor(
-        Type serviceType,
-        TypeRegistrationInfo composite,
-        IReadOnlyList<ServiceDescriptor> innerDescriptors
-    )
-    {
-        return ServiceDescriptor.Describe(
-            serviceType,
-            sp =>
-            {
-                var innerServices = new object?[innerDescriptors.Count];
-                for (var i = 0; i < innerDescriptors.Count; i++)
-                {
-                    innerServices[i] = CreateFromDescriptor(sp, innerDescriptors[i]);
-                }
-
-                var serviceArray = Array.CreateInstance(serviceType, innerServices.Length);
-                for (var i = 0; i < innerServices.Length; i++)
-                {
-                    serviceArray.SetValue(innerServices[i], i);
-                }
-
-                return ActivatorUtilities.CreateInstance(sp, composite.Type, serviceArray);
-            },
-            ServiceLifetime.Transient
-        );
-    }
-
-    private static void RegisterService(
-        IServiceCollection services,
-        TypeRegistrationInfo registration
-    )
-    {
-        // Register implementation first, then map interfaces to the same instance path.
-        var lifetime = ConvertLifetime(registration.Lifetime);
-        var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
-        var serviceTypes = RegistrationTypeUtility.GetEffectiveAsTypes(registration);
-        var registerSelf = ShouldRegisterSelf(serviceTypes, registration.Type);
-
-        object Factory(IServiceProvider sp) =>
-            ActivatorUtilities.CreateInstance(sp, registration.Type);
-
-        if (serviceTypes.Count == 0 && !registerSelf)
-        {
-            return;
-        }
-
-        if (registration.Key is null)
-        {
-            if (registerSelf)
-            {
-                var selfDescriptor = isOpenGeneric
-                    ? new ServiceDescriptor(registration.Type, registration.Type, lifetime)
-                    : ServiceDescriptor.Describe(registration.Type, Factory, lifetime);
-                AddDescriptorWithDuplicateHandling(services, selfDescriptor, registration);
-            }
-
-            if (serviceTypes.Count == 0)
-            {
-                return;
-            }
-
-            if (isOpenGeneric || serviceTypes.Any(t => t.IsGenericTypeDefinition))
-            {
-                foreach (var asType in serviceTypes)
-                {
-                    if (asType == registration.Type)
-                    {
-                        continue;
-                    }
-
-                    var descriptor = new ServiceDescriptor(asType, registration.Type, lifetime);
-                    AddDescriptorWithDuplicateHandling(services, descriptor, registration);
-                }
-
-                return;
-            }
-
-            foreach (var asType in serviceTypes)
-            {
-                if (asType == registration.Type)
-                {
-                    continue;
-                }
-
-                var descriptor = registerSelf
-                    ? ServiceDescriptor.Describe(
-                        asType,
-                        sp => sp.GetRequiredService(registration.Type),
+                    QudiServiceRegistrationKind.ImplementationType => new ServiceDescriptor(
+                        request.ServiceType,
+                        request.ImplementationType,
                         lifetime
-                    )
-                    : new ServiceDescriptor(asType, registration.Type, lifetime);
-                AddDescriptorWithDuplicateHandling(services, descriptor, registration);
+                    ),
+                    QudiServiceRegistrationKind.ForwardToImplementation =>
+                        ServiceDescriptor.Describe(
+                            request.ServiceType,
+                            sp => sp.GetRequiredService(request.ImplementationType),
+                            lifetime
+                        ),
+                    _ => throw new ArgumentOutOfRangeException(
+                        nameof(request),
+                        request.Kind,
+                        "Unsupported registration kind."
+                    ),
+                };
+
+                _services.Add(descriptor);
+                return true;
             }
 
-            return;
+            if (request.Kind == QudiServiceRegistrationKind.ForwardToImplementation)
+            {
+                throw new InvalidOperationException(
+                    "Keyed forwarding registrations are not supported."
+                );
+            }
+
+            AddKeyedService(
+                request.ServiceType,
+                request.ImplementationType,
+                request.Key,
+                lifetime
+            );
+            return true;
         }
 
-        if (
-            registration.AsTypes.Count == 0
-            && serviceTypes.Count == 1
-            && serviceTypes[0] == registration.Type
+        public IReadOnlyList<ServiceDescriptor> GetServiceDescriptors(Type serviceType)
+        {
+            var descriptors = new List<ServiceDescriptor>();
+            for (var i = 0; i < _services.Count; i++)
+            {
+                if (_services[i].ServiceType == serviceType)
+                {
+                    descriptors.Add(_services[i]);
+                }
+            }
+
+            return descriptors;
+        }
+
+        public void ReplaceServiceDescriptors(
+            Type serviceType,
+            IReadOnlyList<ServiceDescriptor> descriptors
         )
         {
-            // Preserve legacy behavior: concrete-only registrations ignore keyed registration.
-            var selfDescriptor = isOpenGeneric
-                ? new ServiceDescriptor(registration.Type, registration.Type, lifetime)
-                : ServiceDescriptor.Describe(registration.Type, Factory, lifetime);
-            AddDescriptorWithDuplicateHandling(services, selfDescriptor, registration);
-            return;
+            var indexes = FindDescriptorIndexes(serviceType, key: null, includeKeyed: true);
+            for (var i = indexes.Count - 1; i >= 0; i--)
+            {
+                _services.RemoveAt(indexes[i]);
+            }
+
+            foreach (var descriptor in descriptors)
+            {
+                _services.Add(descriptor);
+            }
         }
 
-        foreach (var asType in serviceTypes)
+        ServiceDescriptor IQudiLayeredRegistrationAdapter<ServiceDescriptor>.DescribeDecorator(
+            Type serviceType,
+            ServiceDescriptor previousDescriptor,
+            TypeRegistrationInfo decorator
+        )
         {
-            AddKeyedServiceWithDuplicateHandling(
-                services,
-                asType,
-                registration.Type,
-                registration.Key,
-                lifetime,
-                registration
-            );
-        }
-    }
+            var lifetime = previousDescriptor.Lifetime;
+            if (!previousDescriptor.IsKeyedService)
+            {
+                return ServiceDescriptor.Describe(
+                    serviceType,
+                    sp =>
+                    {
+                        var inner = CreateFromDescriptor(sp, previousDescriptor);
+                        return ActivatorUtilities.CreateInstance(sp, decorator.Type, inner);
+                    },
+                    lifetime
+                );
+            }
 
-    private static ServiceDescriptor DescribeDecoratedDescriptor(
-        Type serviceType,
-        ServiceDescriptor previousDescriptor,
-        TypeRegistrationInfo decorator
-    )
-    {
-        var lifetime = previousDescriptor.Lifetime;
-        if (!previousDescriptor.IsKeyedService)
-        {
-            return ServiceDescriptor.Describe(
+            var key = previousDescriptor.ServiceKey;
+            return ServiceDescriptor.DescribeKeyed(
                 serviceType,
-                sp =>
+                key!,
+                (sp, serviceKey) =>
                 {
-                    var inner = CreateFromDescriptor(sp, previousDescriptor);
+                    var inner = CreateFromDescriptor(sp, previousDescriptor, serviceKey);
                     return ActivatorUtilities.CreateInstance(sp, decorator.Type, inner);
                 },
                 lifetime
             );
         }
 
-        var key = previousDescriptor.ServiceKey;
-        return ServiceDescriptor.DescribeKeyed(
-            serviceType,
-            key!,
-            (sp, serviceKey) =>
-            {
-                var inner = CreateFromDescriptor(sp, previousDescriptor, serviceKey);
-                return ActivatorUtilities.CreateInstance(sp, decorator.Type, inner);
-            },
-            lifetime
-        );
-    }
-
-    private static object CreateFromDescriptor(
-        IServiceProvider provider,
-        ServiceDescriptor descriptor,
-        object? serviceKey = null
-    )
-    {
-        return descriptor.Lifetime switch
+        ServiceDescriptor IQudiLayeredRegistrationAdapter<ServiceDescriptor>.DescribeComposite(
+            Type serviceType,
+            TypeRegistrationInfo composite,
+            IReadOnlyList<ServiceDescriptor> innerDescriptors
+        )
         {
-            ServiceLifetime.Singleton => GetOrCreateSingleton(
-                provider,
-                descriptor,
-                () => CreateInstanceUncached(provider, descriptor, serviceKey)
-            ),
-            ServiceLifetime.Scoped => GetOrCreateScoped(
-                provider,
-                descriptor,
-                () => CreateInstanceUncached(provider, descriptor, serviceKey)
-            ),
-            _ => CreateInstanceUncached(provider, descriptor, serviceKey),
-        };
-    }
+            return ServiceDescriptor.Describe(
+                serviceType,
+                sp =>
+                {
+                    var innerServices = new object?[innerDescriptors.Count];
+                    for (var i = 0; i < innerDescriptors.Count; i++)
+                    {
+                        innerServices[i] = CreateFromDescriptor(sp, innerDescriptors[i]);
+                    }
 
-    private static object CreateInstanceUncached(
-        IServiceProvider provider,
-        ServiceDescriptor descriptor,
-        object? serviceKey
-    )
-    {
-        // Recreate the previous descriptor exactly as DI would have produced it.
-        if (descriptor.IsKeyedService)
-        {
-            if (descriptor.KeyedImplementationInstance is not null)
-            {
-                return descriptor.KeyedImplementationInstance;
-            }
+                    var serviceArray = Array.CreateInstance(serviceType, innerServices.Length);
+                    for (var i = 0; i < innerServices.Length; i++)
+                    {
+                        serviceArray.SetValue(innerServices[i], i);
+                    }
 
-            if (descriptor.KeyedImplementationFactory is not null)
-            {
-                return descriptor.KeyedImplementationFactory(provider, serviceKey!);
-            }
-
-            if (descriptor.KeyedImplementationType is not null)
-            {
-                return ActivatorUtilities.CreateInstance(
-                    provider,
-                    descriptor.KeyedImplementationType
-                );
-            }
-
-            throw new InvalidOperationException(
-                $"Unable to create keyed instance for service type '{descriptor.ServiceType}'."
+                    return ActivatorUtilities.CreateInstance(sp, composite.Type, serviceArray);
+                },
+                ServiceLifetime.Transient
             );
         }
 
-        if (descriptor.ImplementationInstance is not null)
+        private static object CreateFromDescriptor(
+            IServiceProvider provider,
+            ServiceDescriptor descriptor,
+            object? serviceKey = null
+        )
         {
-            return descriptor.ImplementationInstance;
-        }
-
-        if (descriptor.ImplementationFactory is not null)
-        {
-            return descriptor.ImplementationFactory(provider);
-        }
-
-        if (descriptor.ImplementationType is not null)
-        {
-            return ActivatorUtilities.CreateInstance(provider, descriptor.ImplementationType);
-        }
-
-        throw new InvalidOperationException(
-            $"Unable to create instance for service type '{descriptor.ServiceType}'."
-        );
-    }
-
-    private static object GetOrCreateSingleton(
-        IServiceProvider provider,
-        ServiceDescriptor descriptor,
-        Func<object> factory
-    )
-    {
-        var scopeFactory = provider.GetService<IServiceScopeFactory>();
-        if (scopeFactory is null)
-        {
-            return GetOrCreateScoped(provider, descriptor, factory);
-        }
-
-        var cache = SingletonCache.GetValue(
-            scopeFactory,
-            static _ => new ConditionalWeakTable<ServiceDescriptor, object>()
-        );
-        return GetOrCreateCached(cache, descriptor, factory);
-    }
-
-    private static object GetOrCreateScoped(
-        IServiceProvider provider,
-        ServiceDescriptor descriptor,
-        Func<object> factory
-    )
-    {
-        var cache = ScopedCache.GetValue(
-            provider,
-            static _ => new ConditionalWeakTable<ServiceDescriptor, object>()
-        );
-        return GetOrCreateCached(cache, descriptor, factory);
-    }
-
-    private static object GetOrCreateCached(
-        ConditionalWeakTable<ServiceDescriptor, object> cache,
-        ServiceDescriptor descriptor,
-        Func<object> factory
-    )
-    {
-        if (cache.TryGetValue(descriptor, out var existing))
-        {
-            return existing;
-        }
-
-        var created = factory();
-        try
-        {
-            cache.Add(descriptor, created);
-            return created;
-        }
-        catch (ArgumentException)
-        {
-            return cache.TryGetValue(descriptor, out var raced) ? raced : created;
-        }
-    }
-
-    private static ServiceLifetime ConvertLifetime(string lifetime)
-    {
-        return lifetime switch
-        {
-            Lifetime.Singleton => ServiceLifetime.Singleton,
-            Lifetime.Scoped => ServiceLifetime.Scoped,
-            Lifetime.Transient => ServiceLifetime.Transient,
-            _ => throw new InvalidOperationException("Unsupported lifetime value."),
-        };
-    }
-
-    private static void AddKeyedService(
-        IServiceCollection services,
-        Type serviceType,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-            Type implementationType,
-        object key,
-        ServiceLifetime lifetime
-    )
-    {
-        switch (lifetime)
-        {
-            case ServiceLifetime.Singleton:
-                services.AddKeyedSingleton(serviceType, key, implementationType);
-                break;
-            case ServiceLifetime.Scoped:
-                services.AddKeyedScoped(serviceType, key, implementationType);
-                break;
-            case ServiceLifetime.Transient:
-                services.AddKeyedTransient(serviceType, key, implementationType);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(
-                    nameof(lifetime),
-                    lifetime,
-                    "Unsupported service lifetime."
-                );
-        }
-    }
-
-    private static bool ShouldRegisterSelf(
-        IReadOnlyList<Type> serviceTypes,
-        Type implementationType
-    )
-    {
-        return serviceTypes.Contains(implementationType);
-    }
-
-    private static void AddKeyedServiceWithDuplicateHandling(
-        IServiceCollection services,
-        Type serviceType,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-            Type implementationType,
-        object key,
-        ServiceLifetime lifetime,
-        TypeRegistrationInfo registration
-    )
-    {
-        if (!ShouldAddDescriptor(services, serviceType, key, registration))
-        {
-            return;
-        }
-
-        AddKeyedService(services, serviceType, implementationType, key, lifetime);
-    }
-
-    private static void AddDescriptorWithDuplicateHandling(
-        IServiceCollection services,
-        ServiceDescriptor descriptor,
-        TypeRegistrationInfo registration
-    )
-    {
-        if (!ShouldAddDescriptor(services, descriptor.ServiceType, null, registration))
-        {
-            return;
-        }
-
-        services.Add(descriptor);
-    }
-
-    private static bool ShouldAddDescriptor(
-        IServiceCollection services,
-        Type serviceType,
-        object? key,
-        TypeRegistrationInfo registration
-    )
-    {
-        var matches = FindDescriptorIndexes(services, serviceType, key);
-        if (matches.Count == 0)
-        {
-            return true;
-        }
-
-        switch (registration.Duplicate)
-        {
-            case DuplicateHandling.Skip:
-                return false;
-            case DuplicateHandling.Throw:
-                throw new InvalidOperationException(
-                    $"Duplicate registration detected for '{serviceType}'."
-                );
-            case DuplicateHandling.Replace:
-                for (var i = matches.Count - 1; i >= 0; i--)
-                {
-                    services.RemoveAt(matches[i]);
-                }
-                return true;
-            case DuplicateHandling.Add:
-            default:
-                return true;
-        }
-    }
-
-    private static List<int> FindDescriptorIndexes(
-        IServiceCollection services,
-        Type serviceType,
-        object? key
-    )
-    {
-        var indexes = new List<int>();
-        for (var i = 0; i < services.Count; i++)
-        {
-            var descriptor = services[i];
-            if (descriptor.ServiceType != serviceType)
+            return descriptor.Lifetime switch
             {
-                continue;
+                ServiceLifetime.Singleton => GetOrCreateSingleton(
+                    provider,
+                    descriptor,
+                    () => CreateInstanceUncached(provider, descriptor, serviceKey)
+                ),
+                ServiceLifetime.Scoped => GetOrCreateScoped(
+                    provider,
+                    descriptor,
+                    () => CreateInstanceUncached(provider, descriptor, serviceKey)
+                ),
+                _ => CreateInstanceUncached(provider, descriptor, serviceKey),
+            };
+        }
+
+        private static object CreateInstanceUncached(
+            IServiceProvider provider,
+            ServiceDescriptor descriptor,
+            object? serviceKey
+        )
+        {
+            if (descriptor.IsKeyedService)
+            {
+                if (descriptor.KeyedImplementationInstance is not null)
+                {
+                    return descriptor.KeyedImplementationInstance;
+                }
+
+                if (descriptor.KeyedImplementationFactory is not null)
+                {
+                    return descriptor.KeyedImplementationFactory(provider, serviceKey!);
+                }
+
+                if (descriptor.KeyedImplementationType is not null)
+                {
+                    return ActivatorUtilities.CreateInstance(provider, descriptor.KeyedImplementationType);
+                }
+
+                throw new InvalidOperationException(
+                    $"Unable to create keyed instance for service type '{descriptor.ServiceType}'."
+                );
             }
 
-            if (key is null)
+            if (descriptor.ImplementationInstance is not null)
             {
+                return descriptor.ImplementationInstance;
+            }
+
+            if (descriptor.ImplementationFactory is not null)
+            {
+                return descriptor.ImplementationFactory(provider);
+            }
+
+            if (descriptor.ImplementationType is not null)
+            {
+                return ActivatorUtilities.CreateInstance(provider, descriptor.ImplementationType);
+            }
+
+            throw new InvalidOperationException(
+                $"Unable to create instance for service type '{descriptor.ServiceType}'."
+            );
+        }
+
+        private static object GetOrCreateSingleton(
+            IServiceProvider provider,
+            ServiceDescriptor descriptor,
+            Func<object> factory
+        )
+        {
+            var scopeFactory = provider.GetService<IServiceScopeFactory>();
+            if (scopeFactory is null)
+            {
+                return GetOrCreateScoped(provider, descriptor, factory);
+            }
+
+            var cache = SingletonCache.GetValue(
+                scopeFactory,
+                static _ => new ConditionalWeakTable<ServiceDescriptor, object>()
+            );
+            return GetOrCreateCached(cache, descriptor, factory);
+        }
+
+        private static object GetOrCreateScoped(
+            IServiceProvider provider,
+            ServiceDescriptor descriptor,
+            Func<object> factory
+        )
+        {
+            var cache = ScopedCache.GetValue(
+                provider,
+                static _ => new ConditionalWeakTable<ServiceDescriptor, object>()
+            );
+            return GetOrCreateCached(cache, descriptor, factory);
+        }
+
+        private static object GetOrCreateCached(
+            ConditionalWeakTable<ServiceDescriptor, object> cache,
+            ServiceDescriptor descriptor,
+            Func<object> factory
+        )
+        {
+            if (cache.TryGetValue(descriptor, out var existing))
+            {
+                return existing;
+            }
+
+            var created = factory();
+            try
+            {
+                cache.Add(descriptor, created);
+                return created;
+            }
+            catch (ArgumentException)
+            {
+                return cache.TryGetValue(descriptor, out var raced) ? raced : created;
+            }
+        }
+
+        private bool ShouldAddDescriptor(Type serviceType, object? key, DuplicateHandling duplicate)
+        {
+            var matches = FindDescriptorIndexes(serviceType, key, includeKeyed: false);
+            if (matches.Count == 0)
+            {
+                return true;
+            }
+
+            switch (duplicate)
+            {
+                case DuplicateHandling.Skip:
+                    return false;
+                case DuplicateHandling.Throw:
+                    throw new InvalidOperationException(
+                        $"Duplicate registration detected for '{serviceType}'."
+                    );
+                case DuplicateHandling.Replace:
+                    for (var i = matches.Count - 1; i >= 0; i--)
+                    {
+                        _services.RemoveAt(matches[i]);
+                    }
+                    return true;
+                case DuplicateHandling.Add:
+                default:
+                    return true;
+            }
+        }
+
+        private List<int> FindDescriptorIndexes(Type serviceType, object? key, bool includeKeyed)
+        {
+            var indexes = new List<int>();
+            for (var i = 0; i < _services.Count; i++)
+            {
+                var descriptor = _services[i];
+                if (descriptor.ServiceType != serviceType)
+                {
+                    continue;
+                }
+
+                if (includeKeyed)
+                {
+                    indexes.Add(i);
+                    continue;
+                }
+
+                if (key is null)
+                {
+                    if (!descriptor.IsKeyedService)
+                    {
+                        indexes.Add(i);
+                    }
+                    continue;
+                }
+
                 if (!descriptor.IsKeyedService)
+                {
+                    continue;
+                }
+
+                if (Equals(descriptor.ServiceKey, key))
                 {
                     indexes.Add(i);
                 }
-                continue;
             }
 
-            if (!descriptor.IsKeyedService)
-            {
-                continue;
-            }
+            return indexes;
+        }
 
-            if (Equals(descriptor.ServiceKey, key))
+        private void AddKeyedService(
+            Type serviceType,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+                Type implementationType,
+            object key,
+            ServiceLifetime lifetime
+        )
+        {
+            switch (lifetime)
             {
-                indexes.Add(i);
+                case ServiceLifetime.Singleton:
+                    _services.AddKeyedSingleton(serviceType, key, implementationType);
+                    break;
+                case ServiceLifetime.Scoped:
+                    _services.AddKeyedScoped(serviceType, key, implementationType);
+                    break;
+                case ServiceLifetime.Transient:
+                    _services.AddKeyedTransient(serviceType, key, implementationType);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(lifetime),
+                        lifetime,
+                        "Unsupported service lifetime."
+                    );
             }
         }
 
-        return indexes;
+        private static ServiceLifetime ConvertLifetime(QudiContainerLifetime lifetime)
+        {
+            return lifetime switch
+            {
+                QudiContainerLifetime.Singleton => ServiceLifetime.Singleton,
+                QudiContainerLifetime.Scoped => ServiceLifetime.Scoped,
+                QudiContainerLifetime.Transient => ServiceLifetime.Transient,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(lifetime),
+                    lifetime,
+                    "Unsupported service lifetime."
+                ),
+            };
+        }
     }
 }
