@@ -55,7 +55,7 @@ internal static class RegistrationAttrGenerator
                 /// <summary>
                 /// Specifies how AsTypes is inferred when omitted.
                 /// </summary>
-                public AsTypesFallback AsTypesFallback { get; set; } = AsTypesFallback.SelfWithInterfaces;
+                public AsTypesFallback AsTypesFallback { get; set; } = AsTypesFallback.SelfOrInterfaces;
 
                 /// <summary>
                 /// Make this class accessible from other projects?

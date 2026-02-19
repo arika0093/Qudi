@@ -824,11 +824,18 @@ public class MyService2 : IService, IOtherService;
 To change this behavior, use the `AsTypesFallback` property.
 
 ```csharp
+[DITransient(AsTypesFallback = AsTypesFallback.SelfOrInterfaces)]
+public class MyService : IService, IOtherService;
+// -> interfaces exist: registered as IService/IOtherService, no interfaces: registered as MyService (default)
+
 [DITransient(AsTypesFallback = AsTypesFallback.Self)]
 public class MyService : IService, IOtherService; // -> registered only as MyService, not as IService or IOtherService
 
 [DITransient(AsTypesFallback = AsTypesFallback.Interfaces)]
 public class MyService : IService, IOtherService; // -> registered only as IService and IOtherService, not as MyService
+
+[DITransient(AsTypesFallback = AsTypesFallback.SelfWithInterfaces)]
+public class MyService : IService, IOtherService; // -> registered as MyService and as IService/IOtherService
 ```
 
 You can also explicitly specify the types to register with the `AsTypes` property.
@@ -2024,7 +2031,7 @@ Are you a customization nerd? You can customize various registration settings us
     // It is automatically identified, but you can also specify it explicitly
     AsTypes = [typeof(IYourService), typeof(IYourOtherService)],
     // When multiple registrations for the same interface exist, which one to register as?
-    AsTypesFallback = AsTypesFallback.SelfWithInterfaces, // or "Self", "Interfaces"
+    AsTypesFallback = AsTypesFallback.SelfOrInterfaces, // or "Self", "Interfaces", "SelfWithInterfaces"
     // Make this class accessible from other projects?
     UsePublic = true,
     // You can use Keyed registrations.

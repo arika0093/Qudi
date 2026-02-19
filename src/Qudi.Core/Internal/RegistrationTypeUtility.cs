@@ -27,6 +27,7 @@ public static class RegistrationTypeUtility
                 registration.Type,
                 GetFilteredInterfaces(registration.Type)
             ),
+            AsTypesFallback.SelfOrInterfaces => PreferInterfacesOrSelf(registration.Type),
             _ => [registration.Type],
         };
     }
@@ -51,6 +52,17 @@ public static class RegistrationTypeUtility
         var list = new List<Type>(interfaces.Count + 1) { type };
         list.AddRange(interfaces);
         return list.Distinct().ToList();
+    }
+
+    private static IReadOnlyList<Type> PreferInterfacesOrSelf(Type type)
+    {
+        var interfaces = GetFilteredInterfaces(type);
+        if (interfaces.Count > 0)
+        {
+            return interfaces;
+        }
+
+        return [type];
     }
 
     private static bool IsSystemBuiltInType(Type type)

@@ -50,6 +50,43 @@ public sealed class QudiAttributeOptionsTests
     }
 
     [Test]
+    public void AsTypesFallback_SelfOrInterfaces_PrefersInterfaces()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        provider.GetService<AsTypesSelfOrInterfacesSample>().ShouldBeNull();
+
+        var service = provider.GetRequiredService<IAsTypesSelfOrInterfacesSample>();
+        service.Id.ShouldBe("self-or-interfaces");
+    }
+
+    [Test]
+    public void AsTypesFallback_Default_UsesSelfOrInterfaces_WhenInterfacesExist()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        provider.GetService<AsTypesDefaultSample>().ShouldBeNull();
+
+        var service = provider.GetRequiredService<IAsTypesDefaultSample>();
+        service.Id.ShouldBe("default-interface");
+    }
+
+    [Test]
+    public void AsTypesFallback_Default_UsesSelfOrInterfaces_WhenNoInterfaces()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var self = provider.GetRequiredService<AsTypesDefaultSelfSample>();
+        self.Id.ShouldBe("default-self");
+    }
+
+    [Test]
     public void DuplicateHandling_Add_AllowsMultipleRegistrations()
     {
         var services = new ServiceCollection();

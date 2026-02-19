@@ -224,6 +224,34 @@ public sealed class AsTypesSelfWithInterfacesSample : IAsTypesSelfWithInterfaces
     public string Id => "self-with-interface";
 }
 
+public interface IAsTypesSelfOrInterfacesSample
+{
+    string Id { get; }
+}
+
+[Qudi(AsTypesFallback = AsTypesFallback.SelfOrInterfaces)]
+public sealed class AsTypesSelfOrInterfacesSample : IAsTypesSelfOrInterfacesSample
+{
+    public string Id => "self-or-interfaces";
+}
+
+public interface IAsTypesDefaultSample
+{
+    string Id { get; }
+}
+
+[Qudi]
+public sealed class AsTypesDefaultSample : IAsTypesDefaultSample
+{
+    public string Id => "default-interface";
+}
+
+[Qudi]
+public sealed class AsTypesDefaultSelfSample
+{
+    public string Id => "default-self";
+}
+
 public interface IDuplicateAddSample
 {
     string Id { get; }

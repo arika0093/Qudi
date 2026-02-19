@@ -40,7 +40,7 @@ public sealed record TypeRegistrationInfo
     /// <summary>
     /// Specifies how AsTypes is inferred when omitted.
     /// </summary>
-    public AsTypesFallback AsTypesFallback { get; init; } = AsTypesFallback.SelfWithInterfaces;
+    public AsTypesFallback AsTypesFallback { get; init; } = AsTypesFallback.SelfOrInterfaces;
 
     /// <summary>
     /// Make this class accessible from other projects?

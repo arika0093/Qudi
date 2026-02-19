@@ -11,7 +11,7 @@ internal static class RegistrationAttrParser
 {
     private const string DefaultLifetime = "Singleton";
     private const int DefaultDuplicate = 3; // DuplicateHandling.Add
-    private const int DefaultAsTypesFallback = 2; // AsTypesFallback.SelfWithInterfaces
+    private const int DefaultAsTypesFallback = 3; // AsTypesFallback.SelfOrInterfaces
 
     private const string QudiAttribute = $"Qudi.QudiAttribute";
     private const string QudiSingletonAttribute = $"Qudi.DISingletonAttribute";

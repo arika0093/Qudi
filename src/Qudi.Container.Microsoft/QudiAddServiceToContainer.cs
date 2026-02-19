@@ -533,7 +533,7 @@ public static class QudiAddServiceToContainer
         var lifetime = ConvertLifetime(registration.Lifetime);
         var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
         var serviceTypes = RegistrationTypeUtility.GetEffectiveAsTypes(registration);
-        var registerSelf = ShouldRegisterSelf(registration);
+        var registerSelf = ShouldRegisterSelf(serviceTypes, registration.Type);
 
         object Factory(IServiceProvider sp) =>
             ActivatorUtilities.CreateInstance(sp, registration.Type);
@@ -823,14 +823,12 @@ public static class QudiAddServiceToContainer
         }
     }
 
-    private static bool ShouldRegisterSelf(TypeRegistrationInfo registration)
+    private static bool ShouldRegisterSelf(
+        IReadOnlyList<Type> serviceTypes,
+        Type implementationType
+    )
     {
-        if (registration.AsTypes.Count > 0)
-        {
-            return true;
-        }
-
-        return registration.AsTypesFallback != AsTypesFallback.Interfaces;
+        return serviceTypes.Contains(implementationType);
     }
 
     private static void AddKeyedServiceWithDuplicateHandling(

@@ -42,7 +42,12 @@ public enum AsTypesFallback
     Interfaces = 1,
 
     /// <summary>
-    /// Register the implementation type and all implemented interfaces (default behavior).
+    /// Register the implementation type and all implemented interfaces.
     /// </summary>
     SelfWithInterfaces = 2,
+
+    /// <summary>
+    /// Register all implemented interfaces when present; otherwise register only the implementation type itself (default behavior).
+    /// </summary>
+    SelfOrInterfaces = 3,
 }
