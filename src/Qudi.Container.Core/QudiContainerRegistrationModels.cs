@@ -48,6 +48,7 @@ public sealed record QudiServiceRegistrationRequest
     /// <summary>
     /// The service type to register.
     /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
     public required Type ServiceType { get; init; }
 
     /// <summary>
