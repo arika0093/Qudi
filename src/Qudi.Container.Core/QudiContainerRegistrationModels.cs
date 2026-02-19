@@ -54,6 +54,7 @@ public sealed record QudiServiceRegistrationRequest
     /// <summary>
     /// The implementation type used for service creation.
     /// </summary>
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
     public required Type ImplementationType { get; init; }
 
     /// <summary>

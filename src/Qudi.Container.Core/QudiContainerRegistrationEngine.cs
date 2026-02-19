@@ -102,7 +102,7 @@ public static class QudiContainerRegistrationEngine
         var serviceTypes = RegistrationTypeUtility.GetEffectiveAsTypes(registration);
         var registerSelf = serviceTypes.Contains(registration.Type);
 
-        if (serviceTypes.Count == 0 && !registerSelf)
+        if (serviceTypes.Count == 0)
         {
             return;
         }
@@ -121,11 +121,6 @@ public static class QudiContainerRegistrationEngine
                         Kind = QudiServiceRegistrationKind.ImplementationType,
                     }
                 );
-            }
-
-            if (serviceTypes.Count == 0)
-            {
-                return;
             }
 
             if (isOpenGeneric || serviceTypes.Any(t => t.IsGenericTypeDefinition))

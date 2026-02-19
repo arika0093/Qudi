@@ -181,6 +181,8 @@ public static class QudiAddServiceToContainer
             IReadOnlyList<ServiceDescriptor> innerDescriptors
         )
         {
+            var compositeLifetime = GetCompositeLifetime(innerDescriptors);
+
             return ServiceDescriptor.Describe(
                 serviceType,
                 sp =>
@@ -199,8 +201,25 @@ public static class QudiAddServiceToContainer
 
                     return ActivatorUtilities.CreateInstance(sp, composite.Type, serviceArray);
                 },
-                ServiceLifetime.Transient
+                compositeLifetime
             );
+        }
+
+        private static ServiceLifetime GetCompositeLifetime(
+            IReadOnlyList<ServiceDescriptor> innerDescriptors
+        )
+        {
+            if (innerDescriptors.Any(d => d.Lifetime == ServiceLifetime.Singleton))
+            {
+                return ServiceLifetime.Singleton;
+            }
+
+            if (innerDescriptors.Any(d => d.Lifetime == ServiceLifetime.Scoped))
+            {
+                return ServiceLifetime.Scoped;
+            }
+
+            return ServiceLifetime.Transient;
         }
 
         private static object CreateFromDescriptor(
