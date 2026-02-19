@@ -36,14 +36,14 @@ public sealed class QudiAttributeOptionsTests
     }
 
     [Test]
-    public void AsTypesFallback_SelfWithInterface_RegistersBoth()
+    public void AsTypesFallback_SelfWithInterfaces_RegistersBoth()
     {
         var services = new ServiceCollection();
         services.AddQudiServices();
 
         var provider = services.BuildServiceProvider();
-        var self = provider.GetRequiredService<AsTypesSelfWithInterfaceSample>();
-        var service = provider.GetRequiredService<IAsTypesSelfWithInterfaceSample>();
+        var self = provider.GetRequiredService<AsTypesSelfWithInterfacesSample>();
+        var service = provider.GetRequiredService<IAsTypesSelfWithInterfacesSample>();
 
         ReferenceEquals(self, service).ShouldBeTrue();
         self.Id.ShouldBe("self-with-interface");

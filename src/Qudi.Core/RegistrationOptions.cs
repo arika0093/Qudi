@@ -44,5 +44,5 @@ public enum AsTypesFallback
     /// <summary>
     /// Register the implementation type and all implemented interfaces (default behavior).
     /// </summary>
-    SelfWithInterface = 2,
+    SelfWithInterfaces = 2,
 }

@@ -213,13 +213,13 @@ public sealed class AsTypesInterfacesOnlySample : IAsTypesInterfacesOnlySample
     public string Id => "interfaces-only";
 }
 
-public interface IAsTypesSelfWithInterfaceSample
+public interface IAsTypesSelfWithInterfacesSample
 {
     string Id { get; }
 }
 
-[Qudi(AsTypesFallback = AsTypesFallback.SelfWithInterface)]
-public sealed class AsTypesSelfWithInterfaceSample : IAsTypesSelfWithInterfaceSample
+[Qudi(AsTypesFallback = AsTypesFallback.SelfWithInterfaces)]
+public sealed class AsTypesSelfWithInterfacesSample : IAsTypesSelfWithInterfacesSample
 {
     public string Id => "self-with-interface";
 }

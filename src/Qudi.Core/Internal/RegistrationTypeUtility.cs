@@ -23,7 +23,7 @@ public static class RegistrationTypeUtility
         {
             AsTypesFallback.Self => [registration.Type],
             AsTypesFallback.Interfaces => GetFilteredInterfaces(registration.Type),
-            AsTypesFallback.SelfWithInterface => Combine(
+            AsTypesFallback.SelfWithInterfaces => Combine(
                 registration.Type,
                 GetFilteredInterfaces(registration.Type)
             ),

@@ -1,7 +1,7 @@
 # Qudi
 [![NuGet Version](https://img.shields.io/nuget/v/Qudi?style=for-the-badge&logo=NuGet&color=0080CC)](https://www.nuget.org/packages/Qudi/) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Qudi/test.yaml?branch=main&label=Test&style=for-the-badge)  ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/arika0093/Qudi/test-aot.yaml?branch=main&label=Test(AOT)&style=for-the-badge)
 
-**Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is yet another an attribute-based DI helper library.  
+**Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is a yet another attribute-based DI helper library.  
 <br/>
 
 ![Qudi - Quickly Dependency Injection](./assets/hero.png)
@@ -12,7 +12,7 @@
 * **No-Dependency**: [No dependency](#any-di-container-support) on specific DI containers, it just [collects information](#collecting-class-information).
 * **Customize**: [Order](#registration-order), [Duplicate](#duplicate-handling), [AsTypes](#types-to-register), [Key](#keyed-registration), [Condition](#conditional-registration), etc.
 * **Support**: [Multiple Projects](#in-multiple-projects), [Decorator](#decorator-pattern), [Composite](#composite-pattern), [Generic types](#generic-registration).
-* **Visualization**: [Console visualizer](#visualize-registration), [Export to file](#export-registration-diagram) 😎
+* **Visualization**: [Console visualizer](#visualize-registration), [Mistake warnings](#registration-status-visualization), [Export to file](#export-registration-diagram) 😎
 
 ## Getting Started
 ### First Step
@@ -21,8 +21,8 @@ If you are using .NET 10 or later, just paste the following code into a file and
 
 ```csharp
 #!/usr/bin/env dotnet
-#:package Qudi@*
-#:package Qudi.Visualizer@*
+#:package Qudi@*-*
+#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 
@@ -131,8 +131,8 @@ public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
 
 ```csharp
 #!/usr/bin/env dotnet
-#:package Qudi@*
-#:package Qudi.Visualizer@*
+#:package Qudi@*-*
+#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -217,8 +217,8 @@ public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
 
 ```csharp
 #!/usr/bin/env dotnet
-#:package Qudi@*
-#:package Qudi.Visualizer@*
+#:package Qudi@*-*
+#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -327,8 +327,8 @@ public partial class PokemonDecorator(IPokemon decorated) : IPokemon
 
 ```csharp
 #!/usr/bin/env dotnet
-#:package Qudi@*
-#:package Qudi.Visualizer@*
+#:package Qudi@*-*
+#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -459,8 +459,8 @@ public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPo
 
 ```csharp
 #!/usr/bin/env dotnet
-#:package Qudi@*
-#:package Qudi.Visualizer@*
+#:package Qudi@*-*
+#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -809,16 +809,16 @@ services.AddQudiServices(conf => {
 ## Registration Handling
 ### Types to Register
 
-By default, the implementation type and all implemented interfaces are registered.
+By default, the implementation type itself is registered(when no interfaces) or is registered as all interfaces(when implemented interfaces exist).
 
 ```csharp
 [DITransient]
-public class MyService : IService, IOtherService;
+public class MyService1;
+// -> no interface, so registered as MyService1
 
-// This will be registered as:
-services.AddTransient<MyService>();
-services.AddTransient<IService, MyService>(provider => provider.GetRequiredService<MyService>());
-services.AddTransient<IOtherService, MyService>(provider => provider.GetRequiredService<MyService>());
+[DITransient]
+public class MyService2 : IService, IOtherService;
+// -> implemented interfaces exist, so registered as IService and IOtherService
 ```
 
 To change this behavior, use the `AsTypesFallback` property.
@@ -835,7 +835,7 @@ You can also explicitly specify the types to register with the `AsTypes` propert
 
 ```csharp
 [DITransient(AsTypes = [ typeof(IService) ])]
-public class MyService : IService, IOtherService; // -> registered as MyService and IService, but not as IOtherService
+public class MyService : IService, IOtherService; // -> registered as IService, but not as IOtherService or MyService
 ```
 
 ### Registration Order
@@ -1623,8 +1623,8 @@ public class ComponentValidator(IComponentValidator<IComponent> validator)
 
 ```csharp
 #!/usr/bin/env dotnet
-#:package Qudi@*
-#:package Qudi.Visualizer@*
+#:package Qudi@*-*
+#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 
@@ -2024,7 +2024,7 @@ Are you a customization nerd? You can customize various registration settings us
     // It is automatically identified, but you can also specify it explicitly
     AsTypes = [typeof(IYourService), typeof(IYourOtherService)],
     // When multiple registrations for the same interface exist, which one to register as?
-    AsTypesFallback = AsTypesFallback.SelfWithInterface, // or "Self", "Interfaces"
+    AsTypesFallback = AsTypesFallback.SelfWithInterfaces, // or "Self", "Interfaces"
     // Make this class accessible from other projects?
     UsePublic = true,
     // You can use Keyed registrations.
