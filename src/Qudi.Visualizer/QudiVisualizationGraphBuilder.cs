@@ -9,46 +9,27 @@ internal static class QudiVisualizationGraphBuilder
 {
     public static QudiVisualizationGraph Build(QudiConfiguration configuration)
     {
-        var allRegistrations = configuration.Registrations.ToList();
+        var registrationGraph = QudiRegistrationGraphBuilder.Build(configuration);
+        var allRegistrations = registrationGraph
+            .AllEntries.Select(entry => entry.Registration)
+            .ToList();
         var nodes = new Dictionary<string, QudiVisualizationNode>(StringComparer.Ordinal);
         var edges = new List<QudiVisualizationEdge>();
         var registeredTypes = new HashSet<Type>();
-        var availableTypes = GenericConstraintUtility.CollectLoadableTypes(
-            allRegistrations.Select(r => r.Type.Assembly).Distinct().ToList()
-        );
+        var availableTypes = registrationGraph.AvailableTypes;
         var constraintCandidateCache = new Dictionary<Type, List<Type>>();
 
-        // Build internal assemblies set
-        var internalAssemblies = allRegistrations
-            .Select(r => r.AssemblyName)
-            .Where(name => !string.IsNullOrEmpty(name))
-            .Distinct()
-            .ToHashSet(StringComparer.Ordinal);
+        var internalAssemblies = registrationGraph.InternalAssemblies.ToHashSet(
+            StringComparer.Ordinal
+        );
 
-        // Build a map of registrations for easy access
-        var registrationViews = allRegistrations
-            .Select(registration =>
+        var registrationViews = registrationGraph
+            .AllEntries.Select(entry => new VisualizationRegistrationView
             {
-                var serviceTypes = RegistrationTypeUtility
-                    .GetEffectiveAsTypes(registration)
-                    .Distinct()
-                    .ToList();
-
-                var isMatched =
-                    registration.When.Count == 0
-                    || registration.When.Any(r =>
-                        configuration.Conditions.Contains(r, StringComparer.OrdinalIgnoreCase)
-                    );
-
-                return new
-                {
-                    Registration = registration,
-                    ServiceTypes = serviceTypes,
-                    IsMatched = isMatched,
-                    Condition = registration.When.Count > 0
-                        ? string.Join(", ", registration.When)
-                        : null,
-                };
+                Registration = entry.Registration,
+                ServiceTypes = entry.ServiceTypes,
+                IsMatched = entry.IsConditionMatched,
+                Condition = entry.Condition,
             })
             .ToList();
 
@@ -62,44 +43,26 @@ internal static class QudiVisualizationGraphBuilder
             }
         }
 
-        var compositeTypes = registrationViews
-            .Where(v => v.Registration.MarkAsComposite && v.IsMatched)
+        var compositeTypes = registrationGraph
+            .ApplicableEntries.Where(v => v.Registration.MarkAsComposite)
             .Select(v => v.Registration.Type)
             .ToHashSet();
 
-        // Group decorators and composites by service type in application order (outer -> inner).
-        var layersByService = registrationViews
-            .Where(v =>
-                (v.Registration.MarkAsDecorator || v.Registration.MarkAsComposite) && v.IsMatched
-            )
-            .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
-            .GroupBy(x => x.Service)
-            .ToDictionary(
-                g => g.Key,
-                g =>
-                    g.OrderBy(x => x.View.Registration.Order)
-                        // Lower order is outer; for the same order, decorators wrap composites.
-                        .ThenBy(x => x.View.Registration.MarkAsComposite ? 1 : 0)
-                        .ThenBy(x => x.View.Registration.Type.FullName, StringComparer.Ordinal)
-                        .Select(x => x.View)
-                        .ToList()
+        var layersByService = registrationGraph.LayersByService.ToDictionary(
+            x => x.Key,
+            x => x.Value.Select(ToVisualizationView).ToList()
+        );
+
+        var implementationsByService = registrationGraph.ImplementationsByService.ToDictionary(
+            x => x.Key,
+            x => x.Value.Select(ToVisualizationView).ToList()
+        );
+
+        var baseImplementationsByService = registrationGraph
+            .BaseImplementationsByService.ToDictionary(
+                x => x.Key,
+                x => x.Value.Select(ToVisualizationView).ToList()
             );
-
-        // Build a map of implementations by service type
-        var implementationsByService = registrationViews
-            .Where(v => !v.Registration.MarkAsDecorator && v.IsMatched)
-            .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
-            .GroupBy(x => x.Service)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.View).ToList());
-
-        // Non-decorator, non-composite implementations (used for composite inner services)
-        var baseImplementationsByService = registrationViews
-            .Where(v =>
-                !v.Registration.MarkAsDecorator && !v.Registration.MarkAsComposite && v.IsMatched
-            )
-            .SelectMany(v => v.ServiceTypes.Select(s => (Service: s, View: v)))
-            .GroupBy(x => x.Service)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.View).ToList());
 
         foreach (var view in registrationViews)
         {
@@ -1039,5 +1002,24 @@ internal static class QudiVisualizationGraphBuilder
             .ToList();
 
         return new QudiVisualizationGraph(filteredNodes, filteredEdges);
+    }
+
+    private static VisualizationRegistrationView ToVisualizationView(QudiRegistrationEntry entry)
+    {
+        return new VisualizationRegistrationView
+        {
+            Registration = entry.Registration,
+            ServiceTypes = entry.ServiceTypes,
+            IsMatched = entry.IsConditionMatched,
+            Condition = entry.Condition,
+        };
+    }
+
+    private sealed record VisualizationRegistrationView
+    {
+        public required TypeRegistrationInfo Registration { get; init; }
+        public required IReadOnlyList<Type> ServiceTypes { get; init; }
+        public required bool IsMatched { get; init; }
+        public required string? Condition { get; init; }
     }
 }

@@ -12,14 +12,12 @@ internal static class QudiVisualizationAnalyzer
         QudiVisualizationRuntimeOptions runtimeOptions
     )
     {
-        var context = BuildContext(configuration);
+        var registrationGraph = QudiRegistrationGraphBuilder.Build(configuration);
+        var context = BuildContext(configuration, registrationGraph);
 
-        // Build internal assemblies set from registrations
-        var internalAssemblies = context
-            .Applicable.Select(r => r.Registration.AssemblyName)
-            .Where(name => !string.IsNullOrEmpty(name))
-            .Distinct()
-            .ToHashSet(StringComparer.Ordinal);
+        var internalAssemblies = registrationGraph.InternalAssemblies.ToHashSet(
+            StringComparer.Ordinal
+        );
 
         var missing = DetectMissing(context, internalAssemblies);
         var cycles = DetectCycles(context);
@@ -53,9 +51,9 @@ internal static class QudiVisualizationAnalyzer
             lifetimeWarnings.Count
         );
 
-        var exportedTypes = configuration
-            .Registrations.Where(r => r.Export && IsApplicable(r, configuration.Conditions))
-            .Select(r => r.Type)
+        var exportedTypes = registrationGraph
+            .ApplicableEntries.Where(r => r.Registration.Export)
+            .Select(r => r.Registration.Type)
             .Distinct()
             .ToList();
 
@@ -71,16 +69,16 @@ internal static class QudiVisualizationAnalyzer
         );
     }
 
-    private static VisualizationContext BuildContext(QudiConfiguration configuration)
+    private static VisualizationContext BuildContext(
+        QudiConfiguration configuration,
+        QudiRegistrationGraph registrationGraph
+    )
     {
-        var applicable = configuration
-            .Registrations.Where(r => IsApplicable(r, configuration.Conditions))
-            .Select(registration =>
+        var applicable = registrationGraph
+            .ApplicableEntries.Select(entry =>
             {
-                var serviceTypes = RegistrationTypeUtility
-                    .GetEffectiveAsTypes(registration)
-                    .Distinct()
-                    .ToList();
+                var registration = entry.Registration;
+                var serviceTypes = entry.ServiceTypes;
 
                 return new RegistrationView(
                     registration,
@@ -484,19 +482,6 @@ internal static class QudiVisualizationAnalyzer
         }
 
         return null;
-    }
-
-    internal static bool IsApplicable(
-        TypeRegistrationInfo registration,
-        IReadOnlyCollection<string> conditions
-    )
-    {
-        if (registration.When.Count == 0)
-        {
-            return true;
-        }
-
-        return registration.When.Any(r => conditions.Contains(r, StringComparer.OrdinalIgnoreCase));
     }
 
     private static string NormalizeLifetime(string lifetime)
