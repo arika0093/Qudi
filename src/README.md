@@ -60,10 +60,8 @@ When written like this, the following equivalent code is automatically generated
 public IServiceCollection AddQudiServices(this IServiceCollection services, Action<QudiConfiguration>? configuration = null)
 {
     // Generated code similar to this:
-    services.AddSingleton<Altaria>();
-    services.AddTransient<Abomasnow>();
-    services.AddSingleton<IPokemon, Altaria>(provider => provider.GetRequiredService<Altaria>());
-    services.AddTransient<IPokemon, Abomasnow>(provider => provider.GetRequiredService<Abomasnow>());
+    services.AddSingleton<IPokemon, Altaria>();
+    services.AddTransient<IPokemon, Abomasnow>();
     return services;
 }
 ```

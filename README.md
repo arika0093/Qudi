@@ -1905,7 +1905,7 @@ flowchart LR
 ```
 
 > [!WARNING]
-> Currently, dispatch only works for types that exist within the same project. This is due to limitations in the implementation of the Source Generator.
+> Currently, dispatch only works for types that are accessible (same project or child projects). This is due to implementation constraints of the source generator.
 
 ## Visualize Registration
 ### Setup
