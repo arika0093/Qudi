@@ -940,9 +940,8 @@ flowchart LR
 
 ```
 
-By default, "Development" is active in `DEBUG` build and "Production" is active in `RELEASE` build.
+By default, *Development* is active in DEBUG build and *Production* is active in RELEASE build.
 You can also specify conditions in the argument of `AddQudiServices` as needed.
-
 
 ```csharp
 builder.Services.AddQudiServices(conf => {
