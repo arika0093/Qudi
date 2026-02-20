@@ -5,27 +5,6 @@ using Qudi;
 namespace Qudi.Container.Core;
 
 /// <summary>
-/// Target lifetime used by container-independent registration logic.
-/// </summary>
-public enum QudiContainerLifetime
-{
-    /// <summary>
-    /// Reuse one instance for the whole application.
-    /// </summary>
-    Singleton,
-
-    /// <summary>
-    /// Reuse one instance per scope.
-    /// </summary>
-    Scoped,
-
-    /// <summary>
-    /// Create a new instance each time.
-    /// </summary>
-    Transient,
-}
-
-/// <summary>
 /// Registration strategy for service wiring.
 /// </summary>
 public enum QudiServiceRegistrationKind
@@ -49,7 +28,6 @@ public sealed record QudiServiceRegistrationRequest
     /// <summary>
     /// The service type to register.
     /// </summary>
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
     public required Type ServiceType { get; init; }
 
     /// <summary>
@@ -61,7 +39,7 @@ public sealed record QudiServiceRegistrationRequest
     /// <summary>
     /// Requested service lifetime.
     /// </summary>
-    public required QudiContainerLifetime Lifetime { get; init; }
+    public required string Lifetime { get; init; }
 
     /// <summary>
     /// Duplicate handling policy.

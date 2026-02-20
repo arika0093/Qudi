@@ -97,7 +97,7 @@ public static class QudiContainerRegistrationEngine
         TypeRegistrationInfo registration
     )
     {
-        var lifetime = ConvertLifetime(registration.Lifetime);
+        var lifetime = registration.Lifetime;
         var isOpenGeneric = registration.Type.IsGenericTypeDefinition;
         var serviceTypes = RegistrationTypeUtility.GetEffectiveAsTypes(registration);
         var registerSelf = serviceTypes.Contains(registration.Type);
@@ -205,16 +205,5 @@ public static class QudiContainerRegistrationEngine
                 }
             );
         }
-    }
-
-    private static QudiContainerLifetime ConvertLifetime(string lifetime)
-    {
-        return lifetime switch
-        {
-            Lifetime.Singleton => QudiContainerLifetime.Singleton,
-            Lifetime.Scoped => QudiContainerLifetime.Scoped,
-            Lifetime.Transient => QudiContainerLifetime.Transient,
-            _ => throw new InvalidOperationException("Unsupported lifetime value."),
-        };
     }
 }

@@ -444,13 +444,13 @@ public static class QudiAddServiceToContainer
             }
         }
 
-        private static ServiceLifetime ConvertLifetime(QudiContainerLifetime lifetime)
+        private static ServiceLifetime ConvertLifetime(string lifetime)
         {
             return lifetime switch
             {
-                QudiContainerLifetime.Singleton => ServiceLifetime.Singleton,
-                QudiContainerLifetime.Scoped => ServiceLifetime.Scoped,
-                QudiContainerLifetime.Transient => ServiceLifetime.Transient,
+                Lifetime.Singleton => ServiceLifetime.Singleton,
+                Lifetime.Scoped => ServiceLifetime.Scoped,
+                Lifetime.Transient => ServiceLifetime.Transient,
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(lifetime),
                     lifetime,
