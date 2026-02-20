@@ -268,6 +268,7 @@ internal static class HelperTargetCollector
             var target = new HelperInterfaceTarget
             {
                 InterfaceName = interfaceName,
+                InterfaceAccessibility = GetAccessibility(iface.DeclaredAccessibility),
                 InterfaceNamespace = interfaceNamespace,
                 InterfaceHelperName = interfaceHelperName,
                 HelperNamespaceSuffix = SanitizeIdentifier(interfaceName),

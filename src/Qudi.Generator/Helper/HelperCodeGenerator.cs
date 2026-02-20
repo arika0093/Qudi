@@ -191,6 +191,9 @@ internal static class HelperCodeGenerator
     )
     {
         var interfaceName = helper.InterfaceName;
+        var interfaceAccessibility = string.IsNullOrWhiteSpace(helper.InterfaceAccessibility)
+            ? "internal"
+            : helper.InterfaceAccessibility;
         var interfaceHelperName = helper.InterfaceHelperName;
         var members = helper.Members.ToImmutableArray();
         var useIntercept = helper.UseIntercept;
@@ -214,7 +217,8 @@ internal static class HelperCodeGenerator
             : $"{helperName}{genericArgs}";
 
         // Build the interface declaration line
-        var interfaceDeclaration = $"public interface {helperInterfaceName} : {interfaceName}";
+        var interfaceDeclaration =
+            $"{interfaceAccessibility} interface {helperInterfaceName} : {interfaceName}";
 
         // Add where clauses if present
         if (!string.IsNullOrEmpty(genericParams))

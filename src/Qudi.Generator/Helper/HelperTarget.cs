@@ -13,6 +13,11 @@ internal sealed record HelperInterfaceTarget
     public required string InterfaceName { get; init; }
 
     /// <summary>
+    /// Accessibility of the interface (e.g., public, internal).
+    /// </summary>
+    public required string InterfaceAccessibility { get; init; }
+
+    /// <summary>
     /// Namespace that contains the interface.
     /// </summary>
     public required string InterfaceNamespace { get; init; }

@@ -55,9 +55,7 @@ internal static class CompositeDispatchCodeGenerator
                 builder.AppendLine("");
 
                 // constructor with dependencies for each concrete type.
-                builder.AppendLine(
-                    $"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}("
-                );
+                builder.AppendLine($"public {target.ImplementingTypeName}(");
                 builder.IncreaseIndent();
                 BuildConstructorParameters(builder, target);
                 builder.DecreaseIndent();
