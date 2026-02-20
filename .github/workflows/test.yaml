@@ -65,11 +65,30 @@ jobs:
         run: |
           dotnet pack -c Release -o nupkg
           
-      - name: Test Qudi.Example.Readme (Copy)
+      - name: Test Qudi.Example.Readme 
         run: |
           mkdir -p tmp/Qudi.Example.Readme
           cp -r examples/Qudi.Example.Readme/* tmp/Qudi.Example.Readme
           cd tmp/Qudi.Example.Readme
           dotnet add package Qudi --source ../../nupkg --prerelease
-          dotnet add package Qudi.Visualizer --source ../../nupkg --prerelease
           dotnet run
+
+  test-snippets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Run each snippets
+        run: |
+          for file in $(find examples/Qudi.Example.Snippets -name "*.cs"); do
+            echo "Running $file"
+            dotnet run "$file"
+          done
