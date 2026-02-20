@@ -2235,8 +2235,8 @@ internal static partial class QudiAddServiceExtensions
         {
             ConfigurationAction = (config) => global::Qudi.Container.Microsoft.QudiAddServiceToContainer.AddQudiServices(services, config)
         };
-        multiBuilder.AddBuilder(builderOfCurrent);
         configuration?.Invoke(multiBuilder, builderOfCurrent);
+        multiBuilder.AddBuilder(builderOfCurrent);
         global::Qudi.Internal.QudiConfigurationExecutor.ExecuteAll(multiBuilder, global::Qudi.Generated.QudiInternalRegistrations.FetchAll);
         return services;
     }

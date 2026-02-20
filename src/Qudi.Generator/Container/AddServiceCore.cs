@@ -79,8 +79,8 @@ internal abstract class AddServiceCore
                 {
                     ConfigurationAction = (config) => {{CalledMethodName}}(services, config)
                 };
-                multiBuilder.AddBuilder(builderOfCurrent);
                 configuration?.Invoke(multiBuilder, builderOfCurrent);
+                multiBuilder.AddBuilder(builderOfCurrent);
                 {{QudiExecuteAllMethod}}(multiBuilder, {{QudiGeneratedNS}}.QudiInternalRegistrations.FetchAll);
                 return services;
             }
