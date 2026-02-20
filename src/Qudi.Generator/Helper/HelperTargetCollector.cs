@@ -24,39 +24,29 @@ internal static class HelperTargetCollector
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDecoratorAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) =>
-                    CreateTargets(ctx, isDecorator: true, isComposite: false, isDispatch: false)
+                static (ctx, _) => CreateTargets(ctx, isDecorator: true)
             )
-            .Select(static (targets, _) => targets);
+            .Collect();
         var compositeTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiCompositeAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) =>
-                    CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: false)
+                static (ctx, _) => CreateTargets(ctx, isComposite: true)
             )
-            .Select(static (targets, _) => targets);
+            .Collect();
         var dispatchTargets = context
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDispatchAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) =>
-                    CreateTargets(ctx, isDecorator: false, isComposite: true, isDispatch: true)
+                static (ctx, _) => CreateTargets(ctx, isComposite: true, isDispatch: true)
             )
-            .Select(static (targets, _) => targets);
-        return decoratorTargets
-            .Collect()
-            .Combine(compositeTargets.Collect())
-            .Combine(dispatchTargets.Collect())
-            .Select(
-                static (targets, _) =>
-                    MergeTargets(
-                        targets
-                            .Left.Left.Concat(targets.Left.Right)
-                            .Concat(targets.Right)
-                            .ToImmutableArray()
-                    )
-            );
+            .Collect();
+
+        var collectedTargets = decoratorTargets
+            .CombineAndMerge(compositeTargets)
+            .CombineAndMerge(dispatchTargets);
+
+        return collectedTargets.Select((c, _) => MergeTargets(c));
     }
 
     // Check if the syntax node is a partial class declaration
@@ -68,9 +58,9 @@ internal static class HelperTargetCollector
 
     private static HelperGenerationInput CreateTargets(
         GeneratorAttributeSyntaxContext context,
-        bool isDecorator,
-        bool isComposite,
-        bool isDispatch
+        bool isDecorator = false,
+        bool isComposite = false,
+        bool isDispatch = false
     )
     {
         var blankInput = new HelperGenerationInput
@@ -89,10 +79,24 @@ internal static class HelperTargetCollector
             return blankInput;
         }
 
-        var attributeName =
-            isDecorator ? QudiDecoratorAttribute
-            : isDispatch ? QudiDispatchAttribute
-            : QudiCompositeAttribute;
+        string? attributeName = null;
+        if (isDecorator)
+        {
+            attributeName = QudiDecoratorAttribute;
+        }
+        else if (isDispatch)
+        {
+            attributeName = QudiDispatchAttribute;
+        }
+        else if (isComposite)
+        {
+            attributeName = QudiCompositeAttribute;
+        }
+        else
+        {
+            throw new ArgumentException("At least one of isDecorator, isComposite, or isDispatch must be true.");
+        }
+
         var attribute = context
             .Attributes.Where(attr =>
                 SymbolEqualityComparer.Default.Equals(
