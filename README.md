@@ -1905,7 +1905,7 @@ flowchart LR
 ```
 
 > [!WARNING]
-> Currently, dispatch only works for types that are accessible (same project or child projects). This is due to implementation constraints of the source generator.
+> Currently, dispatch only works for types that are accessible (same project or child projects).
 
 ## Visualize Registration
 ### Setup
@@ -2016,44 +2016,6 @@ public class YourClass : IYourService;
 ```
 
 ## Customization
-### Customize Registration
-Are you a customization nerd? You can customize various registration settings using the `[Qudi]` attribute.
-
-```csharp
-// For example, you can add custom attributes like this:
-[Qudi(
-    // Lifetime is required parameter
-    Lifetime = Lifetime.Singleton, // or "Singleton"
-    // When multiple registrations for the same interface exist, how to handle them?
-    Duplicate = DuplicateStrategy.Add, // or "Skip", "Replace", "Throw"
-    // Trigger registration only in specific conditions. if empty, always registered.
-    When = [Condition.Development, Condition.Production],
-    // It is automatically identified, but you can also specify it explicitly
-    AsTypes = [typeof(IYourService), typeof(IYourOtherService)],
-    // When multiple registrations for the same interface exist, which one to register as?
-    AsTypesFallback = AsTypesFallback.SelfOrInterfaces, // or "Self", "Interfaces", "SelfWithInterfaces"
-    // Make this class accessible from other projects?
-    UsePublic = true,
-    // You can use Keyed registrations.
-    Key = null,
-    // Are you concerned about the order of registration? (default is 0, high value means later registration)
-    Order = 0,
-    // Set true if you want to register as a decorator
-    MarkAsDecorator = false,
-    // Set true if you want to register as a composite
-    MarkAsComposite = false,
-    // Export visualization data to a specific folder when visualization is enabled. (see Visualize Registration section)
-    Export = false
-)]
-public class YourClass : IYourService, IYourOtherService;
-
-// [DI*] is just a shorthand for the above [Qudi] attribute, so you can use it like this:
-// [DISingleton(When = [Condition.Development], AsTypes = [typeof(IYourService)], ...)]
-```
-
-> [!TIP]
-> If you need to perform more complex tasks, it is recommended to register them manually.
-
 ### Filtering Registration
 You can filter which registrations to apply by specifying options in the `AddQudiServices` method.
 
@@ -2118,10 +2080,11 @@ By doing so, it collects information in a way that does not depend on the target
 Attribute-based dependency injection is often regarded as an anti-pattern. Even an [older article from 2014](https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/) states this. So why did we choose it?
 
 1. Because it’s simply convenient. I often keep class and model definitions together in the same .cs file (it’s easier to read that way). You can think of it as similar to that.
-2. It covers ~90% of real-world use cases. In many projects you have one-to-one interfaces (or no interfaces at all), registration order rarely matters, and complex scenarios are uncommon. In such cases, assembly scanning would be somewhat overkill.
-3. When you need extensibility, source-generator “magic” makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
-4. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
-5. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
+2. I dislike assembly scanning. It doesn't work in AOT, and if implementations or interfaces are in other assemblies, you need to either scan everything or prepare extensions for scanning for each project. Since it loads all types including built-in ones, you need to write logic to properly exclude them. (Don't you think it's a bit uncomfortable to scan with naming conventions like `*Service`?)
+3. It covers ~90% of real-world use cases. In many projects you have one-to-one interfaces (or no interfaces at all), registration order rarely matters, and complex scenarios are uncommon. In such cases, assembly scanning would be somewhat overkill.
+4. When you need extensibility, source-generator “magic” makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
+5. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
+6. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
 
 ---
 

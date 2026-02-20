@@ -4,7 +4,7 @@
     <IsPackable>true</IsPackable>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <PackageDescription>Automatic implementation generator for the Qudi interface via source generators.</PackageDescription>
+    <PackageDescription>Yet another attribute-based DI helper. AOT friendly.</PackageDescription>
     <PackageProjectUrl>https://github.com/arika0093/Qudi</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arika0093/Qudi</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
