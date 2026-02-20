@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Qudi.Generator.Utility;
@@ -25,35 +24,17 @@ internal static class ProjectDependenciesCollector
         foreach (var reference in compilation.References)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (reference is CompilationReference)
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is not IAssemblySymbol assembly)
             {
-                if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assembly)
-                {
-                    FindRegistrationExtensions(
-                        assembly,
-                        assembly.GlobalNamespace,
-                        dependencies,
-                        cancellationToken
-                    );
-                }
-
                 continue;
             }
 
-            if (
-                reference is PortableExecutableReference portable
-                && IsProjectReferencePath(portable.FilePath)
-                && compilation.GetAssemblyOrModuleSymbol(reference)
-                    is IAssemblySymbol projectAssembly
-            )
-            {
-                FindRegistrationExtensions(
-                    projectAssembly,
-                    projectAssembly.GlobalNamespace,
-                    dependencies,
-                    cancellationToken
-                );
-            }
+            FindRegistrationExtensions(
+                assembly,
+                assembly.GlobalNamespace,
+                dependencies,
+                cancellationToken
+            );
         }
 
         return new EquatableArray<ProjectDependencyInfo>(dependencies);
@@ -67,8 +48,21 @@ internal static class ProjectDependenciesCollector
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
+        // Only traverse namespaces that can possibly contain Qudi.Generated__*.
+        var namespaceName = namespaceSymbol.ToDisplayString();
+        var isGlobal = namespaceSymbol.IsGlobalNamespace || string.IsNullOrEmpty(namespaceName);
+        if (
+            !isGlobal
+            && !QudiGeneratedRegistrationsPrefix.StartsWith(namespaceName, StringComparison.Ordinal)
+            && !namespaceName.StartsWith(QudiGeneratedRegistrationsPrefix, StringComparison.Ordinal)
+        )
+        {
+            // Fast-exit for unrelated namespaces.
+            return;
+        }
+
         // Look for types named QudiRegistrationExtensions in namespaces
-        // that start with Qudi.Generated.Registrations__
+        // that start with Qudi.Generated__
         foreach (var type in namespaceSymbol.GetTypeMembers())
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -88,7 +82,8 @@ internal static class ProjectDependenciesCollector
                 );
             }
         }
-        // Recurse into child namespaces
+
+        // Recurse into child namespaces (only when still relevant).
         foreach (var child in namespaceSymbol.GetNamespaceMembers())
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -105,31 +100,6 @@ internal static class ProjectDependenciesCollector
         return FastHashGenerator.Generate(assemblySymbol.Identity.ToString(), 12);
     }
 
-    private static bool IsProjectReferencePath(string? filePath)
-    {
-        // TODO: The project determination needs to be more precise. The current implementation is path-dependent and thus unreliable.
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            return false;
-        }
-        var path = filePath!.Replace('\\', '/');
-        if (ExcludePath.Any(exclude => path.Contains(exclude, StringComparison.OrdinalIgnoreCase)))
-        {
-            return false;
-        }
-        if (IncludePath.Any(include => path.Contains(include, StringComparison.OrdinalIgnoreCase)))
-        {
-            return true;
-        }
-        return false;
-    }
-
-    private static readonly IReadOnlyCollection<string> ExcludePath =
-    [
-        "/.nuget/",
-        "/packages/",
-        "/packs/",
-    ];
-
-    private static readonly IReadOnlyCollection<string> IncludePath = ["/bin/", "/obj/"];
+    // NOTE: We intentionally avoid path-based heuristics here because they are
+    // environment-dependent and unreliable in real-world builds.
 }
