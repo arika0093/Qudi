@@ -1757,7 +1757,11 @@ public partial class ComponentValidatorDispatcher
     private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Screen>> _screenValidators;
     private readonly global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Keyboard>> _keyboardValidators;
     
-    public ComponentValidatorDispatcher(global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Battery>> batteryValidators, global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Screen>> screenValidators, global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Keyboard>> keyboardValidators)
+    public ComponentValidatorDispatcher(
+        global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Battery>> batteryValidators,
+        global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Screen>> screenValidators,
+        global::System.Collections.Generic.IEnumerable<global::IComponentValidator<global::Keyboard>> keyboardValidators
+    )
     {
         _batteryValidators = batteryValidators;
         _screenValidators = screenValidators;
@@ -1787,7 +1791,7 @@ public partial class ComponentValidatorDispatcher
                 }
                 return true;
             default:
-                return true;
+                throw new global::System.NotSupportedException($"No concrete implementation found for dispatch parameter 'component' in method 'Validate'.");
         }
     }
 }

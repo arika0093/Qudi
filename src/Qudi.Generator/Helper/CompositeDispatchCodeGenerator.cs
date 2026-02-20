@@ -55,16 +55,17 @@ internal static class CompositeDispatchCodeGenerator
                 builder.AppendLine("");
 
                 // constructor with dependencies for each concrete type.
-                builder.AppendLine(
-                    $"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}({BuildConstructorParameters(target)})"
-                );
+                builder.AppendLine($"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}(");
+                builder.IncreaseIndent();
+                BuildConstructorParameters(builder, target);
+                builder.DecreaseIndent();
+                builder.AppendLine(")");
+
                 using (builder.BeginScope())
                 {
                     foreach (var concreteType in target.ConcreteTypes)
                     {
-                        builder.AppendLine(
-                            $"{concreteType.FieldName} = {concreteType.ParameterName};"
-                        );
+                        builder.AppendLine($"{concreteType.FieldName} = {concreteType.ParameterName};");
                     }
                 }
 
@@ -84,14 +85,15 @@ internal static class CompositeDispatchCodeGenerator
         }
     }
 
-    private static string BuildConstructorParameters(DispatchCompositeTarget target)
+    private static void BuildConstructorParameters(IndentedStringBuilder builder, DispatchCompositeTarget target)
     {
-        return string.Join(
-            ", ",
+        var parameters = string.Join(
+            ",\n",
             target.ConcreteTypes.Select(t =>
                 $"{BuildDispatchDependencyType(t.ConstructedInterfaceTypeName, target.Multiple)} {t.ParameterName}"
             )
         );
+        builder.AppendLine(parameters);
     }
 
     private static string BuildDispatchDependencyType(string serviceTypeName, bool multiple)
@@ -297,11 +299,11 @@ internal static class CompositeDispatchCodeGenerator
                 }
                 builder.DecreaseIndent();
             }
-
-            builder.AppendLine("default:");
-            builder.IncreaseIndent();
-            builder.AppendLine(useAny ? "return false;" : "return true;");
-            builder.DecreaseIndent();
+            // in default: throw Exception
+            builder.AppendLine($"""
+                default:
+                    throw new {NotSupportedException}($"No concrete implementation found for dispatch parameter '{dispatchParamName}' in method '{methodName}'.");
+                """);
         }
     }
 
