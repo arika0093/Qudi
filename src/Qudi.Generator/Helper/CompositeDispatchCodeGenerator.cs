@@ -134,7 +134,8 @@ internal static class CompositeDispatchCodeGenerator
 
         // Task dispatch composites always execute sequentially.
         var asyncModifier = returnType == Task ? "async " : string.Empty;
-        var isPartialRequired = overrideBehavior.HasValue || !string.IsNullOrEmpty(overrideAggregator);
+        var isPartialRequired =
+            overrideBehavior.HasValue || !string.IsNullOrEmpty(overrideAggregator);
         var partialModifier = isPartialRequired ? "partial " : string.Empty;
         builder.AppendLine(
             $"public {partialModifier}{asyncModifier}{returnType} {member.Name}({parameters})"
@@ -200,7 +201,7 @@ internal static class CompositeDispatchCodeGenerator
                     dispatchArguments,
                     dispatchParamName,
                     returnType,
-                    overrideAggregator
+                    overrideAggregator!
                 );
                 return;
             }
@@ -514,7 +515,9 @@ internal static class CompositeDispatchCodeGenerator
                     builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
                     using (builder.BeginScope())
                     {
-                        builder.AppendLine($"var __current = __validator.{methodName}({arguments});");
+                        builder.AppendLine(
+                            $"var __current = __validator.{methodName}({arguments});"
+                        );
                         builder.AppendLine("if (!__hasResult)");
                         using (builder.BeginScope())
                         {

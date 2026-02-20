@@ -9,7 +9,6 @@ node [shape=box, fontname="Consolas"];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.IComponent>" [label="IComponentValidator<IComponent>", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" [label="IComponentValidator<Keyboard>", shape=box, style=dashed, color=red];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" [label="IComponentValidator<Screen>", shape=ellipse, style=filled, fillcolor="#c8e6c9"];
-  "Qudi.Examples.GenericRegistration.NullComponentValidator<T>" [label="NullComponentValidator<T>", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.GenericRegistration.ScreenValidator" [label="ScreenValidator", shape=box, style=filled, fillcolor="#bbdefb"];
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" -> "Qudi.Examples.GenericRegistration.BatteryValidator";
   "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" -> "Qudi.Examples.GenericRegistration.BatteryAnotherValidator";
@@ -19,5 +18,4 @@ node [shape=box, fontname="Consolas"];
   "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" [label="*", style=dashed];
   "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" [label="*", style=dashed];
   "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" [label="*", style=dashed];
-  "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" -> "Qudi.Examples.GenericRegistration.NullComponentValidator<T>";
 }

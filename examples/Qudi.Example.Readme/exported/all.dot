@@ -84,5 +84,4 @@ node [shape=box, fontname="Consolas"];
   "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Battery>" [label="*", style=dashed];
   "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Screen>" [label="*", style=dashed];
   "Qudi.Examples.GenericRegistration.ComponentValidatorDispatcher" -> "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" [label="*", style=dashed];
-  "Qudi.Examples.GenericRegistration.IComponentValidator<Qudi.Examples.GenericRegistration.Keyboard>" -> "Qudi.Examples.GenericRegistration.NullComponentValidator<T>";
 }
