@@ -178,10 +178,10 @@ internal static class RegistrationAttrGenerator
                 public CompositeResult Result { get; set; } = CompositeResult.All;
 
                 /// <summary>
-                /// The name of a custom result handler method.
+                /// The name of a custom result aggregator method.
                 /// The method should have signature: TResult MethodName(TResult original, TResult result)
                 /// </summary>
-                public string? ResultHandler { get; set; }
+                public string? ResultAggregator { get; set; }
             }
 
             /// <summary>

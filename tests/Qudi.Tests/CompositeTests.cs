@@ -156,4 +156,17 @@ public sealed class CompositeTests
         // B should execute after A (timestamp should be later)
         bTicks.ShouldBeGreaterThan(aTicks);
     }
+
+    [Test]
+    public void CompositeWithCustomAggregatorCombinesFlags()
+    {
+        var services = new ServiceCollection();
+        services.AddQudiServices();
+
+        var provider = services.BuildServiceProvider();
+        var flagService = provider.GetRequiredService<IFlagService>();
+
+        var flags = flagService.GetFlags();
+        flags.ShouldBe(AccessFlags.Read | AccessFlags.Write);
+    }
 }

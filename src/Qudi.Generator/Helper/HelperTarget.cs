@@ -399,6 +399,11 @@ internal sealed record CompositeMethodOverride
     /// Declared result behavior for composite execution.
     /// </summary>
     public required CompositeResultBehavior ResultBehavior { get; init; }
+
+    /// <summary>
+    /// Optional custom result aggregator method name.
+    /// </summary>
+    public required string ResultAggregator { get; init; }
 }
 
 /// <summary>

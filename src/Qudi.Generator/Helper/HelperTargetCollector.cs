@@ -769,6 +769,7 @@ internal static class HelperTargetCollector
             }
 
             var methodResult = CompositeResultBehavior.All;
+            var resultAggregator = string.Empty;
             if (compositeMethodAttrSymbol is not null)
             {
                 var attribute = method
@@ -792,6 +793,13 @@ internal static class HelperTargetCollector
                                 _ => CompositeResultBehavior.All,
                             };
                         }
+                        else if (
+                            argument.Key == "ResultAggregator"
+                            && argument.Value.Value is string aggName
+                        )
+                        {
+                            resultAggregator = aggName ?? string.Empty;
+                        }
                     }
                 }
             }
@@ -807,6 +815,7 @@ internal static class HelperTargetCollector
                         method.Parameters.Select(CreateParameter).ToImmutableArray()
                     ),
                     ResultBehavior = methodResult,
+                    ResultAggregator = resultAggregator,
                 }
             );
         }

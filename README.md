@@ -1342,8 +1342,18 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     // in Task methods, implementations are executed sequentially
     public partial Task FeatureD(int val);
 
+    // in other return types, you can provide a custom aggregator
+    [CompositeMethod(ResultAggregator = nameof(CustomAggregate))]
+    public partial MyEnumValue FeatureE();
+
+    private MyEnumValue MyEnumAggregate(MyEnumValue a, MyEnumValue b)
+    {
+        // combine a and b into a single MyEnumValue
+        return a | b; // for example, if MyEnumValue is a flags enum
+    }
+
     // if you want to handle results manually, you can implement it as a normal method without using auto implementation.
-    public void FeatureE()
+    public void FeatureF()
     {
         // you can also implement methods without using auto implementation,
         // and call inner services manually if you need more control.

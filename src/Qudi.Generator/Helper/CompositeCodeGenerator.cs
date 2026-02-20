@@ -125,6 +125,25 @@ internal static class CompositeCodeGenerator
                 return;
             }
 
+            if (!string.IsNullOrEmpty(method.ResultAggregator))
+            {
+                if (isTask || isVoid)
+                {
+                    AppendCompositeUnsupportedMethod(builder, method.Name);
+                    return;
+                }
+
+                AppendCompositeAggregateMethodBody(
+                    builder,
+                    method.Name,
+                    innerServicesAccessor,
+                    arguments,
+                    method.ReturnTypeName,
+                    method.ResultAggregator
+                );
+                return;
+            }
+
             if (isBool)
             {
                 var useAnd = method.ResultBehavior != CompositeResultBehavior.Any;
@@ -212,6 +231,36 @@ internal static class CompositeCodeGenerator
         {
             builder.AppendLine($"await __service.{method.Name}({arguments});");
         }
+    }
+
+    private static void AppendCompositeAggregateMethodBody(
+        IndentedStringBuilder builder,
+        string methodName,
+        string helperAccessor,
+        string arguments,
+        string returnType,
+        string aggregatorName
+    )
+    {
+        builder.AppendLine($"var __hasResult = false;");
+        builder.AppendLine($"var __result = default({returnType});");
+        builder.AppendLine($"foreach (var __service in {helperAccessor})");
+        using (builder.BeginScope())
+        {
+            builder.AppendLine($"var __current = __service.{methodName}({arguments});");
+            builder.AppendLine("if (!__hasResult)");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine("__result = __current;");
+                builder.AppendLine("__hasResult = true;");
+            }
+            builder.AppendLine("else");
+            using (builder.BeginScope())
+            {
+                builder.AppendLine($"__result = {aggregatorName}(__result, __current);");
+            }
+        }
+        builder.AppendLine("return __result;");
     }
 
     private static void AppendCompositeEnumerableMethod(

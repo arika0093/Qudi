@@ -128,11 +128,13 @@ internal static class CompositeDispatchCodeGenerator
             constraint.TypeName
         );
 
-        var overrideBehavior = TryGetCompositeOverride(target, method);
+        var overrideMethod = TryGetCompositeOverride(target, method);
+        var overrideBehavior = overrideMethod?.ResultBehavior;
+        var overrideAggregator = overrideMethod?.ResultAggregator;
 
         // Task dispatch composites always execute sequentially.
         var asyncModifier = returnType == Task ? "async " : string.Empty;
-        var isPartialRequired = overrideBehavior.HasValue;
+        var isPartialRequired = overrideBehavior.HasValue || !string.IsNullOrEmpty(overrideAggregator);
         var partialModifier = isPartialRequired ? "partial " : string.Empty;
         builder.AppendLine(
             $"public {partialModifier}{asyncModifier}{returnType} {member.Name}({parameters})"
@@ -177,6 +179,28 @@ internal static class CompositeDispatchCodeGenerator
                     member.Name,
                     dispatchArguments,
                     dispatchParamName
+                );
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(overrideAggregator))
+            {
+                if (isTask || isVoid)
+                {
+                    builder.AppendLine(
+                        $"throw new {NotSupportedException}(\"{member.Name} is not supported in this dispatch composite.\");"
+                    );
+                    return;
+                }
+
+                AppendDispatchAggregate(
+                    builder,
+                    target,
+                    member.Name,
+                    dispatchArguments,
+                    dispatchParamName,
+                    returnType,
+                    overrideAggregator
                 );
                 return;
             }
@@ -350,7 +374,7 @@ internal static class CompositeDispatchCodeGenerator
         }
     }
 
-    private static CompositeResultBehavior? TryGetCompositeOverride(
+    private static CompositeMethodOverride? TryGetCompositeOverride(
         DispatchCompositeTarget target,
         DispatchCompositeMethod method
     )
@@ -401,7 +425,7 @@ internal static class CompositeDispatchCodeGenerator
                 continue;
             }
 
-            return overrideMethod.ResultBehavior;
+            return overrideMethod;
         }
 
         return null;
@@ -462,6 +486,61 @@ internal static class CompositeDispatchCodeGenerator
             builder.AppendLine(
                 $"return new global::System.Collections.Generic.List<{elementType}>();"
             );
+            builder.DecreaseIndent();
+        }
+    }
+
+    private static void AppendDispatchAggregate(
+        IndentedStringBuilder builder,
+        DispatchCompositeTarget target,
+        string methodName,
+        string arguments,
+        string dispatchParamName,
+        string returnType,
+        string aggregatorName
+    )
+    {
+        builder.AppendLine($"switch ({dispatchParamName})");
+        using (builder.BeginScope())
+        {
+            foreach (var concrete in target.ConcreteTypes)
+            {
+                builder.AppendLine($"case {concrete.TypeName} __arg:");
+                builder.IncreaseIndent();
+                if (target.Multiple)
+                {
+                    builder.AppendLine("var __hasResult = false;");
+                    builder.AppendLine($"var __result = default({returnType});");
+                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                    using (builder.BeginScope())
+                    {
+                        builder.AppendLine($"var __current = __validator.{methodName}({arguments});");
+                        builder.AppendLine("if (!__hasResult)");
+                        using (builder.BeginScope())
+                        {
+                            builder.AppendLine("__result = __current;");
+                            builder.AppendLine("__hasResult = true;");
+                        }
+                        builder.AppendLine("else");
+                        using (builder.BeginScope())
+                        {
+                            builder.AppendLine(
+                                $"__result = {aggregatorName}(__result, __current);"
+                            );
+                        }
+                    }
+                    builder.AppendLine("return __result;");
+                }
+                else
+                {
+                    builder.AppendLine($"return {concrete.FieldName}.{methodName}({arguments});");
+                }
+                builder.DecreaseIndent();
+            }
+
+            builder.AppendLine("default:");
+            builder.IncreaseIndent();
+            builder.AppendLine($"return default({returnType});");
             builder.DecreaseIndent();
         }
     }

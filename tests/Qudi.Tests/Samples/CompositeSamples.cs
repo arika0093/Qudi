@@ -246,3 +246,39 @@ public sealed partial class CompositeSequentialAsyncService(
 
     public partial Task ExecuteAsync(string input);
 }
+
+[System.Flags]
+public enum AccessFlags
+{
+    None = 0,
+    Read = 1,
+    Write = 2,
+    Execute = 4,
+}
+
+public interface IFlagService
+{
+    AccessFlags GetFlags();
+}
+
+[DITransient]
+public sealed class FlagServiceRead : IFlagService
+{
+    public AccessFlags GetFlags() => AccessFlags.Read;
+}
+
+[DITransient]
+public sealed class FlagServiceWrite : IFlagService
+{
+    public AccessFlags GetFlags() => AccessFlags.Write;
+}
+
+[QudiComposite]
+public sealed partial class CompositeFlagService(IEnumerable<IFlagService> innerServices)
+    : IFlagService
+{
+    [CompositeMethod(ResultAggregator = nameof(CombineFlags))]
+    public partial AccessFlags GetFlags();
+
+    private static AccessFlags CombineFlags(AccessFlags left, AccessFlags right) => left | right;
+}
