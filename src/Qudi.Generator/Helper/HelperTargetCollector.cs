@@ -38,7 +38,7 @@ internal static class HelperTargetCollector
             .SyntaxProvider.ForAttributeWithMetadataName(
                 QudiDispatchAttribute,
                 static (node, _) => IsPartialClass(node),
-                static (ctx, _) => CreateTargets(ctx, isComposite: true, isDispatch: true)
+                static (ctx, _) => CreateTargets(ctx, isDispatch: true)
             )
             .Collect();
 
