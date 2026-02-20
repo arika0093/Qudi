@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Qudi;
 using Shouldly;
 using TUnit;
 
@@ -11,12 +12,14 @@ namespace Qudi.Tests;
 /// </summary>
 public sealed partial class GenericCompositeTests
 {
+    private const string TestCondition = nameof(GenericCompositeTests);
+
     [Test]
     public void ValidateListOfComponentsThroughGenericValidator()
     {
         // Feature Request 1: Validate a list of IComponent through ComponentValidator<T> in bulk
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         var provider = services.BuildServiceProvider();
 
@@ -52,7 +55,7 @@ public sealed partial class GenericCompositeTests
     {
         // Feature Request 3: Use Composite feature for generics
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         var provider = services.BuildServiceProvider();
 
@@ -76,7 +79,7 @@ public sealed partial class GenericCompositeTests
     {
         // Feature Request 3: Composite with generic types
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         var provider = services.BuildServiceProvider();
 
@@ -108,20 +111,20 @@ public sealed partial class GenericCompositeTests
         string Name { get; }
     }
 
-    public class Battery : IComponent
+    public sealed class Battery : IComponent
     {
         public required string Name { get; set; }
         public int Capacity { get; set; }
         public int Voltage { get; set; }
     }
 
-    public class Screen : IComponent
+    public sealed class Screen : IComponent
     {
         public required string Name { get; set; }
         public int Size { get; set; }
     }
 
-    public class Keyboard : IComponent
+    public sealed class Keyboard : IComponent
     {
         public required string Name { get; set; }
         public int Keys { get; set; }
@@ -135,37 +138,37 @@ public sealed partial class GenericCompositeTests
     }
 
     // Default (fallback) implementation
-    [DITransient]
-    public class NullComponentValidator<T> : IComponentValidator<T>
+    [DITransient(When = [TestCondition])]
+    internal sealed class NullComponentValidator<T> : IComponentValidator<T>
         where T : IComponent
     {
         public bool Validate(T component) => true; // default to valid
     }
 
     // Specialized implementation for Battery
-    [DITransient]
-    public class BatteryValidator : IComponentValidator<Battery>
+    [DITransient(When = [TestCondition])]
+    internal sealed class BatteryValidator : IComponentValidator<Battery>
     {
         public bool Validate(Battery component) => component.Capacity > 5000;
     }
 
-    [DITransient]
-    public class BatteryAnotherValidator : IComponentValidator<Battery>
+    [DITransient(When = [TestCondition])]
+    internal sealed class BatteryAnotherValidator : IComponentValidator<Battery>
     {
         public bool Validate(Battery component) => component.Voltage > 3;
     }
 
     // Specialized implementation for Screen
-    [DITransient]
-    public class ScreenValidator : IComponentValidator<Screen>
+    [DITransient(When = [TestCondition])]
+    internal sealed class ScreenValidator : IComponentValidator<Screen>
     {
         public bool Validate(Screen component) => component.Size > 10;
     }
 
     // ComponentValidator that aggregates all validators
     // NOTE: This is NOT registered as IComponentValidator<T> to avoid circular dependency
-    [DITransient]
-    public class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
+    [DITransient(When = [TestCondition])]
+    internal sealed class ComponentValidator<T>(IEnumerable<IComponentValidator<T>> validators)
         where T : IComponent
     {
         public bool Check(T component)
@@ -182,8 +185,10 @@ public sealed partial class GenericCompositeTests
     }
 
     // Generic composite validator using QudiComposite
-    [QudiComposite]
-    public partial class CompositeValidator<T>(IEnumerable<IComponentValidator<T>> innerServices)
+    [QudiComposite(When = [TestCondition])]
+    internal sealed partial class CompositeValidator<T>(
+        IEnumerable<IComponentValidator<T>> innerServices
+    )
         : IComponentValidator<T>
         where T : IComponent;
 }

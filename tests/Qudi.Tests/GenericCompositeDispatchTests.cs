@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Qudi;
 using Shouldly;
 using TUnit;
 
@@ -10,7 +11,7 @@ public sealed partial class GenericCompositeTests
     public void GenericCompositeDispatchResolvesBaseInterface()
     {
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         using var provider = services.BuildServiceProvider();
 
@@ -48,7 +49,7 @@ public sealed partial class GenericCompositeTests
     public void QudiDispatchWithMultipleFalseResolvesSingleService()
     {
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         using var provider = services.BuildServiceProvider();
         var validator = provider.GetRequiredService<ISingleComponentValidator<ISingleComponent>>();
@@ -56,15 +57,15 @@ public sealed partial class GenericCompositeTests
         validator.Validate(new SingleDevice()).ShouldBeTrue();
     }
 
-    [QudiDispatch]
-    public partial class ComponentValidatorDispatcher : IComponentValidator<IComponent>;
+    [QudiDispatch(When = [TestCondition])]
+    public sealed partial class ComponentValidatorDispatcher : IComponentValidator<IComponent>;
 
-    [QudiDispatch(Target = typeof(ISingleComponent), Multiple = false)]
-    public partial class SingleComponentValidatorDispatcher
+    [QudiDispatch(Target = typeof(ISingleComponent), Multiple = false, When = [TestCondition])]
+    public sealed partial class SingleComponentValidatorDispatcher
         : ISingleComponentValidator<ISingleComponent>;
 
-    [DITransient]
-    public class ComponentValidator(IComponentValidator<IComponent> validator)
+    [DITransient(When = [TestCondition])]
+    public sealed class ComponentValidator(IComponentValidator<IComponent> validator)
     {
         public bool Validate(IComponent component) => validator.Validate(component);
     }
@@ -79,7 +80,7 @@ public sealed partial class GenericCompositeTests
         bool Validate(T value);
     }
 
-    [DITransient]
+    [DITransient(When = [TestCondition])]
     public sealed class SingleDeviceValidator : ISingleComponentValidator<SingleDevice>
     {
         public bool Validate(SingleDevice value) => true;

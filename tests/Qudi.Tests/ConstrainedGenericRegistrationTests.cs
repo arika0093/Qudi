@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Qudi;
 using Shouldly;
 using TUnit;
 
@@ -9,11 +10,13 @@ namespace Qudi.Tests;
 
 public sealed class ConstrainedGenericRegistrationTests
 {
+    private const string TestCondition = nameof(ConstrainedGenericRegistrationTests);
+
     [Test]
     public void ResolvesConstrainedOpenGeneric()
     {
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         var provider = services.BuildServiceProvider();
 
@@ -29,7 +32,7 @@ public sealed class ConstrainedGenericRegistrationTests
     public void PrefersSpecificClosedGenericWhenOrderedAfterOpenGeneric()
     {
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         var provider = services.BuildServiceProvider();
 
@@ -56,7 +59,7 @@ public sealed class ConstrainedGenericRegistrationTests
     public void MaterializesOpenGenericFallbackOnlyForTypesWithoutConcreteImplementation()
     {
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         var provider = services.BuildServiceProvider();
         var consumer = provider.GetRequiredService<ComponentValidationConsumer>();
@@ -71,59 +74,59 @@ public sealed class ConstrainedGenericRegistrationTests
         consumer.KeyboardValidators[0].GetType().ShouldBe(typeof(NullComponentValidator<Keyboard>));
     }
 
-    public interface ISpecificInterface;
+    internal interface ISpecificInterface;
 
-    public sealed class SpecificModel : ISpecificInterface;
+    internal sealed class SpecificModel : ISpecificInterface;
 
-    public sealed class NonSpecificModel;
+    internal sealed class NonSpecificModel;
 
-    public interface ISpecificService<T>
+    internal interface ISpecificService<T>
     {
         System.Type ValueType { get; }
     }
 
-    [DITransient]
-    public class SpecificGenericService<T> : ISpecificService<T>
+    [DITransient(When = [TestCondition])]
+    internal sealed class SpecificGenericService<T> : ISpecificService<T>
         where T : ISpecificInterface
     {
         public System.Type ValueType => typeof(T);
     }
 
-    public interface IComponent;
+    internal interface IComponent;
 
-    public sealed class Battery : IComponent;
+    internal sealed class Battery : IComponent;
 
-    public sealed class Screen : IComponent;
+    internal sealed class Screen : IComponent;
 
-    public sealed class Keyboard : IComponent;
+    internal sealed class Keyboard : IComponent;
 
-    public interface IComponentValidator<T>
+    internal interface IComponentValidator<T>
         where T : IComponent
     {
         bool Validate(T component);
     }
 
-    [DITransient]
-    public class NullComponentValidator<T> : IComponentValidator<T>
+    [DITransient(When = [TestCondition])]
+    internal sealed class NullComponentValidator<T> : IComponentValidator<T>
         where T : IComponent
     {
         public bool Validate(T component) => true;
     }
 
-    [DITransient]
-    public class BatteryValidator : IComponentValidator<Battery>
+    [DITransient(When = [TestCondition])]
+    internal sealed class BatteryValidator : IComponentValidator<Battery>
     {
         public bool Validate(Battery component) => false;
     }
 
-    [DITransient]
-    public class ScreenValidator : IComponentValidator<Screen>
+    [DITransient(When = [TestCondition])]
+    internal sealed class ScreenValidator : IComponentValidator<Screen>
     {
         public bool Validate(Screen component) => false;
     }
 
-    [DITransient]
-    public sealed class ComponentValidationConsumer(
+    [DITransient(When = [TestCondition])]
+    internal sealed class ComponentValidationConsumer(
         IEnumerable<IComponentValidator<Battery>> batteryValidators,
         IEnumerable<IComponentValidator<Screen>> screenValidators,
         IEnumerable<IComponentValidator<Keyboard>> keyboardValidators

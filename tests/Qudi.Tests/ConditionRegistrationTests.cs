@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Qudi;
 using Shouldly;
 using TUnit;
 
@@ -9,6 +10,8 @@ namespace Qudi.Tests;
 public sealed class ConditionRegistrationTests
 {
     private const string EnvKey = "QUDI_TEST_ENV";
+    private const string TestingCondition = "Testing";
+    private const string ProductionCondition = "Production";
 
     [Test]
     public void ConditionalServicesWithoutConditions()
@@ -19,12 +22,8 @@ public sealed class ConditionRegistrationTests
         var provider = services.BuildServiceProvider();
         var registered = provider.GetServices<IConditionSample>().ToList();
 
-#if DEBUG
+        // When no conditions are specified, conditional services should not be registered.
         registered.ShouldBeEmpty();
-#else
-        registered.Count.ShouldBe(1);
-        registered[0].ShouldBeOfType<ConditionSampleProduction>();
-#endif
     }
 
     [Test]
@@ -49,7 +48,7 @@ public sealed class ConditionRegistrationTests
         var services = new ServiceCollection();
         services.AddQudiServices(conf =>
         {
-            conf.SetCondition("Testing");
+            conf.SetCondition(TestingCondition);
         });
 
         var provider = services.BuildServiceProvider();
@@ -65,7 +64,7 @@ public sealed class ConditionRegistrationTests
         var original = Environment.GetEnvironmentVariable(EnvKey);
         try
         {
-            Environment.SetEnvironmentVariable(EnvKey, "Testing");
+            Environment.SetEnvironmentVariable(EnvKey, TestingCondition);
 
             var services = new ServiceCollection();
             services.AddQudiServices(conf => conf.SetConditionFromEnvironment(EnvKey));
@@ -80,5 +79,22 @@ public sealed class ConditionRegistrationTests
         {
             Environment.SetEnvironmentVariable(EnvKey, original);
         }
+    }
+
+    internal interface IConditionSample
+    {
+        string Marker { get; }
+    }
+
+    [DITransient(When = [TestingCondition])]
+    internal sealed class ConditionSampleTesting : IConditionSample
+    {
+        public string Marker => "testing";
+    }
+
+    [DITransient(When = [ProductionCondition])]
+    internal sealed class ConditionSampleProduction : IConditionSample
+    {
+        public string Marker => "production";
     }
 }

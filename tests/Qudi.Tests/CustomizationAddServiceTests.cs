@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Qudi;
 
 namespace Qudi.Tests;
 
 public sealed class CustomizationAddServiceTests
 {
+    private const string TestCondition = nameof(CustomizationAddServiceTests);
+
     [Test]
     public void AddServiceActionCanRegisterAdditionalServices()
     {
@@ -14,6 +17,7 @@ public sealed class CustomizationAddServiceTests
 
         services.AddQudiServices(conf =>
         {
+            conf.SetCondition(TestCondition);
             conf.AddService(_ =>
             {
                 // Custom processing example from README: you can use the collected information
@@ -35,6 +39,7 @@ public sealed class CustomizationAddServiceTests
 
         services.AddQudiServices(conf =>
         {
+            conf.SetCondition(TestCondition);
             conf.AddService(config =>
                 {
                     captured = config.Registrations;
@@ -57,6 +62,7 @@ public sealed class CustomizationAddServiceTests
 
         services.AddQudiServices(conf =>
         {
+            conf.SetCondition(TestCondition);
             conf.SetCondition(Condition.Production);
             conf.AddService(_ => executed = true).OnlyWorkOnDevelopment();
         });

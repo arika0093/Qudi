@@ -9,11 +9,13 @@ namespace Qudi.Tests;
 
 public sealed class DepsInterfaceCallingTest
 {
+    private const string TestCondition = nameof(DepsInterfaceCallingTest);
+
     [Test]
     public void RegistersConcreteAndInterfaceSameInstance()
     {
         var services = new ServiceCollection();
-        services.AddQudiServices();
+        services.AddQudiServices(conf => conf.SetCondition(TestCondition));
 
         var provider = services.BuildServiceProvider();
         var service = provider.GetRequiredService<IDependencyAction>();
@@ -25,7 +27,11 @@ public sealed class DepsInterfaceCallingTest
     public void UseSelfImplementsOnlySkipsDependencyRegistrations()
     {
         var services = new ServiceCollection();
-        services.AddQudiServices(conf => conf.UseSelfImplementsOnly());
+        services.AddQudiServices(conf =>
+        {
+            conf.SetCondition(TestCondition);
+            conf.UseSelfImplementsOnly();
+        });
 
         var provider = services.BuildServiceProvider();
         var dependencyService = provider.GetService<IDependencyAction>();
@@ -33,5 +39,16 @@ public sealed class DepsInterfaceCallingTest
 
         dependencyService.ShouldBeNull();
         localService.Name.ShouldBe("singleton");
+    }
+
+    internal interface ISingletonSample
+    {
+        string Name { get; }
+    }
+
+    [DISingleton(When = [TestCondition])]
+    internal sealed class SingletonSample : ISingletonSample
+    {
+        public string Name => "singleton";
     }
 }
