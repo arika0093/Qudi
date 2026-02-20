@@ -66,9 +66,16 @@ public static class QudiContainerRegistrationEngine
             }
 
             var currentDescriptors = adapter.GetServiceDescriptors(serviceType).ToList();
-            if (currentDescriptors.Count == 0 && !layers.Any(r => r.Registration.MarkAsComposite))
+            if (currentDescriptors.Count == 0)
             {
-                continue;
+                var hasComposite = layers.Any(r => r.Registration.MarkAsComposite);
+                var hasDecorator = layers.Any(r => r.Registration.MarkAsDecorator);
+                if (hasDecorator && !hasComposite)
+                {
+                    throw new InvalidOperationException(
+                        $"No base registration found for {serviceType.FullName}. A decorator was registered without any base implementation."
+                    );
+                }
             }
 
             for (var i = layers.Count - 1; i >= 0; i--)
