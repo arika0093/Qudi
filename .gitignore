@@ -1,6 +1,7 @@
 *.db*
 .generated/
 exported/
+*.recieved.*
 examples/example/**
 !examples/**/exported/
 !examples/**/exported/**

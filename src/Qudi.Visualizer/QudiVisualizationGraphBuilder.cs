@@ -544,7 +544,15 @@ internal static class QudiVisualizationGraphBuilder
                     );
                 if (hasClosedImplementation)
                 {
-                    continue;
+                    var hasClosedNode = closedImplementations.Any(impl =>
+                        nodes.ContainsKey(
+                            QudiVisualizationAnalyzer.ToFullDisplayName(impl.Registration.Type)
+                        )
+                    );
+                    if (hasClosedNode)
+                    {
+                        continue;
+                    }
                 }
 
                 var openImplId = QudiVisualizationAnalyzer.ToFullDisplayName(openGenericType);

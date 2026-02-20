@@ -1,0 +1,262 @@
+﻿{
+  "Report": {
+    "Summary": {
+      "RegistrationCount": 7,
+      "MissingCount": 0,
+      "CycleCount": 0,
+      "MultipleRegistrationCount": 0,
+      "LifetimeWarningCount": 0
+    },
+    "Registrations": [
+      {
+        "Service": "ComponentValidator",
+        "Implementation": "ComponentValidator",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "GenericCompositeDecoratorGraphTests",
+        "Order": 0,
+        "Decorator": false,
+        "Composite": false
+      },
+      {
+        "Service": "GraphRoot",
+        "Implementation": "GraphRoot",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "GenericCompositeDecoratorGraphTests",
+        "Order": 0,
+        "Decorator": false,
+        "Composite": false
+      },
+      {
+        "Service": "IComponentValidator\u003CBattery\u003E",
+        "Implementation": "BatteryValidator",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "GenericCompositeDecoratorGraphTests",
+        "Order": 0,
+        "Decorator": false,
+        "Composite": false
+      },
+      {
+        "Service": "IComponentValidator\u003CIComponent\u003E",
+        "Implementation": "ComponentValidatorDecorator",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "GenericCompositeDecoratorGraphTests",
+        "Order": 0,
+        "Decorator": true,
+        "Composite": false
+      },
+      {
+        "Service": "IComponentValidator\u003CIComponent\u003E",
+        "Implementation": "ComponentValidatorDispatcher",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "GenericCompositeDecoratorGraphTests",
+        "Order": 0,
+        "Decorator": false,
+        "Composite": false
+      },
+      {
+        "Service": "IComponentValidator\u003CScreen\u003E",
+        "Implementation": "ScreenValidator",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "GenericCompositeDecoratorGraphTests",
+        "Order": 0,
+        "Decorator": false,
+        "Composite": false
+      },
+      {
+        "Service": "IComponentValidator\u003CT\u003E",
+        "Implementation": "NullComponentValidator\u003CT\u003E",
+        "Lifetime": "Transient",
+        "Key": "-",
+        "When": "GenericCompositeDecoratorGraphTests",
+        "Order": 0,
+        "Decorator": false,
+        "Composite": false
+      }
+    ],
+    "MissingRegistrations": [],
+    "Cycles": [],
+    "MultipleRegistrations": [],
+    "LifetimeWarnings": [],
+    "Traces": []
+  },
+  "Graph": {
+    "Nodes": [
+      {
+        "Id": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BGraphRoot",
+        "Label": "GraphRoot",
+        "Kind": "service",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": false
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidator",
+        "Label": "ComponentValidator",
+        "Kind": "service",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": false
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BIComponent\u003E",
+        "Label": "IComponentValidator\u003CIComponent\u003E",
+        "Kind": "service",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": true
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.NullComponentValidator\u003CT\u003E",
+        "Label": "NullComponentValidator\u003CT\u003E",
+        "Kind": "implementation",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": false
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BBatteryValidator",
+        "Label": "BatteryValidator",
+        "Kind": "implementation",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": false
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BBattery\u003E",
+        "Label": "IComponentValidator\u003CBattery\u003E",
+        "Kind": "service",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": true
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BScreenValidator",
+        "Label": "ScreenValidator",
+        "Kind": "implementation",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": false
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BScreen\u003E",
+        "Label": "IComponentValidator\u003CScreen\u003E",
+        "Kind": "service",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": true
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDecorator",
+        "Label": "ComponentValidatorDecorator",
+        "Kind": "decorator",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": false
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDispatcher",
+        "Label": "ComponentValidatorDispatcher",
+        "Kind": "dispatcher",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": false
+      },
+      {
+        "Id": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BKeyboard\u003E",
+        "Label": "IComponentValidator\u003CKeyboard\u003E",
+        "Kind": "missing",
+        "IsConditionMatched": true,
+        "IsExternal": false,
+        "IsInterface": true
+      }
+    ],
+    "Edges": [
+      {
+        "From": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BGraphRoot",
+        "To": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidator",
+        "Kind": "dependency",
+        "Condition": null,
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidator",
+        "To": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BIComponent\u003E",
+        "Kind": "dependency",
+        "Condition": null,
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BBattery\u003E",
+        "To": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BBatteryValidator",
+        "Kind": "registration",
+        "Condition": "GenericCompositeDecoratorGraphTests",
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BScreen\u003E",
+        "To": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BScreenValidator",
+        "Kind": "registration",
+        "Condition": "GenericCompositeDecoratorGraphTests",
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BIComponent\u003E",
+        "To": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDecorator",
+        "Kind": "registration",
+        "Condition": "GenericCompositeDecoratorGraphTests",
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDecorator",
+        "To": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDispatcher",
+        "Kind": "registration",
+        "Condition": null,
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDispatcher",
+        "To": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BBattery\u003E",
+        "Kind": "collection",
+        "Condition": null,
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDispatcher",
+        "To": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BScreen\u003E",
+        "Kind": "collection",
+        "Condition": null,
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BComponentValidatorDispatcher",
+        "To": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BKeyboard\u003E",
+        "Kind": "collection",
+        "Condition": null,
+        "Key": null,
+        "Order": 0
+      },
+      {
+        "From": "Qudi.Tests.Visualize.IComponentValidator\u003CQudi.Tests.Visualize.GenericCompositeDecoratorGraphTests\u002BKeyboard\u003E",
+        "To": "Qudi.Tests.Visualize.NullComponentValidator\u003CT\u003E",
+        "Kind": "registration",
+        "Condition": "GenericCompositeDecoratorGraphTests",
+        "Key": null,
+        "Order": 0
+      }
+    ]
+  }
+}

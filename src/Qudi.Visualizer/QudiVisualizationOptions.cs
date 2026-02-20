@@ -240,9 +240,14 @@ public sealed class QudiVisualizationOptions
     }
 }
 
-internal static class VisualizeFormatConvertExtensions
+/// <summary>
+/// Convenience extension methods for converting between visualization formats and file extensions, and for determining formats from file paths.
+/// </summary>
+public static class VisualizeFormatConvertExtensions
 {
-    // Helper method to get file extension for a given format
+    /// <summary>
+    /// Helper method to get file extension for a given format
+    /// </summary>
     public static string ToExtension(this QudiVisualizationFormat format)
     {
         return format switch
@@ -256,7 +261,9 @@ internal static class VisualizeFormatConvertExtensions
         };
     }
 
-    // Helper method to determine format from file extension
+    /// <summary>
+    /// Helper method to determine format from file extension
+    /// </summary>
     public static QudiVisualizationFormat DetermineFromFilePath(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
