@@ -22,7 +22,6 @@ If you are using .NET 10 or later, just paste the following code into a file and
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*-*
-#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 
@@ -132,7 +131,6 @@ public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*-*
-#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -218,7 +216,6 @@ public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*-*
-#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -328,7 +325,6 @@ public partial class PokemonDecorator(IPokemon decorated) : IPokemon
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*-*
-#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -460,7 +456,6 @@ public partial class DisplayPokemonService(IEnumerable<IPokemon> pokemons) : IPo
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*-*
-#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -675,27 +670,19 @@ Of course, you can also use only the simple attribute-based registration. 😉
 
 
 ## Installation
-Install `Qudi` from NuGet.
+If you want to get started easily, just install the `Qudi` package. This package includes `Qudi.Container.Microsoft` and `Qudi.Visualizer`.
 
 ```bash
 dotnet add package Qudi
 ```
 
-If you want to use [visualization](#visualize-registration) support (useful during development), install `Qudi.Visualizer`.
+If you are using a specific container, please install the corresponding `Qudi.Container.*` package.
 
 ```bash
-dotnet add package Qudi.Visualizer
-```
-
-Alternatively, you can install `Qudi.Core`, `Qudi.Generator` and `Qudi.Container.*` packages separately.
-
-```bash
-# install Qudi.Core (common models)
-dotnet add package Qudi.Core
-# install Qudi.Generator (source generator)
-dotnet add package Qudi.Generator
-# install container-specific package (here, Microsoft.Extensions.DependencyInjection)
+# for Microsoft.Extensions.DependencyInjection
 dotnet add package Qudi.Container.Microsoft
+# if visualization is needed, install Qudi.Visualizer as well
+# dotnet add package Qudi.Visualizer
 ```
 
 ## TOC
@@ -1346,7 +1333,7 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     [CompositeMethod(ResultAggregator = nameof(CustomAggregate))]
     public partial MyEnumValue FeatureE();
 
-    private MyEnumValue MyEnumAggregate(MyEnumValue a, MyEnumValue b)
+    private MyEnumValue CustomAggregate(MyEnumValue a, MyEnumValue b)
     {
         // combine a and b into a single MyEnumValue
         return a | b; // for example, if MyEnumValue is a flags enum
@@ -1368,99 +1355,6 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     // Of course, if you implement them yourself, your implementation takes precedence.
 }
 ```
-
-<details>
-<summary>Generated Code Snippets</summary>
-
-```csharp
-partial class MyComposite(IEnumerable<IService> services) : IService_MyComposite
-{
-    IEnumerable<IService> IService_MyComposite.__InnerServices => services;
-
-    // If there is no [CompositeMethod], the implementation of the interface will be used as before
-
-    // If there is a [CompositeMethod], an implementation will be generated according to the Result and will override the implementation of the interface
-    public partial bool MethodC()
-    {
-        foreach (var service in __InnerServices)
-        {
-            if (!service.MethodC()) return false;
-        }
-        return true;
-    }
-
-    public partial bool MethodD()
-    {
-        foreach (var service in __InnerServices)
-        {
-            if (service.MethodD()) return true;
-        }
-        return false;
-    }
-}
-
-public interface IService_MyComposite : IService
-{
-    IEnumerable<IService> __InnerServices { get; }
-
-    // Provide a standard implementation according to IService
-    // for example, if void, just call all
-    void IService.MethodA()
-    {
-        foreach (var service in __InnerServices)
-        {
-            service.MethodA();
-        }
-    }
-
-    // if collection, generate as Combine
-    IEnumerable<string> IService.MethodB()
-    {
-        foreach (var service in __InnerServices)
-        {
-            foreach (var item in service.MethodB())
-            {
-                yield return item;
-            }
-        }
-    }
-
-    // if bool, generate as All
-    bool IService.MethodC()
-    {
-        foreach (var service in __InnerServices)
-        {
-            if (!service.MethodC()) return false;
-        }
-        return true;
-    }
-
-    // if Task, generate as All
-    Task IService.MethodD()
-    {
-        return Task.WhenAll(__InnerServices.Select(s => s.MethodD()));
-    }
-
-    //  For properties and methods that return int/string, generate an implementation that throws an exception
-    int IService.ErrorA()
-    {
-        throw new NotSupportedException("ErrorA is not supported in MyComposite.");
-    }
-    string IService.ErrorB(int val)
-    {
-        throw new NotSupportedException("ErrorB is not supported in MyComposite.");
-    }
-    string IService.PropertyC => throw new NotSupportedException("PropertyC is not supported in MyComposite.");
-    double IService.PropertyD
-    {
-        get => throw new NotSupportedException("PropertyD is not supported in MyComposite.");
-        set => throw new NotSupportedException("PropertyD is not supported in MyComposite.");
-    }
-}
-```
-
-</details>
-
 
 ## Generic Registration
 ### Open Generic Registration
@@ -1638,7 +1532,6 @@ public class ComponentValidator(IComponentValidator<IComponent> validator)
 ```csharp
 #!/usr/bin/env dotnet
 #:package Qudi@*-*
-#:package Qudi.Visualizer@*-*
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 

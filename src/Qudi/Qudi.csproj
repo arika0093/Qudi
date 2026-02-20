@@ -2,6 +2,6 @@
   <PropertyGroup></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Qudi.Container.Microsoft\Qudi.Container.Microsoft.csproj" />
-    <ProjectReference Include="..\Qudi.Core\Qudi.Core.csproj" />
+    <ProjectReference Include="..\Qudi.Visualizer\Qudi.Visualizer.csproj" />
   </ItemGroup>
 </Project>
