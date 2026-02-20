@@ -130,11 +130,8 @@ internal static class CompositeDispatchCodeGenerator
 
         var overrideBehavior = TryGetCompositeOverride(target, method);
 
-        // TODO: support async Task methods that use Any/All behavior (requires changing method signature to return Task<bool> or similar, or adding a separate method for this behavior).
-        var asyncModifier =
-            returnType == Task && overrideBehavior == CompositeResultBehavior.Sequential
-                ? "async "
-                : string.Empty;
+        // Task dispatch composites always execute sequentially.
+        var asyncModifier = returnType == Task ? "async " : string.Empty;
         var isPartialRequired = overrideBehavior.HasValue;
         var partialModifier = isPartialRequired ? "partial " : string.Empty;
         builder.AppendLine(
@@ -202,14 +199,12 @@ internal static class CompositeDispatchCodeGenerator
 
             if (isTask)
             {
-                var behavior = overrideBehavior ?? CompositeResultBehavior.All;
                 AppendDispatchTask(
                     builder,
                     target,
                     member.Name,
                     dispatchArguments,
-                    dispatchParamName,
-                    behavior
+                    dispatchParamName
                 );
                 return;
             }
@@ -321,8 +316,7 @@ internal static class CompositeDispatchCodeGenerator
         DispatchCompositeTarget target,
         string methodName,
         string arguments,
-        string dispatchParamName,
-        CompositeResultBehavior behavior
+        string dispatchParamName
     )
     {
         builder.AppendLine($"switch ({dispatchParamName})");
@@ -334,67 +328,24 @@ internal static class CompositeDispatchCodeGenerator
                 builder.IncreaseIndent();
                 if (target.Multiple)
                 {
-                    if (behavior == CompositeResultBehavior.Sequential)
+                    builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
+                    using (builder.BeginScope())
                     {
-                        builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                        using (builder.BeginScope())
-                        {
-                            builder.AppendLine($"await __validator.{methodName}({arguments});");
-                        }
-                        builder.AppendLine("return;");
+                        builder.AppendLine($"await __validator.{methodName}({arguments});");
                     }
-                    else
-                    {
-                        builder.AppendLine(
-                            $"var __tasks = new global::System.Collections.Generic.List<{Task}>();"
-                        );
-                        builder.AppendLine($"foreach (var __validator in {concrete.FieldName})");
-                        using (builder.BeginScope())
-                        {
-                            builder.AppendLine(
-                                $"__tasks.Add(__validator.{methodName}({arguments}));"
-                            );
-                        }
-                        if (behavior == CompositeResultBehavior.Any)
-                        {
-                            builder.AppendLine($"await {Task}.WhenAny(__tasks);");
-                            builder.AppendLine("return;");
-                        }
-                        else
-                        {
-                            builder.AppendLine($"return {Task}.WhenAll(__tasks);");
-                        }
-                    }
+                    builder.AppendLine("return;");
                 }
                 else
                 {
-                    if (
-                        behavior == CompositeResultBehavior.Any
-                        || behavior == CompositeResultBehavior.Sequential
-                    )
-                    {
-                        builder.AppendLine(
-                            $"await {concrete.FieldName}.{methodName}({arguments});"
-                        );
-                        builder.AppendLine("return;");
-                    }
-                    else
-                    {
-                        builder.AppendLine(
-                            $"return {concrete.FieldName}.{methodName}({arguments});"
-                        );
-                    }
+                    builder.AppendLine($"await {concrete.FieldName}.{methodName}({arguments});");
+                    builder.AppendLine("return;");
                 }
                 builder.DecreaseIndent();
             }
 
             builder.AppendLine("default:");
             builder.IncreaseIndent();
-            builder.AppendLine(
-                behavior == CompositeResultBehavior.Sequential
-                    ? "return;"
-                    : $"return {Task}.CompletedTask;"
-            );
+            builder.AppendLine("return;");
             builder.DecreaseIndent();
         }
     }

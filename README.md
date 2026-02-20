@@ -1339,10 +1339,7 @@ public partial class SampleComposite(IEnumerable<ISomeService> innerServices)
     [CompositeMethod(Result = CompositeResult.Any)] // -> return a || b || c || ...;
     public partial bool FeatureC();
 
-    // in Task methods, you can specify aggregation behavior
-    [CompositeMethod(Result = CompositeResult.All)] // -> return Task.WhenAll(a,b,c,...);
-    [CompositeMethod(Result = CompositeResult.Any)] // -> return Task.WhenAny(a,b,c,...);
-    [CompositeMethod(Result = CompositeResult.Sequential)] // -> execute tasks sequentially (await each one before starting the next)
+    // in Task methods, implementations are executed sequentially
     public partial Task FeatureD(int val);
 
     // if you want to handle results manually, you can implement it as a normal method without using auto implementation.

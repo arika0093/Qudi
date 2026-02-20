@@ -408,7 +408,6 @@ internal enum CompositeResultBehavior
 {
     All,
     Any,
-    Sequential,
 }
 
 /// <summary>

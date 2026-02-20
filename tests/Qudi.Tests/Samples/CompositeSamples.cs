@@ -244,6 +244,5 @@ public sealed partial class CompositeSequentialAsyncService(
 {
     public static readonly List<string> ExecutionOrder = new();
 
-    [CompositeMethod(Result = CompositeResult.Sequential)]
     public partial Task ExecuteAsync(string input);
 }

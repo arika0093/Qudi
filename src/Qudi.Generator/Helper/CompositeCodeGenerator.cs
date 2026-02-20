@@ -31,7 +31,8 @@ internal static class CompositeCodeGenerator
             || returnType.Contains("IList");
 
         // For composite, we iterate over all inner services and call the method on each
-        builder.AppendLine($"{returnType} {interfaceName}.{method.Name}({parameters})");
+        var asyncModifier = isTask ? "async " : "";
+        builder.AppendLine($"{asyncModifier}{returnType} {interfaceName}.{method.Name}({parameters})");
         using (builder.BeginScope())
         {
             if (isVoid)
@@ -45,14 +46,7 @@ internal static class CompositeCodeGenerator
             }
             else if (isTask)
             {
-                // Default to Task.WhenAll
-                AppendCompositeTaskMethod(
-                    builder,
-                    method,
-                    helperAccessor,
-                    arguments,
-                    useWhenAll: true
-                );
+                AppendCompositeTaskSequentialMethod(builder, method, helperAccessor, arguments);
             }
             else if (isIEnumerable)
             {
@@ -112,9 +106,8 @@ internal static class CompositeCodeGenerator
         var isBool = returnType == "bool";
         var isTask = returnType == Task;
 
-        // Add async modifier for Sequential task execution
-        var asyncModifier =
-            isTask && method.ResultBehavior == CompositeResultBehavior.Sequential ? "async " : "";
+        // Task composite methods always execute sequentially.
+        var asyncModifier = isTask ? "async " : "";
 
         builder.AppendLine(
             $"public partial {asyncModifier}{returnType} {method.Name}({parameters})"
@@ -147,13 +140,11 @@ internal static class CompositeCodeGenerator
 
             if (isTask)
             {
-                var behavior = method.ResultBehavior;
-                AppendCompositeTaskMethodBody(
+                AppendCompositeTaskSequentialMethodBody(
                     builder,
                     method.Name,
                     innerServicesAccessor,
-                    arguments,
-                    behavior
+                    arguments
                 );
                 return;
             }
@@ -209,30 +200,17 @@ internal static class CompositeCodeGenerator
         }
     }
 
-    private static void AppendCompositeTaskMethod(
+    private static void AppendCompositeTaskSequentialMethod(
         IndentedStringBuilder builder,
         HelperMember method,
         string helperAccessor,
-        string arguments,
-        bool useWhenAll
+        string arguments
     )
     {
-        builder.AppendLine($"var __tasks = new global::System.Collections.Generic.List<{Task}>();");
         builder.AppendLine($"foreach (var __service in {helperAccessor})");
         using (builder.BeginScope())
         {
-            builder.AppendLine($"__tasks.Add(__service.{method.Name}({arguments}));");
-        }
-
-        if (useWhenAll)
-        {
-            // CompositeResult.All or default - use WhenAll (works for Task and Task<T>)
-            builder.AppendLine($"return {Task}.WhenAll(__tasks);");
-        }
-        else
-        {
-            // CompositeResult.Any - use WhenAny
-            builder.AppendLine($"return {Task}.WhenAny(__tasks);");
+            builder.AppendLine($"await __service.{method.Name}({arguments});");
         }
     }
 
@@ -325,44 +303,18 @@ internal static class CompositeCodeGenerator
         }
     }
 
-    private static void AppendCompositeTaskMethodBody(
+    private static void AppendCompositeTaskSequentialMethodBody(
         IndentedStringBuilder builder,
         string methodName,
         string helperAccessor,
-        string arguments,
-        CompositeResultBehavior behavior
+        string arguments
     )
     {
-        if (behavior == CompositeResultBehavior.Sequential)
+        builder.AppendLine($"foreach (var __service in {helperAccessor})");
+        using (builder.BeginScope())
         {
-            // Sequential execution: await each task one by one
-            builder.AppendLine($"foreach (var __service in {helperAccessor})");
-            using (builder.BeginScope())
-            {
-                builder.AppendLine($"await __service.{methodName}({arguments});");
-            }
-            // No return statement needed for async Task method
+            builder.AppendLine($"await __service.{methodName}({arguments});");
         }
-        else
-        {
-            // Parallel execution: collect all tasks and await together
-            builder.AppendLine(
-                $"var __tasks = new global::System.Collections.Generic.List<{Task}>();"
-            );
-            builder.AppendLine($"foreach (var __service in {helperAccessor})");
-            using (builder.BeginScope())
-            {
-                builder.AppendLine($"__tasks.Add(__service.{methodName}({arguments}));");
-            }
-
-            if (behavior == CompositeResultBehavior.Any)
-            {
-                builder.AppendLine($"return {Task}.WhenAny(__tasks);");
-            }
-            else
-            {
-                builder.AppendLine($"return {Task}.WhenAll(__tasks);");
-            }
-        }
+        // No return statement needed for async Task method
     }
 }

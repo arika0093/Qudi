@@ -789,7 +789,6 @@ internal static class HelperTargetCollector
                             {
                                 0 => CompositeResultBehavior.All,
                                 1 => CompositeResultBehavior.Any,
-                                2 => CompositeResultBehavior.Sequential,
                                 _ => CompositeResultBehavior.All,
                             };
                         }

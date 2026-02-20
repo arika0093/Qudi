@@ -193,22 +193,14 @@ internal static class RegistrationAttrGenerator
                 /// <summary>
                 /// Return logical AND of all results.
                 /// In Boolean: (a && b && c && ...).
-                /// In Task: Task.WhenAll(a, b, c, ...).
                 /// </summary>
                 All,
 
                 /// <summary>
                 /// Return logical OR of all results.
                 /// In Boolean: (a || b || c || ...).
-                /// In Task: Task.WhenAny(a, b, c, ...).
                 /// </summary>
                 Any,
-
-                /// <summary>
-                /// Execute sequentially and return when all complete.
-                /// In Task: await a; await b; await c; ...; return Task.CompletedTask.
-                /// </summary>
-                Sequential,
             }
         }
         """;
