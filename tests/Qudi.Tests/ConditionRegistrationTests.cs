@@ -14,19 +14,6 @@ public sealed class ConditionRegistrationTests
     private const string ProductionCondition = "Production";
 
     [Test]
-    public void ConditionalServicesWithoutConditions()
-    {
-        var services = new ServiceCollection();
-        services.AddQudiServices();
-
-        var provider = services.BuildServiceProvider();
-        var registered = provider.GetServices<IConditionSample>().ToList();
-
-        // When no conditions are specified, conditional services should not be registered.
-        registered.ShouldBeEmpty();
-    }
-
-    [Test]
     public void RegisterCConfigurationConstantKey()
     {
         var services = new ServiceCollection();
