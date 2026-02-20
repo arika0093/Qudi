@@ -21,7 +21,7 @@ public sealed class KeyedLiteralAndConcreteTests
     }
 
     [Test]
-    public void RegistersConcreteOnlyWhenNoInterfaces()
+    public void RegistersKeyedConcreteOnlyAsKeyedService()
     {
         var services = new ServiceCollection();
         services.AddQudiServices();
@@ -30,7 +30,7 @@ public sealed class KeyedLiteralAndConcreteTests
         var concrete = provider.GetService<KeyedConcreteOnlySample>();
         var keyed = provider.GetKeyedService<KeyedConcreteOnlySample>("concrete-only");
 
-        concrete.ShouldNotBeNull();
-        keyed.ShouldBeNull();
+        concrete.ShouldBeNull();
+        keyed.ShouldNotBeNull();
     }
 }

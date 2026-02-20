@@ -25,6 +25,7 @@
   </Folder>
   <Folder Name="/src/">
     <File Path="src/Directory.Build.props" />
+    <Project Path="src/Qudi.Container.Core/Qudi.Container.Core.csproj" />
     <Project Path="src/Qudi.Container.Microsoft/Qudi.Container.Microsoft.csproj" />
     <Project Path="src/Qudi.Core/Qudi.Core.csproj" />
     <Project Path="src/Qudi.Generator/Qudi.Generator.csproj" />
