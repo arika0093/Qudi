@@ -26,10 +26,8 @@ public static class QudiRegistrationGraphBuilder
             applicableEntries.Select(e => e.Registration).ToList()
         );
 
-        var materializedEntries = BuildEntries(
-            materializedRegistrations,
-            configuration.Conditions
-        ).Where(e => e.IsConditionMatched)
+        var materializedEntries = BuildEntries(materializedRegistrations, configuration.Conditions)
+            .Where(e => e.IsConditionMatched)
             .ToList();
 
         var baseRegistrations = materializedEntries
@@ -38,7 +36,10 @@ public static class QudiRegistrationGraphBuilder
             .ToList();
 
         var layeredEntries = materializedEntries
-            .Where(e => e.Registration.MarkAsDecorator || (e.Registration.MarkAsComposite && !e.Registration.MarkAsDispatcher))
+            .Where(e =>
+                e.Registration.MarkAsDecorator
+                || (e.Registration.MarkAsComposite && !e.Registration.MarkAsDispatcher)
+            )
             .OrderBy(e => e.Registration.Order)
             .ThenBy(e => e.Registration.MarkAsComposite ? 0 : 1)
             .ToList();
@@ -50,11 +51,13 @@ public static class QudiRegistrationGraphBuilder
             .GroupBy(x => x.Service)
             .ToDictionary(
                 g => g.Key,
-                g => (IReadOnlyList<QudiRegistrationEntry>)g.Select(x => x.Entry)
-                    .OrderBy(r => r.Registration.Order)
-                    .ThenBy(r => r.Registration.MarkAsComposite ? 1 : 0)
-                    .ThenBy(r => r.Registration.Type.FullName, StringComparer.Ordinal)
-                    .ToList()
+                g =>
+                    (IReadOnlyList<QudiRegistrationEntry>)
+                        g.Select(x => x.Entry)
+                            .OrderBy(r => r.Registration.Order)
+                            .ThenBy(r => r.Registration.MarkAsComposite ? 1 : 0)
+                            .ThenBy(r => r.Registration.Type.FullName, StringComparer.Ordinal)
+                            .ToList()
             );
 
         var implementationsByService = materializedEntries
@@ -130,9 +133,8 @@ public static class QudiRegistrationGraphBuilder
                     .ToList();
 
                 var matched = IsConditionMatched(registration, conditions);
-                var conditionText = registration.When.Count > 0
-                    ? string.Join(", ", registration.When)
-                    : null;
+                var conditionText =
+                    registration.When.Count > 0 ? string.Join(", ", registration.When) : null;
 
                 return new QudiRegistrationEntry
                 {

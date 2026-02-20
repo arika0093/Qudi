@@ -62,29 +62,26 @@ public sealed record QudiRegistrationGraph
     /// <summary>
     /// Layered entries grouped by service type in application order.
     /// </summary>
-    public required IReadOnlyDictionary<Type, IReadOnlyList<QudiRegistrationEntry>> LayersByService
-    {
-        get;
-        init;
-    }
+    public required IReadOnlyDictionary<
+        Type,
+        IReadOnlyList<QudiRegistrationEntry>
+    > LayersByService { get; init; }
 
     /// <summary>
     /// Non-decorator implementations grouped by service type.
     /// </summary>
-    public required IReadOnlyDictionary<Type, IReadOnlyList<QudiRegistrationEntry>> ImplementationsByService
-    {
-        get;
-        init;
-    }
+    public required IReadOnlyDictionary<
+        Type,
+        IReadOnlyList<QudiRegistrationEntry>
+    > ImplementationsByService { get; init; }
 
     /// <summary>
     /// Non-layered implementations grouped by service type.
     /// </summary>
-    public required IReadOnlyDictionary<Type, IReadOnlyList<QudiRegistrationEntry>> BaseImplementationsByService
-    {
-        get;
-        init;
-    }
+    public required IReadOnlyDictionary<
+        Type,
+        IReadOnlyList<QudiRegistrationEntry>
+    > BaseImplementationsByService { get; init; }
 
     /// <summary>
     /// Internal assembly names used for external-type determination.

@@ -89,10 +89,12 @@ public partial class ComponentValidatorDispatcher : IComponentValidator<ICompone
 }
 
 [DITransient(Export = true)]
-public class GenericRegistrationExecutor(IComponentValidator<IComponent> componentValidator) : ISampleExecutor
+public class GenericRegistrationExecutor(IComponentValidator<IComponent> componentValidator)
+    : ISampleExecutor
 {
     public string Name => "Generic Registration";
-    public string Description => "Open generic types with specialized implementations and use [QudiDispatch].";
+    public string Description =>
+        "Open generic types with specialized implementations and use [QudiDispatch].";
     public string Namespace => typeof(GenericRegistrationExecutor).Namespace!;
 
     public void Execute()
@@ -106,14 +108,15 @@ public class GenericRegistrationExecutor(IComponentValidator<IComponent> compone
             new Battery { Capacity = 5555 },
             new Screen { Size = 6 },
             new Screen { Size = 4 },
-            new Keyboard { Keys = 104 }
+            new Keyboard { Keys = 104 },
         };
 
         foreach (var component in components)
         {
             var rst = componentValidator.Validate(component);
-            Console.WriteLine($"  --> Overall validation result: {(rst ? "✅ Valid" : "❌ Invalid")}\n");
+            Console.WriteLine(
+                $"  --> Overall validation result: {(rst ? "✅ Valid" : "❌ Invalid")}\n"
+            );
         }
-
     }
 }

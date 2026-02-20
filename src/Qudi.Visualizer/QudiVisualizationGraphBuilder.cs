@@ -58,8 +58,8 @@ internal static class QudiVisualizationGraphBuilder
             x => x.Value.Select(ToVisualizationView).ToList()
         );
 
-        var baseImplementationsByService = registrationGraph
-            .BaseImplementationsByService.ToDictionary(
+        var baseImplementationsByService =
+            registrationGraph.BaseImplementationsByService.ToDictionary(
                 x => x.Key,
                 x => x.Value.Select(ToVisualizationView).ToList()
             );

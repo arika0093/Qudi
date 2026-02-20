@@ -168,9 +168,7 @@ internal static class CodeGenerationUtility
             var constraints = BuildGenericConstraintList(definition.TypeParameters[i]);
             if (constraints.Count > 0)
             {
-                whereClauses.Add(
-                    $"where {typeArg.Name} : {string.Join(", ", constraints)}"
-                );
+                whereClauses.Add($"where {typeArg.Name} : {string.Join(", ", constraints)}");
             }
         }
 

@@ -55,7 +55,9 @@ internal static class CompositeDispatchCodeGenerator
                 builder.AppendLine("");
 
                 // constructor with dependencies for each concrete type.
-                builder.AppendLine($"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}(");
+                builder.AppendLine(
+                    $"{target.ImplementingTypeAccessibility} {target.ImplementingTypeName}("
+                );
                 builder.IncreaseIndent();
                 BuildConstructorParameters(builder, target);
                 builder.DecreaseIndent();
@@ -65,7 +67,9 @@ internal static class CompositeDispatchCodeGenerator
                 {
                     foreach (var concreteType in target.ConcreteTypes)
                     {
-                        builder.AppendLine($"{concreteType.FieldName} = {concreteType.ParameterName};");
+                        builder.AppendLine(
+                            $"{concreteType.FieldName} = {concreteType.ParameterName};"
+                        );
                     }
                 }
 
@@ -85,7 +89,10 @@ internal static class CompositeDispatchCodeGenerator
         }
     }
 
-    private static void BuildConstructorParameters(IndentedStringBuilder builder, DispatchCompositeTarget target)
+    private static void BuildConstructorParameters(
+        IndentedStringBuilder builder,
+        DispatchCompositeTarget target
+    )
     {
         var parameters = string.Join(
             ",\n",
@@ -300,10 +307,12 @@ internal static class CompositeDispatchCodeGenerator
                 builder.DecreaseIndent();
             }
             // in default: throw Exception
-            builder.AppendLine($"""
+            builder.AppendLine(
+                $"""
                 default:
                     throw new {NotSupportedException}($"No concrete implementation found for dispatch parameter '{dispatchParamName}' in method '{methodName}'.");
-                """);
+                """
+            );
         }
     }
 
