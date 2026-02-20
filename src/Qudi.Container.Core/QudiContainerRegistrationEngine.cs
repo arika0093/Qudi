@@ -177,8 +177,6 @@ public static class QudiContainerRegistrationEngine
             && serviceTypes[0] == registration.Type
         )
         {
-            // Preserve legacy concrete-only behavior: keyed concrete registrations resolve as
-            // unkeyed self services (covered by KeyedLiteralAndConcreteTests.RegistersConcreteOnlyWhenNoInterfaces).
             adapter.TryAddService(
                 new QudiServiceRegistrationRequest
                 {
@@ -187,6 +185,7 @@ public static class QudiContainerRegistrationEngine
                     Lifetime = lifetime,
                     DuplicateHandling = registration.Duplicate,
                     Kind = QudiServiceRegistrationKind.ImplementationType,
+                    Key = registration.Key,
                 }
             );
             return;
