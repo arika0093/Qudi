@@ -62,7 +62,9 @@ public static class QudiContainerRegistrationEngine
 
             if (!adapter.SupportsKeyedLayers && layers.Any(r => r.Registration.Key is not null))
             {
-                continue;
+                throw new InvalidOperationException(
+                    $"Keyed layered registrations are not supported by {adapter.GetType().Name}."
+                );
             }
 
             var currentDescriptors = adapter.GetServiceDescriptors(serviceType).ToList();
