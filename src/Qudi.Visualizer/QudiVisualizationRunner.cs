@@ -6,6 +6,12 @@ namespace Qudi.Visualizer;
 
 internal static class QudiVisualizationRunner
 {
+    public static void Execute(QudiVisualizationConfiguration configuration)
+    {
+        var runtime = configuration.Options.BuildRuntimeOptions();
+        Execute(configuration, runtime);
+    }
+
     public static void Execute(
         QudiConfiguration configuration,
         QudiVisualizationRuntimeOptions options

@@ -29,10 +29,8 @@ public static class QudiVisualizationExtensions
         var options = new QudiVisualizationOptions();
         configure?.Invoke(options);
 
-        return builder.AddService(configuration =>
-        {
-            var runtime = options.BuildRuntimeOptions();
-            QudiVisualizationRunner.Execute(configuration, runtime);
-        });
+        var visualizationBuilder = new QudiVisualizationConfigurationBuilder(options);
+        builder.AddBuilder(visualizationBuilder);
+        return visualizationBuilder;
     }
 }

@@ -41,13 +41,9 @@ public static class QudiConfigurationExecutor
             {
                 types = types.Where(filter);
             }
-            var configuration = new QudiConfiguration
-            {
-                Registrations = [.. types],
-                Conditions = conditions,
-            };
+            var registrations = (IReadOnlyCollection<TypeRegistrationInfo>)[.. types];
             // execute configuration action
-            builder.Execute(configuration);
+            builder.ExecuteInternal(registrations, conditions);
         }
     }
 }

@@ -11,30 +11,27 @@ namespace Qudi.Container.Microsoft;
 public static class QudiAddServiceToContainer
 {
     /// <summary>
-    /// Registers Qudi-collected service definitions into <paramref name="services" />.
+    /// Registers Qudi-collected service definitions into the configured service collection.
     /// </summary>
-    /// <param name="services">Service collection to register into.</param>
     /// <param name="configuration">Runtime registration configuration.</param>
-    public static IServiceCollection AddQudiServices(
-        IServiceCollection services,
-        QudiConfiguration configuration
-    )
+    public static IServiceCollection AddQudiServices(QudiMicrosoftConfiguration configuration)
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
-
         if (configuration is null)
         {
             throw new ArgumentNullException(nameof(configuration));
         }
-
+        var services = configuration.Services;
         var registrationGraph = QudiRegistrationGraphBuilder.Build(configuration);
         var adapter = new MicrosoftContainerRegistrationAdapter(services);
 
-        QudiContainerRegistrationEngine.RegisterBaseServices(adapter, registrationGraph.BaseRegistrations);
-        QudiContainerRegistrationEngine.ApplyLayeredRegistrations(adapter, registrationGraph.LayersByService);
+        QudiContainerRegistrationEngine.RegisterBaseServices(
+            adapter,
+            registrationGraph.BaseRegistrations
+        );
+        QudiContainerRegistrationEngine.ApplyLayeredRegistrations(
+            adapter,
+            registrationGraph.LayersByService
+        );
 
         return services;
     }

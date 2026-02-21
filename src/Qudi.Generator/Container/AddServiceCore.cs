@@ -1,4 +1,5 @@
 #pragma warning disable S101 // Types should be named in PascalCase
+using System.Linq;
 using Qudi.Generator.Dependency;
 
 namespace Qudi.Generator.Container;
@@ -31,10 +32,24 @@ internal abstract class AddServiceCore
     public abstract string CalledMethodName { get; }
 
     /// <summary>
+    /// Builder type name to use for this dependency.
+    /// </summary>
+    public abstract string BuilderTypeName { get; }
+
+    /// <summary>
+    /// Generates code for creating the dependency-specific builder.
+    /// </summary>
+    protected abstract string GetBuilderCreationCode(
+        string builderVariableName,
+        string servicesVariableName
+    );
+
+    /// <summary>
     /// Generates the AddQudiService code for the given dependency.
     /// </summary>
     public virtual string? GenerateAddQudiServicesCode(ProjectBasicInfo info)
     {
+        var builderCreationCode = GetBuilderCreationCode("builderOfCurrent", "services");
         return $$"""
             /// <summary>
             /// Registers services in Qudi with optional configuration.
@@ -66,7 +81,7 @@ internal abstract class AddServiceCore
             /// </param>
             public static {{TargetTypeName}} AddQudiServices(
                 this {{TargetTypeName}} services,
-                {{SystemAction}}<{{QudiNS}}.QudiConfigurationRootBuilder, {{QudiNS}}.QudiConfigurationBuilder>? configuration
+                {{SystemAction}}<{{QudiNS}}.QudiConfigurationRootBuilder, {{BuilderTypeName}}>? configuration
             )
             {
                 var multiBuilder = new {{QudiNS}}.QudiConfigurationRootBuilder();
@@ -75,10 +90,7 @@ internal abstract class AddServiceCore
             #else
                 multiBuilder.SetCondition({{QudiNS}}.Condition.Production);
             #endif
-                var builderOfCurrent = new {{QudiNS}}.QudiConfigurationBuilder()
-                {
-                    ConfigurationAction = (config) => {{CalledMethodName}}(services, config)
-                };
+                {{builderCreationCode}}
                 configuration?.Invoke(multiBuilder, builderOfCurrent);
                 multiBuilder.AddBuilder(builderOfCurrent);
                 {{QudiExecuteAllMethod}}(multiBuilder, {{QudiGeneratedNS}}.QudiInternalRegistrations.FetchAll);

@@ -17,6 +17,16 @@ internal class AddServiceForMicrosoft : AddServiceCore
     public override string CalledMethodName =>
         $"global::{SupportCheckMetadataName}.AddQudiServices";
 
+    public override string BuilderTypeName => "global::Qudi.QudiMicrosoftConfigurationBuilder";
+
+    protected override string GetBuilderCreationCode(
+        string builderVariableName,
+        string servicesVariableName
+    )
+    {
+        return $"var {builderVariableName} = new {BuilderTypeName}({servicesVariableName});";
+    }
+
     public override string? GenerateAddQudiServicesCode(ProjectBasicInfo info)
     {
         var isSupported = info.AddServicesAvailable.GetValueOrDefault(GetType(), false);

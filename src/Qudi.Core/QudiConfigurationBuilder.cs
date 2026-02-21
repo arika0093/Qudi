@@ -106,11 +106,12 @@ public class QudiConfigurationBuilder
 {
     private readonly HashSet<string> _onlyWorkedConditions = [];
     private readonly List<Func<TypeRegistrationInfo, bool>> _filters = [];
+    private QudiConfiguration? _configuration;
 
     /// <summary>
     /// Action to further modify the configuration.
     /// </summary>
-    public required Action<QudiConfiguration> ConfigurationAction { get; init; }
+    public Action<QudiConfiguration>? ConfigurationAction { get; init; }
 
     /// <summary>
     /// Conditions on which this builder works.
@@ -182,16 +183,99 @@ public class QudiConfigurationBuilder
         OnlyWorkOnSpecificCondition(Condition.Production);
 
     /// <summary>
+    /// Creates a configuration instance for this builder.
+    /// </summary>
+    protected internal virtual QudiConfiguration CreateConfiguration(
+        IReadOnlyCollection<TypeRegistrationInfo> registrations,
+        IReadOnlyCollection<string> conditions
+    ) =>
+        new QudiConfiguration
+        {
+            Registrations = registrations,
+            Conditions = conditions,
+        };
+
+    /// <summary>
     /// Executes the configuration action.
     /// </summary>
-    protected internal virtual void Execute(QudiConfiguration configuration) =>
+    protected internal virtual void Execute()
+    {
+        if (_configuration is null)
+        {
+            throw new InvalidOperationException("Configuration has not been initialized.");
+        }
+        Execute(_configuration);
+    }
+
+    /// <summary>
+    /// Executes the configuration action with the specified configuration.
+    /// </summary>
+    protected internal virtual void Execute(QudiConfiguration configuration)
+    {
+        if (ConfigurationAction is null)
+        {
+            throw new InvalidOperationException("ConfigurationAction is not set.");
+        }
         ConfigurationAction(configuration);
+    }
+
+    // internal execution entry point used by the executor
+    internal void ExecuteInternal(
+        IReadOnlyCollection<TypeRegistrationInfo> registrations,
+        IReadOnlyCollection<string> conditions
+    )
+    {
+        _configuration = CreateConfiguration(registrations, conditions);
+        Execute();
+    }
+}
+
+/// <summary>
+/// Builder for Qudi configuration with a specific configuration type.
+/// </summary>
+public abstract class QudiConfigurationBuilder<TConfiguration> : QudiConfigurationBuilder
+    where TConfiguration : QudiConfiguration
+{
+    private TConfiguration? _typedConfiguration;
+
+    /// <summary>
+    /// The strongly-typed configuration instance.
+    /// </summary>
+    protected TConfiguration Configuration =>
+        _typedConfiguration
+        ?? throw new InvalidOperationException("Configuration has not been initialized.");
+
+    /// <summary>
+    /// Creates a strongly-typed configuration instance for this builder.
+    /// </summary>
+    protected abstract TConfiguration CreateTypedConfiguration(
+        IReadOnlyCollection<TypeRegistrationInfo> registrations,
+        IReadOnlyCollection<string> conditions
+    );
+
+    /// <summary>
+    /// Executes the configuration action with the strongly-typed configuration.
+    /// </summary>
+    protected abstract void ExecuteTyped(TConfiguration configuration);
+
+    /// <inheritdoc />
+    protected internal sealed override QudiConfiguration CreateConfiguration(
+        IReadOnlyCollection<TypeRegistrationInfo> registrations,
+        IReadOnlyCollection<string> conditions
+    )
+    {
+        _typedConfiguration = CreateTypedConfiguration(registrations, conditions);
+        return _typedConfiguration;
+    }
+
+    /// <inheritdoc />
+    protected internal sealed override void Execute() => ExecuteTyped(Configuration);
 }
 
 /// <summary>
 /// Result of Qudi service configuration.
 /// </summary>
-public sealed record QudiConfiguration
+public record QudiConfiguration
 {
     /// <summary>
     /// Type registrations after applying configuration.
