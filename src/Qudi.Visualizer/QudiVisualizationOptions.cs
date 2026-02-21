@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace Qudi;
@@ -99,6 +100,11 @@ public sealed class QudiVisualizationOptions
         get => ConsoleOutput != ConsoleDisplay.None;
         set => ConsoleOutput = value ? ConsoleDisplay.Default : ConsoleDisplay.None;
     }
+
+    /// <summary>
+    /// Optional encoding for console output. Default is UTF8.
+    /// </summary>
+    public Encoding? ConsoleEncoding { get; set; } = Encoding.UTF8;
 
     /// <summary>
     /// Controls which sections are rendered to the console output.

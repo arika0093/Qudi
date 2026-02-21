@@ -23,12 +23,8 @@ public static class QudiVisualizationExtensions
             throw new ArgumentNullException(nameof(builder));
         }
 
-        // export UTF-8
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-
         var options = new QudiVisualizationOptions();
         configure?.Invoke(options);
-
         var visualizationBuilder = new QudiVisualizationConfigurationBuilder(options);
         builder.AddBuilder(visualizationBuilder);
         return visualizationBuilder;

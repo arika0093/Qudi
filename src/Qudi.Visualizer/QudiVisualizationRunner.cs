@@ -8,15 +8,13 @@ internal static class QudiVisualizationRunner
 {
     public static void Execute(QudiVisualizationConfiguration configuration)
     {
-        var runtime = configuration.Options.BuildRuntimeOptions();
-        Execute(configuration, runtime);
-    }
+        var options = configuration.Options.BuildRuntimeOptions();
 
-    public static void Execute(
-        QudiConfiguration configuration,
-        QudiVisualizationRuntimeOptions options
-    )
-    {
+        if (configuration.Options.ConsoleEncoding != null)
+        {
+            Console.OutputEncoding = configuration.Options.ConsoleEncoding;
+        }
+
         var report = QudiVisualizationAnalyzer.Analyze(configuration, options);
         var graph = QudiVisualizationGraphBuilder.Build(configuration);
         var warnings = new List<string>();
