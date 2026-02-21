@@ -277,7 +277,9 @@ internal static class CompositeDispatchCodeGenerator
 
             builder.AppendLine("default:");
             builder.IncreaseIndent();
-            builder.AppendLine("break;");
+            builder.AppendLine(
+                $"throw new {NotSupportedException}($\"No concrete implementation found for dispatch parameter '{dispatchParamName}' in method '{methodName}'.\");"
+            );
             builder.DecreaseIndent();
         }
     }
@@ -368,7 +370,9 @@ internal static class CompositeDispatchCodeGenerator
 
             builder.AppendLine("default:");
             builder.IncreaseIndent();
-            builder.AppendLine("return;");
+            builder.AppendLine(
+                $"throw new {NotSupportedException}($\"No concrete implementation found for dispatch parameter '{dispatchParamName}' in method '{methodName}'.\");"
+            );
             builder.DecreaseIndent();
         }
     }
