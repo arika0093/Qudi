@@ -119,6 +119,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
         const string DecoratorColor = "#e1bee7";
         const string CompositeColor = "#f8d7da";
         const string DispatcherColor = "#fff2b3";
+        var showCondKey = rows.Any(r => !(r.When == "*" && r.Key == "-"));
 
         var table = new Table()
             .Border(TableBorder.Simple)
@@ -126,9 +127,14 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             .Expand()
             .AddColumn(new TableColumn("[bold cyan]Service[/]"))
             .AddColumn(new TableColumn("[bold green]Implementation[/]"))
-            .AddColumn(new TableColumn("[bold yellow]Life[/]"))
-            .AddColumn(new TableColumn("[bold blue]Cond[/]|[bold magenta]Key[/]"))
-            .AddColumn(new TableColumn("[bold orange1]Order[/]"));
+            .AddColumn(new TableColumn("[bold yellow]Life[/]"));
+
+        if (showCondKey)
+        {
+            table.AddColumn(new TableColumn("[bold blue]Cond[/]|[bold magenta]Key[/]"));
+        }
+
+        table.AddColumn(new TableColumn("[bold orange1]Order[/]"));
 
         foreach (var row in rows)
         {
@@ -167,13 +173,25 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
                 implColor = CompositeColor;
             }
 
-            table.AddRow(
-                $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",
-                $"[{implColor}]{Markup.Escape(row.Implementation)}[/]",
-                $"[yellow]{lifeTimeEmoji}[/]",
-                condKey,
-                orderText
-            );
+            if (showCondKey)
+            {
+                table.AddRow(
+                    $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",
+                    $"[{implColor}]{Markup.Escape(row.Implementation)}[/]",
+                    $"[yellow]{lifeTimeEmoji}[/]",
+                    condKey,
+                    orderText
+                );
+            }
+            else
+            {
+                table.AddRow(
+                    $"[{serviceColor}]{Markup.Escape(row.Service)}[/]",
+                    $"[{implColor}]{Markup.Escape(row.Implementation)}[/]",
+                    $"[yellow]{lifeTimeEmoji}[/]",
+                    orderText
+                );
+            }
         }
 
         return new Panel(table)
