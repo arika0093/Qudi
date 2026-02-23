@@ -13,6 +13,7 @@ services.AddQudiServices(conf =>
 {
     conf.EnableVisualizationOutput(option =>
     {
+        option.ConsoleOutput = ConsoleDisplay.All;
         option.AddOutput("generics-composite-decorator.md");
     });
 });

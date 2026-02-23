@@ -35,7 +35,8 @@ internal static class QudiVisualizationAnalyzer
                     registration.Conditions,
                     registration.Order,
                     registration.IsDecorator,
-                    registration.IsComposite
+                    registration.IsComposite,
+                    registration.IsDispatcher
                 ))
             )
             .OrderBy(r => r.Service, StringComparer.Ordinal)
@@ -91,6 +92,7 @@ internal static class QudiVisualizationAnalyzer
                     registration.Order,
                     registration.MarkAsDecorator,
                     registration.MarkAsComposite,
+                    registration.MarkAsDispatcher,
                     IsConditionMatched: true
                 );
             })

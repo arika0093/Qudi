@@ -15,6 +15,7 @@ internal sealed record RegistrationView(
     int Order,
     bool IsDecorator,
     bool IsComposite,
+    bool IsDispatcher,
     bool IsConditionMatched
 );
 
@@ -52,7 +53,8 @@ internal sealed record QudiRegistrationTableRow(
     string When,
     int Order,
     bool Decorator,
-    bool Composite
+    bool Composite,
+    bool Dispatcher
 );
 
 internal sealed record QudiVisualizationReport(

@@ -116,6 +116,9 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
     private Panel CreateRegistrationsPanel(IReadOnlyList<QudiRegistrationTableRow> rows)
     {
         const string Nothing = "[dim]*[/]";
+        const string DecoratorColor = "#e1bee7";
+        const string CompositeColor = "#f8d7da";
+        const string DispatcherColor = "#fff2b3";
 
         var table = new Table()
             .Border(TableBorder.Simple)
@@ -153,11 +156,15 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
             var implColor = "green";
             if (row.Decorator)
             {
-                implColor = "DeepPink3_1";
+                implColor = DecoratorColor;
+            }
+            else if (row.Dispatcher)
+            {
+                implColor = DispatcherColor;
             }
             else if (row.Composite)
             {
-                implColor = "magenta";
+                implColor = CompositeColor;
             }
 
             table.AddRow(
