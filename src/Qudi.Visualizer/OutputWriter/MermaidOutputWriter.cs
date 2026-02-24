@@ -8,10 +8,21 @@ namespace Qudi.Visualizer.OutputWriter;
 
 internal static class MermaidOutputWriter
 {
-    public static string Generate(QudiVisualizationGraph graph, bool groupByNamespace = false)
+    public static string Generate(
+        QudiVisualizationGraph graph,
+        bool groupByNamespace = false,
+        QudiVisualizationDirection direction = QudiVisualizationDirection.LeftToRight,
+        string? fontFamily = null
+    )
     {
+        var flowDirection = direction == QudiVisualizationDirection.TopToBottom ? "TB" : "LR";
+        var normalizedFont = string.IsNullOrWhiteSpace(fontFamily) ? "Consolas" : fontFamily!;
+        var escapedFont = EscapeMermaidInitValue(
+            normalizedFont
+        );
         var sb = new StringBuilder();
-        sb.AppendLine("flowchart LR");
+        sb.AppendLine($"%%{{init: {{ 'themeVariables': {{ 'fontFamily': '{escapedFont}' }} }} }}%%");
+        sb.AppendLine($"flowchart {flowDirection}");
 
         var ids = new Dictionary<string, string>(StringComparer.Ordinal);
         var used = new HashSet<string>(StringComparer.Ordinal);
@@ -343,6 +354,11 @@ internal static class MermaidOutputWriter
             .Replace("<", "#lt;")
             .Replace(">", "#gt;")
             .Replace("|", "#124;");
+    }
+
+    private static string EscapeMermaidInitValue(string value)
+    {
+        return value.Replace("\\", "\\\\").Replace("'", "\\'");
     }
 
     private static string SanitizeMermaidId(string value)

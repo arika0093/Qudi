@@ -27,23 +27,45 @@ internal static class QudiVisualizationOutputWriter
                     JsonOutputWriter.Write(output.FilePath, report, graph);
                     break;
                 case QudiVisualizationFormat.Dot:
-                    File.WriteAllText(output.FilePath, DotOutputWriter.Generate(graph));
+                    File.WriteAllText(
+                        output.FilePath,
+                        DotOutputWriter.Generate(
+                            graph,
+                            options.GraphDirection,
+                            options.FontFamily
+                        )
+                    );
                     break;
                 case QudiVisualizationFormat.Mermaid:
                     File.WriteAllText(
                         output.FilePath,
-                        MermaidOutputWriter.Generate(graph, options.GroupByNamespace)
+                        MermaidOutputWriter.Generate(
+                            graph,
+                            options.GroupByNamespace,
+                            options.GraphDirection,
+                            options.FontFamily
+                        )
                     );
                     break;
                 case QudiVisualizationFormat.Markdown:
-                    var mermaid = MermaidOutputWriter.Generate(graph, options.GroupByNamespace);
+                    var mermaid = MermaidOutputWriter.Generate(
+                        graph,
+                        options.GroupByNamespace,
+                        options.GraphDirection,
+                        options.FontFamily
+                    );
                     File.WriteAllText(
                         output.FilePath,
                         $"```mermaid{Environment.NewLine}{mermaid}{Environment.NewLine}```"
                     );
                     break;
                 case QudiVisualizationFormat.Svg:
-                    var warning = SvgOutputWriter.TryWrite(output.FilePath, graph);
+                    var warning = SvgOutputWriter.TryWrite(
+                        output.FilePath,
+                        graph,
+                        options.GraphDirection,
+                        options.FontFamily
+                    );
                     if (!string.IsNullOrWhiteSpace(warning))
                     {
                         warnings.Add(warning!);

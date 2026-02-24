@@ -88,6 +88,8 @@ internal static class QudiVisualizationRunner
                     [fakeOutput],
                     [],
                     options.GroupByNamespace,
+                    options.GraphDirection,
+                    options.FontFamily,
                     null,
                     []
                 );

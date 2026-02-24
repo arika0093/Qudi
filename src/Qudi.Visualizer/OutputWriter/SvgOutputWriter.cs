@@ -6,9 +6,14 @@ namespace Qudi.Visualizer.OutputWriter;
 
 internal static class SvgOutputWriter
 {
-    public static string? TryWrite(string filePath, QudiVisualizationGraph graph)
+    public static string? TryWrite(
+        string filePath,
+        QudiVisualizationGraph graph,
+        QudiVisualizationDirection direction,
+        string? fontFamily
+    )
     {
-        var dot = DotOutputWriter.Generate(graph);
+        var dot = DotOutputWriter.Generate(graph, direction, fontFamily);
         var dotPath = Path.ChangeExtension(filePath, ".dot");
 
         try

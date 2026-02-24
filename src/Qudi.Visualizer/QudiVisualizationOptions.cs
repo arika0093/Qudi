@@ -40,6 +40,22 @@ public enum QudiVisualizationFormat
 }
 
 /// <summary>
+/// Graph direction for DOT and Mermaid outputs.
+/// </summary>
+public enum QudiVisualizationDirection
+{
+    /// <summary>
+    /// Left-to-right layout.
+    /// </summary>
+    LeftToRight,
+
+    /// <summary>
+    /// Top-to-bottom layout.
+    /// </summary>
+    TopToBottom,
+}
+
+/// <summary>
 /// Controls which sections are rendered to the console output.
 /// </summary>
 [Flags]
@@ -122,6 +138,18 @@ public sealed class QudiVisualizationOptions
     /// Default is false.
     /// </summary>
     public bool GroupByNamespace { get; set; } = false;
+
+    /// <summary>
+    /// Graph direction for outputs.
+    /// Default is <see cref="QudiVisualizationDirection.LeftToRight"/>.
+    /// </summary>
+    public QudiVisualizationDirection GraphDirection { get; set; } =
+        QudiVisualizationDirection.LeftToRight;
+
+    /// <summary>
+    /// Font family for outputs. Default is "Consolas".
+    /// </summary>
+    public string FontFamily { get; set; } = "Consolas";
 
     /// <summary>
     /// Output directory for exported individual graphs.
@@ -240,6 +268,8 @@ public sealed class QudiVisualizationOptions
             [.. _outputs],
             [.. _traceServices],
             GroupByNamespace,
+            GraphDirection,
+            FontFamily,
             OutputDirectory,
             [.. _outputFormats]
         );
@@ -293,6 +323,8 @@ internal sealed record QudiVisualizationRuntimeOptions(
     IReadOnlyCollection<QudiVisualizationFileOutput> Outputs,
     IReadOnlyCollection<Type> TraceServices,
     bool GroupByNamespace,
+    QudiVisualizationDirection GraphDirection,
+    string FontFamily,
     string? OutputDirectory,
     IReadOnlyCollection<QudiVisualizationFormat> OutputFormats
 );

@@ -74,6 +74,43 @@ public sealed class VisualizeSmokeTests
         var dotContent = File.ReadAllText(dotPath);
         dotContent.ShouldContain("digraph");
     }
+
+    [Test]
+    public void AppliesDotAndMermaidLayoutOptions()
+    {
+        var rootDir = Path.Combine(
+            Path.GetTempPath(),
+            "Qudi.Visualize.Tests",
+            Guid.NewGuid().ToString("N")
+        );
+        var dotOutputPath = Path.Combine(rootDir, "visualization.dot");
+        var mermaidOutputPath = Path.Combine(rootDir, "visualization.mmd");
+
+        var services = new ServiceCollection();
+        services.AddQudiServices(conf =>
+        {
+            conf.EnableVisualizationOutput(opt =>
+            {
+                opt.ConsoleOutput = ConsoleDisplay.None;
+                opt.GraphDirection = QudiVisualizationDirection.TopToBottom;
+                opt.FontFamily = "JetBrains Mono";
+                opt.AddOutput(dotOutputPath);
+                opt.AddOutput(mermaidOutputPath);
+            });
+        });
+
+        using var provider = services.BuildServiceProvider();
+        _ = provider.GetRequiredService<VisualizeRoot>();
+
+        var dotContent = File.ReadAllText(dotOutputPath);
+        dotContent.ShouldContain("rankdir=TB;");
+        dotContent.ShouldContain("node [shape=box, fontname=\"JetBrains Mono\"];");
+        dotContent.ShouldNotContain("shape=ellipse");
+
+        var mermaidContent = File.ReadAllText(mermaidOutputPath);
+        mermaidContent.ShouldContain("flowchart TB");
+        mermaidContent.ShouldContain("fontFamily': 'JetBrains Mono'");
+    }
 }
 
 [DITransient(Export = true)]

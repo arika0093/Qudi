@@ -6,25 +6,28 @@ namespace Qudi.Visualizer.OutputWriter;
 
 internal static class DotOutputWriter
 {
-    private const string FontName = "Consolas";
-
-    public static string Generate(QudiVisualizationGraph graph)
+    public static string Generate(
+        QudiVisualizationGraph graph,
+        QudiVisualizationDirection direction,
+        string? fontFamily
+    )
     {
+        var rankDirection = direction == QudiVisualizationDirection.TopToBottom ? "TB" : "LR";
+        var fontName = string.IsNullOrWhiteSpace(fontFamily) ? "Consolas" : fontFamily!;
         var sb = new StringBuilder();
         sb.AppendLine(
             $$"""
             digraph Qudi {
-              rankdir=LR;
-            node [shape=box, fontname="{{FontName}}"];
+              rankdir={{rankDirection}};
+            node [shape=box, fontname="{{EscapeDot(fontName)}}"];
             """
         );
 
         foreach (var node in graph.Nodes.OrderBy(n => n.Label, StringComparer.Ordinal))
         {
-            var shape = node.Kind == "service" ? "ellipse" : "box";
             var style = BuildNodeStyle(node);
             sb.AppendLine(
-                $"  \"{EscapeDot(node.Id)}\" [label=\"{EscapeDot(node.Label)}\", shape={shape}{style}];"
+                $"  \"{EscapeDot(node.Id)}\" [label=\"{EscapeDot(node.Label)}\", shape=box{style}];"
             );
         }
 
