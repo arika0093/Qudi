@@ -2141,6 +2141,14 @@ Attribute-based dependency injection is often regarded as an anti-pattern. Even 
 5. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
 6. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
 
+Of course, there are drawbacks as well.
+
+1. Registration details leak into each class, so separation of concerns is not complete. This would be unacceptable to purists.
+2. Registration mistakes and dependency issues tend to become implicit. (However, Qudi provides [features](#visualize-registration) to compensate for this.)
+3. A dependency on Qudi is introduced. While switching DI containers is possible, Qudi itself remains in your project as a dependency.
+
+Considering the pros and cons, we believe that this approach is a good fit for many real-world projects, especially those that prioritize simplicity and ease of use over strict separation of concerns.
+
 ## Development Guides
 ### Testing
 This project uses [TUnit](https://tunit.dev/) for testing. This ensures that the library works correctly even in AOT environments.
