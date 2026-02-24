@@ -1026,7 +1026,7 @@ flowchart LR
     classDef decorator fill:#e1bee7,stroke:#9c27b0,stroke-width:2px,color:#000;
     class Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator decorator;
     class Qudi_Examples_DecoratorPattern_CensorshipMessageServiceDecorator decorator;
-    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;
+    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#000;
     class Microsoft_Extensions_Logging_ILogger_Qudi_Examples_DecoratorPattern_LoggingMessageServiceDecorator_ external;
 
 ```

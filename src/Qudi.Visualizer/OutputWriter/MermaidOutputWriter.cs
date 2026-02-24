@@ -301,7 +301,7 @@ internal static class MermaidOutputWriter
         if (externalNodes.Count > 0)
         {
             sb.AppendLine(
-                "    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#e65100;"
+                "    classDef external fill:#ffe0b2,stroke:#ff9800,stroke-width:1px,stroke-dasharray:3 3,color:#000;"
             );
             foreach (var node in externalNodes)
             {
