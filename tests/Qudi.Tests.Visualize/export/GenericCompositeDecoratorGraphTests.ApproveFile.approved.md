@@ -1,4 +1,5 @@
 ﻿```mermaid
+%%{init: { 'themeVariables': { 'fontFamily': 'Consolas' } } }%%
 flowchart LR
     Qudi_Tests_Visualize_GenericCompositeDecoratorGraphTests_GraphRoot["GraphRoot"]
     Qudi_Tests_Visualize_GenericCompositeDecoratorGraphTests_ComponentValidator["ComponentValidator"]
