@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Qudi;
 using Qudi.Visualizer;
@@ -29,6 +30,29 @@ namespace Qudi.Tests.Visualize
         [Test]
         public void GraphApproveMarkdown() =>
             CompositeDecoratorGraphGenerate(QudiVisualizationFormat.Markdown);
+
+        [Test]
+        public void GraphApproveConsole()
+        {
+            var output = ConsoleOutputTestHelper.CaptureConsoleOutput(
+                (mb, _) =>
+                {
+                    mb.AddFilter(r => r.When.Contains(Condition));
+                    mb.SetCondition(Condition);
+                    mb.EnableVisualizationOutput(opt =>
+                    {
+                        opt.ConsoleOutput = ConsoleDisplay.All;
+                        opt.SuppressConsolePrompts = true;
+                        opt.ConsoleEncoding = Encoding.UTF8;
+                    });
+                },
+                provider => _ = provider.GetRequiredService<GraphRoot>()
+            );
+
+            output.ShouldMatchApproved(c =>
+                c.SubFolder("export").WithFileExtension(".console.txt").NoDiff()
+            );
+        }
 
         private static void CompositeDecoratorGraphGenerate(QudiVisualizationFormat format)
         {
