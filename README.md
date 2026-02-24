@@ -1953,9 +1953,9 @@ By doing so, it collects information in a way that does not depend on the target
 Attribute-based dependency injection is often regarded as an anti-pattern. Even an [older article from 2014](https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/) states this. So why did we choose it?
 
 1. Because it’s simply convenient. I often keep class and model definitions together in the same .cs file (it’s easier to read that way). You can think of it as similar to that.
-2. I dislike assembly scanning. It doesn't work in AOT, and if implementations or interfaces are in other assemblies, you need to either scan everything or prepare extensions for scanning for each project. Since it loads all types including built-in ones, you need to write logic to properly exclude them. (Don't you think it's a bit uncomfortable to scan with naming conventions like `*Service`?)
+2. I dislike assembly scanning. It doesn't work in AOT. If implementations or interfaces are in other assemblies, you need to either scan everything or prepare extensions for scanning for each project. Since it loads all types including built-in ones, you need to write logic to properly exclude them. (Don't you think it's a bit uncomfortable to scan with naming conventions like `*Service`?)
 3. It covers ~90% of real-world use cases. In many projects you have one-to-one interfaces (or no interfaces at all), registration order rarely matters, and complex scenarios are uncommon. In such cases, assembly scanning would be somewhat overkill.
-4. When you need extensibility, source-generator “magic” makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
+4. When you need extensibility, source-generator *magic* makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
 5. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
 6. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
 
@@ -1969,8 +1969,8 @@ This library operates in approximately three steps:
 3. **DI Container Registration**: Based on the collected class information, registration code for the DI container is generated.
 
 Step 1 is completely optional. You can skip marking as partial and handle everything manually.  
-For step 3, you can register the collected data to any container you prefer. The data structure is simple and contains basic information such as Type, Lifetime, AsTypes, When, etc. (Well, most people will use `MS.DI`, so that part is provided by the library)  
-In other words, this library only introduces a dependency for step 2 (class information collection) — that one can't be avoided 😢
+For step 3, you can register the collected data to any container you prefer. The data structure is simple and contains basic information such as Type, Lifetime, AsTypes, When, etc. (most people will use `MS.DI`, so that part is provided by the library)  
+In other words, this library only introduces a dependency for step 2 (class information collection).
 
 ---
 
