@@ -963,6 +963,13 @@ builder.Services.AddQudiServices(conf => {
 Decorator pattern is a useful technique to add functionality to existing services without modifying their code.
 You can easily register decorator classes using the `[QudiDecorator]` attribute.
 
+For example, suppose you have an `IMessageService` that sends messages. Consumers just want to send messages, but in reality, additional features are also needed, such as logging output before and after sending, or censoring specific words. Importantly:
+
+* These additional features must be invisible to the consumers. Consumers should only call `IMessageService`, and the message with all necessary processing completed should be sent.
+* You don't want to modify the actual code of `MessageService` or `MessageAnotherService`. Logging and censoring code are often outside the concern of `MessageService`.
+
+This is where the Decorator pattern is useful. Create a decorator class that implements `IMessageService` and implements the required additional features. Then, just add the `[QudiDecorator]` attribute to the class, and it will be automatically registered in the DI container. Consumers can simply call `IMessageService`, and the message with all necessary processing completed will be sent.
+
 ```csharp
 [QudiDecorator]
 public class LoggingMessageServiceDecorator(IMessageService innerService, ILogger<LoggingMessageServiceDecorator> logger)
@@ -1207,6 +1214,10 @@ The generated code creates a helper interface and a base implementation class th
 ## Composite Pattern
 ### Overview
 The composite pattern is a design pattern that allows you to treat individual objects and compositions of objects uniformly. You can easily register composite classes using the `[QudiComposite]` attribute.
+
+For example, suppose you have an `IMessageService` that sends messages. Consumers are not concerned with *where* the message should be sent. However, in reality, multiple destinations are often needed, such as email, SMS, and push notifications. Furthermore, new destinations may be added in the future.
+
+In such cases, the Composite pattern is useful. Create a composite class that simply calls multiple `IMessageService` implementations, add the `[QudiComposite]` attribute to it, and it will be automatically registered in the DI container. Consumers can simply call `IMessageService`, and the message will be sent to all destinations.
 
 ```csharp
 // some message services
