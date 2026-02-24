@@ -78,10 +78,8 @@ When written like this, the following equivalent code is automatically generated
 public IServiceCollection AddQudiServices(this IServiceCollection services, Action<QudiConfigurationRootBuilder>? configuration = null)
 {
     // Generated code similar to this:
-    services.AddSingleton<Altaria>();
-    services.AddTransient<Abomasnow>();
-    services.AddSingleton<IPokemon, Altaria>(provider => provider.GetRequiredService<Altaria>());
-    services.AddTransient<IPokemon, Abomasnow>(provider => provider.GetRequiredService<Abomasnow>());
+    services.AddSingleton<IPokemon, Altaria>();
+    services.AddTransient<IPokemon, Abomasnow>();
     return services;
 }
 ```
@@ -701,9 +699,10 @@ dotnet add package Qudi.Container.Microsoft
 * **Visualization**
   * [Visualize Registration](#visualize-registration)
 * **Customization**
-  * [Customize Registration](#customize-registration)
   * [Filtering Registration](#filtering-registration)
   * [Use Collected Information Directly](#use-collected-information-directly)
+* **Architecture**
+  * [About](#architecture)
 
 ## Simple Usage
 ### Overview
@@ -1815,43 +1814,14 @@ flowchart LR
 Qudi collects registration information and generates code.
 Therefore, it is possible to visualize the registration status and dependencies based on the collected information.
 
-When visualization is needed, add `Qudi.Visualizer` package to your project.
-
-```bash
-dotnet add package Qudi.Visualizer
-```
-
-Then, call `EnableVisualizationOutput` in the configuration of `AddQudiServices` to enable visualization output.
+call `EnableVisualizationOutput` in the configuration of `AddQudiServices` to enable visualization output.
 
 ```csharp
+// required Qudi or Qudi.Visualizer package reference
 services.AddQudiServices(conf => {
     conf.EnableVisualizationOutput();
 });
 ```
-
-<details>
-<summary> Enable Visualization only for DEBUG Builds </summary>
-
-Since visualization is mainly needed during development, it is recommended to enable it only for DEBUG builds.
-
-```xml
-<Project>
-  <ItemGroup>
-    <PackageReference Include="Qudi.Visualizer" Version="*" Condition="'$(Configuration)' == 'Debug'" />
-  </ItemGroup>
-</Project>
-```
-```csharp
-services.AddQudiServices(conf => {
-#if DEBUG
-    conf.EnableVisualizationOutput(option => {
-        // customize visualization options here
-    });
-#endif
-});
-```
-
-</details>
 
 ### Registration Status Visualization
 When visualization is enabled, visual runtime errors will be output when there are issues in the registration, such as missing registrations or circular dependencies. This helps you identify and resolve problems in your registration.
@@ -1977,7 +1947,7 @@ Qudi aims to be compatible with any DI container. To achieve this, the informati
 By doing so, it collects information in a way that does not depend on the target DI container and makes it easier to support various DI containers.
 
 > [!NOTE]
-> Well, currently only extension methods for `Microsoft.Extensions.DependencyInjection` are supported, but in terms of functionality, it should be compatible with any DI container.
+> Currently only extension methods for `Microsoft.Extensions.DependencyInjection` are supported, but in terms of functionality, it should be compatible with any DI container.
 
 ### Why Attribute-Based Registration ?
 Attribute-based dependency injection is often regarded as an anti-pattern. Even an [older article from 2014](https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/) states this. So why did we choose it?
@@ -1989,12 +1959,25 @@ Attribute-based dependency injection is often regarded as an anti-pattern. Even 
 5. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
 6. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
 
+
+### How Separation is Achieved
+
+This library operates in approximately three steps:
+
+1. **Helper Class Generation**: For attributes like `[QudiDecorator]` or `[QudiComposite]`, if marked as `partial`, helper classes are generated.
+2. **Class Information Collection**: Classes marked with attributes like `[DISingleton]` or `[DITransient]` are scanned and class information is collected.
+3. **DI Container Registration**: Based on the collected class information, registration code for the DI container is generated.
+
+Step 1 is completely optional. You can skip marking as partial and handle everything manually.  
+For step 3, you can register the collected data to any container you prefer. The data structure is simple and contains basic information such as Type, Lifetime, AsTypes, When, etc. (Well, most people will use `MS.DI`, so that part is provided by the library)  
+In other words, this library only introduces a dependency for step 2 (class information collection) — that one can't be avoided 😢
+
 ---
 
 Below we explain how Qudi collects class information and performs registration into DI containers.
 
 ### Collecting class information
-First, the source generator scans classes annotated with attributes like `DISingleton` and `DITransient`. Based on the results, it generates code such as the following:
+The source generator scans classes annotated with attributes like `DISingleton` and `DITransient`. Based on the results, it generates code such as the following:
 
 <details>
 <summary>Generated Code (Qudi.Registration.Self.g.cs)</summary>
