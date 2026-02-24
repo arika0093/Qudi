@@ -1949,17 +1949,6 @@ By doing so, it collects information in a way that does not depend on the target
 > [!NOTE]
 > Currently only extension methods for `Microsoft.Extensions.DependencyInjection` are supported, but in terms of functionality, it should be compatible with any DI container.
 
-### Why Attribute-Based Registration ?
-Attribute-based dependency injection is often regarded as an anti-pattern. Even an [older article from 2014](https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/) states this. So why did we choose it?
-
-1. Because it’s simply convenient. I often keep class and model definitions together in the same .cs file (it’s easier to read that way). You can think of it as similar to that.
-2. I dislike assembly scanning. It doesn't work in AOT. If implementations or interfaces are in other assemblies, you need to either scan everything or prepare extensions for scanning for each project. Since it loads all types including built-in ones, you need to write logic to properly exclude them. (Don't you think it's a bit uncomfortable to scan with naming conventions like `*Service`?)
-3. It covers ~90% of real-world use cases. In many projects you have one-to-one interfaces (or no interfaces at all), registration order rarely matters, and complex scenarios are uncommon. In such cases, assembly scanning would be somewhat overkill.
-4. When you need extensibility, source-generator *magic* makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
-5. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
-6. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
-
-
 ### How Separation is Achieved
 
 This library operates in approximately three steps:
@@ -2128,6 +2117,18 @@ internal static partial class QudiAddServiceExtensions
 </details>
 
 Here, we create a QudiConfigurationRootBuilder, add the DI-container-specific builder (builderOfCurrent) at the end, and then call ExecuteAll for all registered QudiConfigurationBuilder instances together with the auto-generated definition data. This design allows users to apply various extensions using the definition data (for example, Visualize Registration) while ultimately performing the registrations into the DI container.
+
+## Notes
+
+### Why Attribute-Based Registration ?
+Attribute-based dependency injection is often regarded as an anti-pattern. Even an [older article from 2014](https://blogs.cuttingedge.it/steven/posts/2014/dependency-injection-in-attributes-dont-do-it/) states this. So why did we choose it?
+
+1. Because it’s simply convenient. I often keep class and model definitions together in the same .cs file (it’s easier to read that way). You can think of it as similar to that.
+2. I dislike assembly scanning. It doesn't work in AOT. If implementations or interfaces are in other assemblies, you need to either scan everything or prepare extensions for scanning for each project. Since it loads all types including built-in ones, you need to write logic to properly exclude them. (Don't you think it's a bit uncomfortable to scan with naming conventions like `*Service`?)
+3. It covers ~90% of real-world use cases. In many projects you have one-to-one interfaces (or no interfaces at all), registration order rarely matters, and complex scenarios are uncommon. In such cases, assembly scanning would be somewhat overkill.
+4. When you need extensibility, source-generator *magic* makes patterns like [Decorator](#decorator-pattern) and [Composite](#composite-pattern) easy to implement. Attributes don’t block flexibility. 😉
+5. By separating information collection from container registration (collect first, register later), we can validate and visualize registrations before applying them (even with MS.DI!).
+6. Finally, source generators need hook points — attributes are a practical way to mark types for the generator.
 
 ## Development Guides
 ### Testing
