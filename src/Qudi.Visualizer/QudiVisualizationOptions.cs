@@ -129,6 +129,11 @@ public sealed class QudiVisualizationOptions
     public ConsoleDisplay ConsoleOutput { get; set; } = ConsoleDisplay.Default;
 
     /// <summary>
+    /// Suppress interactive prompts in console output (useful for tests and CI).
+    /// </summary>
+    public bool SuppressConsolePrompts { get; set; } = false;
+
+    /// <summary>
     /// Optional logger factory for ILogger output.
     /// </summary>
     public ILoggerFactory? LoggerFactory { get; set; }
@@ -264,6 +269,7 @@ public sealed class QudiVisualizationOptions
     {
         return new QudiVisualizationRuntimeOptions(
             ConsoleOutput,
+            SuppressConsolePrompts,
             LoggerFactory,
             [.. _outputs],
             [.. _traceServices],
@@ -319,6 +325,7 @@ public static class VisualizeFormatConvertExtensions
 
 internal sealed record QudiVisualizationRuntimeOptions(
     ConsoleDisplay ConsoleOutput,
+    bool SuppressConsolePrompts,
     ILoggerFactory? LoggerFactory,
     IReadOnlyCollection<QudiVisualizationFileOutput> Outputs,
     IReadOnlyCollection<Type> TraceServices,

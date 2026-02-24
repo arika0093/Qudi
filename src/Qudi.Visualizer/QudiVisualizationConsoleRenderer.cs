@@ -11,7 +11,8 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
     public void Render(
         QudiVisualizationReport report,
         IReadOnlyList<string> warnings,
-        ConsoleDisplay display
+        ConsoleDisplay display,
+        bool suppressPrompts
     )
     {
         if (display == ConsoleDisplay.None)
@@ -61,7 +62,7 @@ internal class QudiVisualizationConsoleRenderer(IAnsiConsole AnsiConsole)
 
         var errorCount = report.MissingRegistrations.Count + report.Cycles.Count;
         var warningCount = report.LifetimeWarnings.Count + warnings.Count;
-        if (!AskContinue(errorCount, warningCount))
+        if (!suppressPrompts && !AskContinue(errorCount, warningCount))
         {
             throw new OperationCanceledException("Visualization was canceled by user.");
         }

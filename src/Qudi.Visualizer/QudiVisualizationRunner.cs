@@ -40,7 +40,12 @@ internal static class QudiVisualizationRunner
         if (options.ConsoleOutput != ConsoleDisplay.None)
         {
             var consoleRenderer = new QudiVisualizationConsoleRenderer(AnsiConsole.Console);
-            consoleRenderer.Render(report, warnings, options.ConsoleOutput);
+            consoleRenderer.Render(
+                report,
+                warnings,
+                options.ConsoleOutput,
+                options.SuppressConsolePrompts
+            );
         }
     }
 
@@ -84,6 +89,7 @@ internal static class QudiVisualizationRunner
                 var fakeOutput = new QudiVisualizationFileOutput(filePath, format);
                 var fakeOptions = new QudiVisualizationRuntimeOptions(
                     ConsoleDisplay.None,
+                    options.SuppressConsolePrompts,
                     null,
                     [fakeOutput],
                     [],
