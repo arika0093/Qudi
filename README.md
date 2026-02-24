@@ -9,7 +9,7 @@
 ## Features
 * **Attribute-based**: [[DISingleton]](#simple-usage), [[DITransient]](#simple-usage), etc.
 * **AOT-friendly**: No assembly scanning, all registrations are [generated at compile time](#architecture).
-* **No-Dependency**: [No dependency](#any-di-container-support) on specific DI containers, it just [collects information](#collecting-class-information).
+* **Container-agnostic**: [No dependency](#any-di-container-support) on specific DI containers, it just [collects information](#collecting-class-information).
 * **Customize**: [Order](#registration-order), [Duplicate](#duplicate-handling), [AsTypes](#types-to-register), [Key](#keyed-registration), [Condition](#conditional-registration), etc.
 * **Support**: [Multiple Projects](#in-multiple-projects), [Decorator](#decorator-pattern), [Composite](#composite-pattern), [Generic types](#generic-registration).
 * **Visualization**: [Console visualizer](#visualize-registration), [Mistake warnings](#registration-status-visualization), [Export to file](#export-registration-diagram) 😎
