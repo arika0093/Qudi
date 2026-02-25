@@ -4,7 +4,7 @@
 **Qudi** (`/kʲɯːdiː/`, Quickly Dependency Injection) is a yet another attribute-based DI helper library.  
 <br/>
 
-![Qudi - Quickly Dependency Injection](./assets/hero.png)
+![Qudi - Quickly Dependency Injection](./assets/hero.svg)
 
 ## Features
 * **Attribute-based**: [[DISingleton]](#simple-usage), [[DITransient]](#simple-usage), etc.
@@ -87,7 +87,7 @@ public IServiceCollection AddQudiServices(this IServiceCollection services, Acti
 When you run the application in this state, a simple registration status viewer will be displayed 🎉
 <br/>
 
-![getting start](assets/getting-start-list.png)
+![getting start](assets/getting-start-list.svg)
 
 A diagram showing the registration status is also output.
 
@@ -198,7 +198,7 @@ displayService.DisplayAll();
 
 you will see the following warning.
 
-![getting start with warning](assets/getting-start-warning.png)
+![getting start with warning](assets/getting-start-warning.svg)
 
 This library has a feature that provides clear [warnings for common mistakes](#registration-status-visualization).
 Let's fix it by setting the correct lifetime.
@@ -274,7 +274,7 @@ public class DisplayPokemonService(IEnumerable<IPokemon> pokemons)
 Now, the warning is gone and the application runs successfully 🎉
 <br/>
 
-![correct lifetime](assets/getting-start-correct.png)
+![correct lifetime](assets/getting-start-correct.svg)
 
 Of course, the diagram will also be updated.
 

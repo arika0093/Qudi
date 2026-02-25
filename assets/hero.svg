@@ -1,0 +1,1030 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1084 328" role="img" aria-label="console2svg output">
+<style>.crt{font-family:ui-monospace,"Cascadia Mono","Segoe UI Mono","SFMono-Regular",Menlo,monospace;font-size:14px;}text{dominant-baseline:alphabetic;}</style>
+<rect width="1084" height="328" fill="#1e1e1e"/>
+<g transform="translate(2 2)">
+<rect width="1080" height="324" fill="#1e1e1e"/>
+<text class="crt" x="0" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="9" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="18" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="27" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="36" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="45" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="54" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="63" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="72" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="81" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="90" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="99" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="108" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="117" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="126" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="135" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="144" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="153" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="162" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="171" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="180" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="189" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="198" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="207" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="216" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="225" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="234" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="243" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="252" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="261" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="270" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="279" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="288" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="297" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="306" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="315" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="324" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="333" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="351" y="14" fill="#31DDFF" style="font-weight:bold;">🎯</text>
+<text class="crt" x="378" y="14" fill="#31DDFF" style="font-weight:bold;">Q</text>
+<text class="crt" x="387" y="14" fill="#31DDFF" style="font-weight:bold;">u</text>
+<text class="crt" x="396" y="14" fill="#31DDFF" style="font-weight:bold;">d</text>
+<text class="crt" x="405" y="14" fill="#31DDFF" style="font-weight:bold;">i</text>
+<text class="crt" x="423" y="14" fill="#31DDFF" style="font-weight:bold;">D</text>
+<text class="crt" x="432" y="14" fill="#31DDFF" style="font-weight:bold;">e</text>
+<text class="crt" x="441" y="14" fill="#31DDFF" style="font-weight:bold;">p</text>
+<text class="crt" x="450" y="14" fill="#31DDFF" style="font-weight:bold;">e</text>
+<text class="crt" x="459" y="14" fill="#31DDFF" style="font-weight:bold;">n</text>
+<text class="crt" x="468" y="14" fill="#31DDFF" style="font-weight:bold;">d</text>
+<text class="crt" x="477" y="14" fill="#31DDFF" style="font-weight:bold;">e</text>
+<text class="crt" x="486" y="14" fill="#31DDFF" style="font-weight:bold;">n</text>
+<text class="crt" x="495" y="14" fill="#31DDFF" style="font-weight:bold;">c</text>
+<text class="crt" x="504" y="14" fill="#31DDFF" style="font-weight:bold;">y</text>
+<text class="crt" x="522" y="14" fill="#31DDFF" style="font-weight:bold;">I</text>
+<text class="crt" x="531" y="14" fill="#31DDFF" style="font-weight:bold;">n</text>
+<text class="crt" x="540" y="14" fill="#31DDFF" style="font-weight:bold;">j</text>
+<text class="crt" x="549" y="14" fill="#31DDFF" style="font-weight:bold;">e</text>
+<text class="crt" x="558" y="14" fill="#31DDFF" style="font-weight:bold;">c</text>
+<text class="crt" x="567" y="14" fill="#31DDFF" style="font-weight:bold;">t</text>
+<text class="crt" x="576" y="14" fill="#31DDFF" style="font-weight:bold;">i</text>
+<text class="crt" x="585" y="14" fill="#31DDFF" style="font-weight:bold;">o</text>
+<text class="crt" x="594" y="14" fill="#31DDFF" style="font-weight:bold;">n</text>
+<text class="crt" x="612" y="14" fill="#31DDFF" style="font-weight:bold;">V</text>
+<text class="crt" x="621" y="14" fill="#31DDFF" style="font-weight:bold;">i</text>
+<text class="crt" x="630" y="14" fill="#31DDFF" style="font-weight:bold;">s</text>
+<text class="crt" x="639" y="14" fill="#31DDFF" style="font-weight:bold;">u</text>
+<text class="crt" x="648" y="14" fill="#31DDFF" style="font-weight:bold;">a</text>
+<text class="crt" x="657" y="14" fill="#31DDFF" style="font-weight:bold;">l</text>
+<text class="crt" x="666" y="14" fill="#31DDFF" style="font-weight:bold;">i</text>
+<text class="crt" x="675" y="14" fill="#31DDFF" style="font-weight:bold;">z</text>
+<text class="crt" x="684" y="14" fill="#31DDFF" style="font-weight:bold;">a</text>
+<text class="crt" x="693" y="14" fill="#31DDFF" style="font-weight:bold;">t</text>
+<text class="crt" x="702" y="14" fill="#31DDFF" style="font-weight:bold;">i</text>
+<text class="crt" x="711" y="14" fill="#31DDFF" style="font-weight:bold;">o</text>
+<text class="crt" x="720" y="14" fill="#31DDFF" style="font-weight:bold;">n</text>
+<text class="crt" x="738" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="747" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="756" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="765" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="774" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="783" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="792" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="801" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="810" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="819" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="828" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="837" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="846" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="855" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="864" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="873" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="882" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="891" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="900" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="909" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="918" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="927" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="936" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="945" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="954" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="963" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="972" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="981" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="990" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="999" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1008" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1017" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1026" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1035" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1044" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1053" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1062" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="1071" y="14" fill="#d4d4d4">─</text>
+<text class="crt" x="0" y="50" fill="#00FFFF">╭</text>
+<text class="crt" x="9" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="18" y="50" fill="#00FFFF" style="font-weight:bold;">📈</text>
+<text class="crt" x="45" y="50" fill="#00FFFF" style="font-weight:bold;">S</text>
+<text class="crt" x="54" y="50" fill="#00FFFF" style="font-weight:bold;">u</text>
+<text class="crt" x="63" y="50" fill="#00FFFF" style="font-weight:bold;">m</text>
+<text class="crt" x="72" y="50" fill="#00FFFF" style="font-weight:bold;">m</text>
+<text class="crt" x="81" y="50" fill="#00FFFF" style="font-weight:bold;">a</text>
+<text class="crt" x="90" y="50" fill="#00FFFF" style="font-weight:bold;">r</text>
+<text class="crt" x="99" y="50" fill="#00FFFF" style="font-weight:bold;">y</text>
+<text class="crt" x="117" y="50" fill="#00FFFF" style="font-weight:bold;">M</text>
+<text class="crt" x="126" y="50" fill="#00FFFF" style="font-weight:bold;">e</text>
+<text class="crt" x="135" y="50" fill="#00FFFF" style="font-weight:bold;">t</text>
+<text class="crt" x="144" y="50" fill="#00FFFF" style="font-weight:bold;">r</text>
+<text class="crt" x="153" y="50" fill="#00FFFF" style="font-weight:bold;">i</text>
+<text class="crt" x="162" y="50" fill="#00FFFF" style="font-weight:bold;">c</text>
+<text class="crt" x="171" y="50" fill="#00FFFF" style="font-weight:bold;">s</text>
+<text class="crt" x="180" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="189" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="198" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="207" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="216" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="225" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="234" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="243" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="252" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="261" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="270" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="279" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="288" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="297" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="306" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="315" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="324" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="333" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="342" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="351" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="360" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="369" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="378" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="387" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="396" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="405" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="414" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="423" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="432" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="441" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="450" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="459" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="468" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="477" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="486" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="495" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="504" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="513" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="522" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="531" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="540" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="549" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="558" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="567" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="576" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="585" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="594" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="603" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="612" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="621" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="630" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="639" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="648" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="657" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="666" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="675" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="684" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="693" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="702" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="711" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="720" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="729" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="738" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="747" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="756" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="765" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="774" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="783" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="792" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="801" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="810" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="819" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="828" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="837" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="846" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="855" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="864" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="873" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="882" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="891" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="900" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="909" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="918" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="927" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="936" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="945" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="954" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="963" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="972" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="981" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="990" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="999" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1008" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1017" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1026" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1035" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1044" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1053" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1062" y="50" fill="#00FFFF">─</text>
+<text class="crt" x="1071" y="50" fill="#00FFFF">╮</text>
+<text class="crt" x="0" y="68" fill="#00FFFF">│</text>
+<text class="crt" x="18" y="68" fill="#10E291" style="font-weight:bold;">📊</text>
+<text class="crt" x="45" y="68" fill="#10E291" style="font-weight:bold;">R</text>
+<text class="crt" x="54" y="68" fill="#10E291" style="font-weight:bold;">e</text>
+<text class="crt" x="63" y="68" fill="#10E291" style="font-weight:bold;">g</text>
+<text class="crt" x="72" y="68" fill="#10E291" style="font-weight:bold;">i</text>
+<text class="crt" x="81" y="68" fill="#10E291" style="font-weight:bold;">s</text>
+<text class="crt" x="90" y="68" fill="#10E291" style="font-weight:bold;">t</text>
+<text class="crt" x="99" y="68" fill="#10E291" style="font-weight:bold;">r</text>
+<text class="crt" x="108" y="68" fill="#10E291" style="font-weight:bold;">a</text>
+<text class="crt" x="117" y="68" fill="#10E291" style="font-weight:bold;">t</text>
+<text class="crt" x="126" y="68" fill="#10E291" style="font-weight:bold;">i</text>
+<text class="crt" x="135" y="68" fill="#10E291" style="font-weight:bold;">o</text>
+<text class="crt" x="144" y="68" fill="#10E291" style="font-weight:bold;">n</text>
+<text class="crt" x="153" y="68" fill="#10E291" style="font-weight:bold;">s</text>
+<text class="crt" x="198" y="68" fill="#FF5B5B" style="font-weight:bold;">❌</text>
+<text class="crt" x="225" y="68" fill="#FF5B5B" style="font-weight:bold;">M</text>
+<text class="crt" x="234" y="68" fill="#FF5B5B" style="font-weight:bold;">i</text>
+<text class="crt" x="243" y="68" fill="#FF5B5B" style="font-weight:bold;">s</text>
+<text class="crt" x="252" y="68" fill="#FF5B5B" style="font-weight:bold;">s</text>
+<text class="crt" x="261" y="68" fill="#FF5B5B" style="font-weight:bold;">i</text>
+<text class="crt" x="270" y="68" fill="#FF5B5B" style="font-weight:bold;">n</text>
+<text class="crt" x="279" y="68" fill="#FF5B5B" style="font-weight:bold;">g</text>
+<text class="crt" x="324" y="68" fill="#FF86FF" style="font-weight:bold;">🔄</text>
+<text class="crt" x="351" y="68" fill="#FF86FF" style="font-weight:bold;">C</text>
+<text class="crt" x="360" y="68" fill="#FF86FF" style="font-weight:bold;">y</text>
+<text class="crt" x="369" y="68" fill="#FF86FF" style="font-weight:bold;">c</text>
+<text class="crt" x="378" y="68" fill="#FF86FF" style="font-weight:bold;">l</text>
+<text class="crt" x="387" y="68" fill="#FF86FF" style="font-weight:bold;">e</text>
+<text class="crt" x="396" y="68" fill="#FF86FF" style="font-weight:bold;">s</text>
+<text class="crt" x="441" y="68" fill="#FFD200" style="font-weight:bold;">💡</text>
+<text class="crt" x="468" y="68" fill="#FFD200" style="font-weight:bold;">L</text>
+<text class="crt" x="477" y="68" fill="#FFD200" style="font-weight:bold;">i</text>
+<text class="crt" x="486" y="68" fill="#FFD200" style="font-weight:bold;">f</text>
+<text class="crt" x="495" y="68" fill="#FFD200" style="font-weight:bold;">e</text>
+<text class="crt" x="504" y="68" fill="#FFD200" style="font-weight:bold;">t</text>
+<text class="crt" x="513" y="68" fill="#FFD200" style="font-weight:bold;">i</text>
+<text class="crt" x="522" y="68" fill="#FFD200" style="font-weight:bold;">m</text>
+<text class="crt" x="531" y="68" fill="#FFD200" style="font-weight:bold;">e</text>
+<text class="crt" x="1071" y="68" fill="#00FFFF">│</text>
+<text class="crt" x="0" y="86" fill="#00FFFF">│</text>
+<text class="crt" x="144" y="86" fill="#10E291" style="font-weight:bold;">3</text>
+<text class="crt" x="153" y="86" fill="#10E291" style="font-weight:bold;">0</text>
+<text class="crt" x="279" y="86" fill="#9F9F9F">0</text>
+<text class="crt" x="396" y="86" fill="#9F9F9F">0</text>
+<text class="crt" x="531" y="86" fill="#9F9F9F">0</text>
+<text class="crt" x="1071" y="86" fill="#00FFFF">│</text>
+<text class="crt" x="0" y="104" fill="#00FFFF">╰</text>
+<text class="crt" x="9" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="18" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="27" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="36" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="45" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="54" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="63" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="72" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="81" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="90" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="99" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="108" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="117" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="126" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="135" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="144" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="153" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="162" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="171" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="180" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="189" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="198" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="207" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="216" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="225" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="234" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="243" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="252" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="261" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="270" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="279" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="288" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="297" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="306" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="315" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="324" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="333" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="342" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="351" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="360" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="369" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="378" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="387" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="396" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="405" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="414" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="423" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="432" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="441" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="450" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="459" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="468" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="477" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="486" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="495" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="504" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="513" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="522" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="531" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="540" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="549" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="558" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="567" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="576" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="585" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="594" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="603" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="612" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="621" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="630" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="639" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="648" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="657" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="666" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="675" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="684" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="693" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="702" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="711" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="720" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="729" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="738" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="747" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="756" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="765" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="774" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="783" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="792" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="801" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="810" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="819" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="828" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="837" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="846" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="855" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="864" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="873" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="882" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="891" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="900" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="909" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="918" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="927" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="936" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="945" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="954" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="963" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="972" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="981" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="990" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="999" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1008" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1017" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1026" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1035" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1044" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1053" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1062" y="104" fill="#00FFFF">─</text>
+<text class="crt" x="1071" y="104" fill="#00FFFF">╯</text>
+<text class="crt" x="0" y="140" fill="#0dbc79">╭</text>
+<text class="crt" x="9" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="18" y="140" fill="#10E291" style="font-weight:bold;">🔧</text>
+<text class="crt" x="45" y="140" fill="#10E291" style="font-weight:bold;">S</text>
+<text class="crt" x="54" y="140" fill="#10E291" style="font-weight:bold;">e</text>
+<text class="crt" x="63" y="140" fill="#10E291" style="font-weight:bold;">r</text>
+<text class="crt" x="72" y="140" fill="#10E291" style="font-weight:bold;">v</text>
+<text class="crt" x="81" y="140" fill="#10E291" style="font-weight:bold;">i</text>
+<text class="crt" x="90" y="140" fill="#10E291" style="font-weight:bold;">c</text>
+<text class="crt" x="99" y="140" fill="#10E291" style="font-weight:bold;">e</text>
+<text class="crt" x="117" y="140" fill="#10E291" style="font-weight:bold;">R</text>
+<text class="crt" x="126" y="140" fill="#10E291" style="font-weight:bold;">e</text>
+<text class="crt" x="135" y="140" fill="#10E291" style="font-weight:bold;">g</text>
+<text class="crt" x="144" y="140" fill="#10E291" style="font-weight:bold;">i</text>
+<text class="crt" x="153" y="140" fill="#10E291" style="font-weight:bold;">s</text>
+<text class="crt" x="162" y="140" fill="#10E291" style="font-weight:bold;">t</text>
+<text class="crt" x="171" y="140" fill="#10E291" style="font-weight:bold;">r</text>
+<text class="crt" x="180" y="140" fill="#10E291" style="font-weight:bold;">a</text>
+<text class="crt" x="189" y="140" fill="#10E291" style="font-weight:bold;">t</text>
+<text class="crt" x="198" y="140" fill="#10E291" style="font-weight:bold;">i</text>
+<text class="crt" x="207" y="140" fill="#10E291" style="font-weight:bold;">o</text>
+<text class="crt" x="216" y="140" fill="#10E291" style="font-weight:bold;">n</text>
+<text class="crt" x="225" y="140" fill="#10E291" style="font-weight:bold;">s</text>
+<text class="crt" x="243" y="140" fill="#10E291" style="font-weight:bold;">(</text>
+<text class="crt" x="252" y="140" fill="#10E291" style="font-weight:bold;">3</text>
+<text class="crt" x="261" y="140" fill="#10E291" style="font-weight:bold;">0</text>
+<text class="crt" x="270" y="140" fill="#10E291" style="font-weight:bold;">)</text>
+<text class="crt" x="279" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="288" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="297" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="306" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="315" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="324" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="333" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="342" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="351" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="360" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="369" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="378" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="387" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="396" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="405" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="414" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="423" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="432" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="441" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="450" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="459" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="468" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="477" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="486" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="495" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="504" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="513" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="522" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="531" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="540" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="549" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="558" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="567" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="576" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="585" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="594" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="603" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="612" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="621" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="630" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="639" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="648" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="657" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="666" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="675" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="684" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="693" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="702" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="711" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="720" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="729" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="738" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="747" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="756" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="765" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="774" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="783" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="792" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="801" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="810" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="819" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="828" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="837" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="846" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="855" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="864" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="873" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="882" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="891" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="900" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="909" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="918" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="927" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="936" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="945" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="954" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="963" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="972" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="981" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="990" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="999" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1008" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1017" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1026" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1035" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1044" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1053" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1062" y="140" fill="#0dbc79">─</text>
+<text class="crt" x="1071" y="140" fill="#0dbc79">╮</text>
+<text class="crt" x="0" y="158" fill="#0dbc79">│</text>
+<text class="crt" x="1071" y="158" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="176" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="176" fill="#31DDFF" style="font-weight:bold;">S</text>
+<text class="crt" x="45" y="176" fill="#31DDFF" style="font-weight:bold;">e</text>
+<text class="crt" x="54" y="176" fill="#31DDFF" style="font-weight:bold;">r</text>
+<text class="crt" x="63" y="176" fill="#31DDFF" style="font-weight:bold;">v</text>
+<text class="crt" x="72" y="176" fill="#31DDFF" style="font-weight:bold;">i</text>
+<text class="crt" x="81" y="176" fill="#31DDFF" style="font-weight:bold;">c</text>
+<text class="crt" x="90" y="176" fill="#31DDFF" style="font-weight:bold;">e</text>
+<text class="crt" x="414" y="176" fill="#10E291" style="font-weight:bold;">I</text>
+<text class="crt" x="423" y="176" fill="#10E291" style="font-weight:bold;">m</text>
+<text class="crt" x="432" y="176" fill="#10E291" style="font-weight:bold;">p</text>
+<text class="crt" x="441" y="176" fill="#10E291" style="font-weight:bold;">l</text>
+<text class="crt" x="450" y="176" fill="#10E291" style="font-weight:bold;">e</text>
+<text class="crt" x="459" y="176" fill="#10E291" style="font-weight:bold;">m</text>
+<text class="crt" x="468" y="176" fill="#10E291" style="font-weight:bold;">e</text>
+<text class="crt" x="477" y="176" fill="#10E291" style="font-weight:bold;">n</text>
+<text class="crt" x="486" y="176" fill="#10E291" style="font-weight:bold;">t</text>
+<text class="crt" x="495" y="176" fill="#10E291" style="font-weight:bold;">a</text>
+<text class="crt" x="504" y="176" fill="#10E291" style="font-weight:bold;">t</text>
+<text class="crt" x="513" y="176" fill="#10E291" style="font-weight:bold;">i</text>
+<text class="crt" x="522" y="176" fill="#10E291" style="font-weight:bold;">o</text>
+<text class="crt" x="531" y="176" fill="#10E291" style="font-weight:bold;">n</text>
+<text class="crt" x="810" y="176" fill="#FFFF50" style="font-weight:bold;">L</text>
+<text class="crt" x="819" y="176" fill="#FFFF50" style="font-weight:bold;">i</text>
+<text class="crt" x="828" y="176" fill="#FFFF50" style="font-weight:bold;">f</text>
+<text class="crt" x="837" y="176" fill="#FFFF50" style="font-weight:bold;">e</text>
+<text class="crt" x="882" y="176" fill="#47AAFF" style="font-weight:bold;">C</text>
+<text class="crt" x="891" y="176" fill="#47AAFF" style="font-weight:bold;">o</text>
+<text class="crt" x="900" y="176" fill="#47AAFF" style="font-weight:bold;">n</text>
+<text class="crt" x="909" y="176" fill="#47AAFF" style="font-weight:bold;">d</text>
+<text class="crt" x="918" y="176" fill="#d4d4d4">|</text>
+<text class="crt" x="927" y="176" fill="#FF86FF" style="font-weight:bold;">K</text>
+<text class="crt" x="936" y="176" fill="#FF86FF" style="font-weight:bold;">e</text>
+<text class="crt" x="945" y="176" fill="#FF86FF" style="font-weight:bold;">y</text>
+<text class="crt" x="999" y="176" fill="#FFD200" style="font-weight:bold;">O</text>
+<text class="crt" x="1008" y="176" fill="#FFD200" style="font-weight:bold;">r</text>
+<text class="crt" x="1017" y="176" fill="#FFD200" style="font-weight:bold;">d</text>
+<text class="crt" x="1026" y="176" fill="#FFD200" style="font-weight:bold;">e</text>
+<text class="crt" x="1035" y="176" fill="#FFD200" style="font-weight:bold;">r</text>
+<text class="crt" x="1071" y="176" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="194" fill="#0dbc79">│</text>
+<text class="crt" x="18" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="27" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="36" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="45" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="54" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="63" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="72" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="81" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="90" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="99" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="108" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="117" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="126" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="135" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="144" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="153" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="162" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="171" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="180" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="189" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="198" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="207" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="216" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="225" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="234" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="243" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="252" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="261" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="270" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="279" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="288" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="297" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="306" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="315" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="324" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="333" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="342" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="351" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="360" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="369" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="378" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="387" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="396" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="405" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="414" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="423" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="432" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="441" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="450" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="459" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="468" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="477" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="486" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="495" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="504" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="513" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="522" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="531" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="540" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="549" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="558" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="567" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="576" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="585" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="594" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="603" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="612" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="621" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="630" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="639" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="648" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="657" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="666" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="675" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="684" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="693" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="702" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="711" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="720" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="729" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="738" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="747" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="756" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="765" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="774" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="783" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="792" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="801" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="810" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="819" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="828" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="837" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="846" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="855" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="864" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="873" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="882" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="891" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="900" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="909" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="918" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="927" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="936" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="945" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="954" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="963" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="972" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="981" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="990" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="999" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="1008" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="1017" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="1026" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="1035" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="1044" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="1053" y="194" fill="#0dbc79">─</text>
+<text class="crt" x="1071" y="194" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="212" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="212" fill="#29b8db">I</text>
+<text class="crt" x="45" y="212" fill="#29b8db">C</text>
+<text class="crt" x="54" y="212" fill="#29b8db">o</text>
+<text class="crt" x="63" y="212" fill="#29b8db">m</text>
+<text class="crt" x="72" y="212" fill="#29b8db">p</text>
+<text class="crt" x="81" y="212" fill="#29b8db">o</text>
+<text class="crt" x="90" y="212" fill="#29b8db">n</text>
+<text class="crt" x="99" y="212" fill="#29b8db">e</text>
+<text class="crt" x="108" y="212" fill="#29b8db">n</text>
+<text class="crt" x="117" y="212" fill="#29b8db">t</text>
+<text class="crt" x="126" y="212" fill="#29b8db">V</text>
+<text class="crt" x="135" y="212" fill="#29b8db">a</text>
+<text class="crt" x="144" y="212" fill="#29b8db">l</text>
+<text class="crt" x="153" y="212" fill="#29b8db">i</text>
+<text class="crt" x="162" y="212" fill="#29b8db">d</text>
+<text class="crt" x="171" y="212" fill="#29b8db">a</text>
+<text class="crt" x="180" y="212" fill="#29b8db">t</text>
+<text class="crt" x="189" y="212" fill="#29b8db">o</text>
+<text class="crt" x="198" y="212" fill="#29b8db">r</text>
+<text class="crt" x="207" y="212" fill="#29b8db">&lt;</text>
+<text class="crt" x="216" y="212" fill="#29b8db">B</text>
+<text class="crt" x="225" y="212" fill="#29b8db">a</text>
+<text class="crt" x="234" y="212" fill="#29b8db">t</text>
+<text class="crt" x="243" y="212" fill="#29b8db">t</text>
+<text class="crt" x="252" y="212" fill="#29b8db">e</text>
+<text class="crt" x="261" y="212" fill="#29b8db">r</text>
+<text class="crt" x="270" y="212" fill="#29b8db">y</text>
+<text class="crt" x="279" y="212" fill="#29b8db">&gt;</text>
+<text class="crt" x="414" y="212" fill="#0dbc79">B</text>
+<text class="crt" x="423" y="212" fill="#0dbc79">a</text>
+<text class="crt" x="432" y="212" fill="#0dbc79">t</text>
+<text class="crt" x="441" y="212" fill="#0dbc79">t</text>
+<text class="crt" x="450" y="212" fill="#0dbc79">e</text>
+<text class="crt" x="459" y="212" fill="#0dbc79">r</text>
+<text class="crt" x="468" y="212" fill="#0dbc79">y</text>
+<text class="crt" x="477" y="212" fill="#0dbc79">A</text>
+<text class="crt" x="486" y="212" fill="#0dbc79">n</text>
+<text class="crt" x="495" y="212" fill="#0dbc79">o</text>
+<text class="crt" x="504" y="212" fill="#0dbc79">t</text>
+<text class="crt" x="513" y="212" fill="#0dbc79">h</text>
+<text class="crt" x="522" y="212" fill="#0dbc79">e</text>
+<text class="crt" x="531" y="212" fill="#0dbc79">r</text>
+<text class="crt" x="540" y="212" fill="#0dbc79">V</text>
+<text class="crt" x="549" y="212" fill="#0dbc79">a</text>
+<text class="crt" x="558" y="212" fill="#0dbc79">l</text>
+<text class="crt" x="567" y="212" fill="#0dbc79">i</text>
+<text class="crt" x="576" y="212" fill="#0dbc79">d</text>
+<text class="crt" x="585" y="212" fill="#0dbc79">a</text>
+<text class="crt" x="594" y="212" fill="#0dbc79">t</text>
+<text class="crt" x="603" y="212" fill="#0dbc79">o</text>
+<text class="crt" x="612" y="212" fill="#0dbc79">r</text>
+<text class="crt" x="810" y="212" fill="#f5f543">🔄</text>
+<text class="crt" x="882" y="212" fill="#9F9F9F">*</text>
+<text class="crt" x="999" y="212" fill="#9F9F9F">*</text>
+<text class="crt" x="1071" y="212" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="230" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="230" fill="#29b8db">I</text>
+<text class="crt" x="45" y="230" fill="#29b8db">C</text>
+<text class="crt" x="54" y="230" fill="#29b8db">o</text>
+<text class="crt" x="63" y="230" fill="#29b8db">m</text>
+<text class="crt" x="72" y="230" fill="#29b8db">p</text>
+<text class="crt" x="81" y="230" fill="#29b8db">o</text>
+<text class="crt" x="90" y="230" fill="#29b8db">n</text>
+<text class="crt" x="99" y="230" fill="#29b8db">e</text>
+<text class="crt" x="108" y="230" fill="#29b8db">n</text>
+<text class="crt" x="117" y="230" fill="#29b8db">t</text>
+<text class="crt" x="126" y="230" fill="#29b8db">V</text>
+<text class="crt" x="135" y="230" fill="#29b8db">a</text>
+<text class="crt" x="144" y="230" fill="#29b8db">l</text>
+<text class="crt" x="153" y="230" fill="#29b8db">i</text>
+<text class="crt" x="162" y="230" fill="#29b8db">d</text>
+<text class="crt" x="171" y="230" fill="#29b8db">a</text>
+<text class="crt" x="180" y="230" fill="#29b8db">t</text>
+<text class="crt" x="189" y="230" fill="#29b8db">o</text>
+<text class="crt" x="198" y="230" fill="#29b8db">r</text>
+<text class="crt" x="207" y="230" fill="#29b8db">&lt;</text>
+<text class="crt" x="216" y="230" fill="#29b8db">B</text>
+<text class="crt" x="225" y="230" fill="#29b8db">a</text>
+<text class="crt" x="234" y="230" fill="#29b8db">t</text>
+<text class="crt" x="243" y="230" fill="#29b8db">t</text>
+<text class="crt" x="252" y="230" fill="#29b8db">e</text>
+<text class="crt" x="261" y="230" fill="#29b8db">r</text>
+<text class="crt" x="270" y="230" fill="#29b8db">y</text>
+<text class="crt" x="279" y="230" fill="#29b8db">&gt;</text>
+<text class="crt" x="414" y="230" fill="#0dbc79">B</text>
+<text class="crt" x="423" y="230" fill="#0dbc79">a</text>
+<text class="crt" x="432" y="230" fill="#0dbc79">t</text>
+<text class="crt" x="441" y="230" fill="#0dbc79">t</text>
+<text class="crt" x="450" y="230" fill="#0dbc79">e</text>
+<text class="crt" x="459" y="230" fill="#0dbc79">r</text>
+<text class="crt" x="468" y="230" fill="#0dbc79">y</text>
+<text class="crt" x="477" y="230" fill="#0dbc79">V</text>
+<text class="crt" x="486" y="230" fill="#0dbc79">a</text>
+<text class="crt" x="495" y="230" fill="#0dbc79">l</text>
+<text class="crt" x="504" y="230" fill="#0dbc79">i</text>
+<text class="crt" x="513" y="230" fill="#0dbc79">d</text>
+<text class="crt" x="522" y="230" fill="#0dbc79">a</text>
+<text class="crt" x="531" y="230" fill="#0dbc79">t</text>
+<text class="crt" x="540" y="230" fill="#0dbc79">o</text>
+<text class="crt" x="549" y="230" fill="#0dbc79">r</text>
+<text class="crt" x="810" y="230" fill="#f5f543">🔄</text>
+<text class="crt" x="882" y="230" fill="#9F9F9F">*</text>
+<text class="crt" x="999" y="230" fill="#9F9F9F">*</text>
+<text class="crt" x="1071" y="230" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="248" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="248" fill="#29b8db">I</text>
+<text class="crt" x="45" y="248" fill="#29b8db">C</text>
+<text class="crt" x="54" y="248" fill="#29b8db">o</text>
+<text class="crt" x="63" y="248" fill="#29b8db">m</text>
+<text class="crt" x="72" y="248" fill="#29b8db">p</text>
+<text class="crt" x="81" y="248" fill="#29b8db">o</text>
+<text class="crt" x="90" y="248" fill="#29b8db">n</text>
+<text class="crt" x="99" y="248" fill="#29b8db">e</text>
+<text class="crt" x="108" y="248" fill="#29b8db">n</text>
+<text class="crt" x="117" y="248" fill="#29b8db">t</text>
+<text class="crt" x="126" y="248" fill="#29b8db">V</text>
+<text class="crt" x="135" y="248" fill="#29b8db">a</text>
+<text class="crt" x="144" y="248" fill="#29b8db">l</text>
+<text class="crt" x="153" y="248" fill="#29b8db">i</text>
+<text class="crt" x="162" y="248" fill="#29b8db">d</text>
+<text class="crt" x="171" y="248" fill="#29b8db">a</text>
+<text class="crt" x="180" y="248" fill="#29b8db">t</text>
+<text class="crt" x="189" y="248" fill="#29b8db">o</text>
+<text class="crt" x="198" y="248" fill="#29b8db">r</text>
+<text class="crt" x="207" y="248" fill="#29b8db">&lt;</text>
+<text class="crt" x="216" y="248" fill="#29b8db">I</text>
+<text class="crt" x="225" y="248" fill="#29b8db">C</text>
+<text class="crt" x="234" y="248" fill="#29b8db">o</text>
+<text class="crt" x="243" y="248" fill="#29b8db">m</text>
+<text class="crt" x="252" y="248" fill="#29b8db">p</text>
+<text class="crt" x="261" y="248" fill="#29b8db">o</text>
+<text class="crt" x="270" y="248" fill="#29b8db">n</text>
+<text class="crt" x="279" y="248" fill="#29b8db">e</text>
+<text class="crt" x="288" y="248" fill="#29b8db">n</text>
+<text class="crt" x="297" y="248" fill="#29b8db">t</text>
+<text class="crt" x="306" y="248" fill="#29b8db">&gt;</text>
+<text class="crt" x="414" y="248" fill="#FFFFAF">C</text>
+<text class="crt" x="423" y="248" fill="#FFFFAF">o</text>
+<text class="crt" x="432" y="248" fill="#FFFFAF">m</text>
+<text class="crt" x="441" y="248" fill="#FFFFAF">p</text>
+<text class="crt" x="450" y="248" fill="#FFFFAF">o</text>
+<text class="crt" x="459" y="248" fill="#FFFFAF">n</text>
+<text class="crt" x="468" y="248" fill="#FFFFAF">e</text>
+<text class="crt" x="477" y="248" fill="#FFFFAF">n</text>
+<text class="crt" x="486" y="248" fill="#FFFFAF">t</text>
+<text class="crt" x="495" y="248" fill="#FFFFAF">V</text>
+<text class="crt" x="504" y="248" fill="#FFFFAF">a</text>
+<text class="crt" x="513" y="248" fill="#FFFFAF">l</text>
+<text class="crt" x="522" y="248" fill="#FFFFAF">i</text>
+<text class="crt" x="531" y="248" fill="#FFFFAF">d</text>
+<text class="crt" x="540" y="248" fill="#FFFFAF">a</text>
+<text class="crt" x="549" y="248" fill="#FFFFAF">t</text>
+<text class="crt" x="558" y="248" fill="#FFFFAF">o</text>
+<text class="crt" x="567" y="248" fill="#FFFFAF">r</text>
+<text class="crt" x="576" y="248" fill="#FFFFAF">D</text>
+<text class="crt" x="585" y="248" fill="#FFFFAF">i</text>
+<text class="crt" x="594" y="248" fill="#FFFFAF">s</text>
+<text class="crt" x="603" y="248" fill="#FFFFAF">p</text>
+<text class="crt" x="612" y="248" fill="#FFFFAF">a</text>
+<text class="crt" x="621" y="248" fill="#FFFFAF">t</text>
+<text class="crt" x="630" y="248" fill="#FFFFAF">c</text>
+<text class="crt" x="639" y="248" fill="#FFFFAF">h</text>
+<text class="crt" x="648" y="248" fill="#FFFFAF">e</text>
+<text class="crt" x="657" y="248" fill="#FFFFAF">r</text>
+<text class="crt" x="810" y="248" fill="#f5f543">🔄</text>
+<text class="crt" x="882" y="248" fill="#9F9F9F">*</text>
+<text class="crt" x="999" y="248" fill="#9F9F9F">*</text>
+<text class="crt" x="1071" y="248" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="266" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="266" fill="#29b8db">I</text>
+<text class="crt" x="45" y="266" fill="#29b8db">C</text>
+<text class="crt" x="54" y="266" fill="#29b8db">o</text>
+<text class="crt" x="63" y="266" fill="#29b8db">m</text>
+<text class="crt" x="72" y="266" fill="#29b8db">p</text>
+<text class="crt" x="81" y="266" fill="#29b8db">o</text>
+<text class="crt" x="90" y="266" fill="#29b8db">n</text>
+<text class="crt" x="99" y="266" fill="#29b8db">e</text>
+<text class="crt" x="108" y="266" fill="#29b8db">n</text>
+<text class="crt" x="117" y="266" fill="#29b8db">t</text>
+<text class="crt" x="126" y="266" fill="#29b8db">V</text>
+<text class="crt" x="135" y="266" fill="#29b8db">a</text>
+<text class="crt" x="144" y="266" fill="#29b8db">l</text>
+<text class="crt" x="153" y="266" fill="#29b8db">i</text>
+<text class="crt" x="162" y="266" fill="#29b8db">d</text>
+<text class="crt" x="171" y="266" fill="#29b8db">a</text>
+<text class="crt" x="180" y="266" fill="#29b8db">t</text>
+<text class="crt" x="189" y="266" fill="#29b8db">o</text>
+<text class="crt" x="198" y="266" fill="#29b8db">r</text>
+<text class="crt" x="207" y="266" fill="#29b8db">&lt;</text>
+<text class="crt" x="216" y="266" fill="#29b8db">S</text>
+<text class="crt" x="225" y="266" fill="#29b8db">c</text>
+<text class="crt" x="234" y="266" fill="#29b8db">r</text>
+<text class="crt" x="243" y="266" fill="#29b8db">e</text>
+<text class="crt" x="252" y="266" fill="#29b8db">e</text>
+<text class="crt" x="261" y="266" fill="#29b8db">n</text>
+<text class="crt" x="270" y="266" fill="#29b8db">&gt;</text>
+<text class="crt" x="414" y="266" fill="#0dbc79">S</text>
+<text class="crt" x="423" y="266" fill="#0dbc79">c</text>
+<text class="crt" x="432" y="266" fill="#0dbc79">r</text>
+<text class="crt" x="441" y="266" fill="#0dbc79">e</text>
+<text class="crt" x="450" y="266" fill="#0dbc79">e</text>
+<text class="crt" x="459" y="266" fill="#0dbc79">n</text>
+<text class="crt" x="468" y="266" fill="#0dbc79">V</text>
+<text class="crt" x="477" y="266" fill="#0dbc79">a</text>
+<text class="crt" x="486" y="266" fill="#0dbc79">l</text>
+<text class="crt" x="495" y="266" fill="#0dbc79">i</text>
+<text class="crt" x="504" y="266" fill="#0dbc79">d</text>
+<text class="crt" x="513" y="266" fill="#0dbc79">a</text>
+<text class="crt" x="522" y="266" fill="#0dbc79">t</text>
+<text class="crt" x="531" y="266" fill="#0dbc79">o</text>
+<text class="crt" x="540" y="266" fill="#0dbc79">r</text>
+<text class="crt" x="810" y="266" fill="#f5f543">🔄</text>
+<text class="crt" x="882" y="266" fill="#9F9F9F">*</text>
+<text class="crt" x="999" y="266" fill="#9F9F9F">*</text>
+<text class="crt" x="1071" y="266" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="284" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="284" fill="#29b8db">I</text>
+<text class="crt" x="45" y="284" fill="#29b8db">C</text>
+<text class="crt" x="54" y="284" fill="#29b8db">o</text>
+<text class="crt" x="63" y="284" fill="#29b8db">m</text>
+<text class="crt" x="72" y="284" fill="#29b8db">p</text>
+<text class="crt" x="81" y="284" fill="#29b8db">o</text>
+<text class="crt" x="90" y="284" fill="#29b8db">n</text>
+<text class="crt" x="99" y="284" fill="#29b8db">e</text>
+<text class="crt" x="108" y="284" fill="#29b8db">n</text>
+<text class="crt" x="117" y="284" fill="#29b8db">t</text>
+<text class="crt" x="126" y="284" fill="#29b8db">V</text>
+<text class="crt" x="135" y="284" fill="#29b8db">a</text>
+<text class="crt" x="144" y="284" fill="#29b8db">l</text>
+<text class="crt" x="153" y="284" fill="#29b8db">i</text>
+<text class="crt" x="162" y="284" fill="#29b8db">d</text>
+<text class="crt" x="171" y="284" fill="#29b8db">a</text>
+<text class="crt" x="180" y="284" fill="#29b8db">t</text>
+<text class="crt" x="189" y="284" fill="#29b8db">o</text>
+<text class="crt" x="198" y="284" fill="#29b8db">r</text>
+<text class="crt" x="207" y="284" fill="#29b8db">&lt;</text>
+<text class="crt" x="216" y="284" fill="#29b8db">T</text>
+<text class="crt" x="225" y="284" fill="#29b8db">&gt;</text>
+<text class="crt" x="414" y="284" fill="#0dbc79">N</text>
+<text class="crt" x="423" y="284" fill="#0dbc79">u</text>
+<text class="crt" x="432" y="284" fill="#0dbc79">l</text>
+<text class="crt" x="441" y="284" fill="#0dbc79">l</text>
+<text class="crt" x="450" y="284" fill="#0dbc79">C</text>
+<text class="crt" x="459" y="284" fill="#0dbc79">o</text>
+<text class="crt" x="468" y="284" fill="#0dbc79">m</text>
+<text class="crt" x="477" y="284" fill="#0dbc79">p</text>
+<text class="crt" x="486" y="284" fill="#0dbc79">o</text>
+<text class="crt" x="495" y="284" fill="#0dbc79">n</text>
+<text class="crt" x="504" y="284" fill="#0dbc79">e</text>
+<text class="crt" x="513" y="284" fill="#0dbc79">n</text>
+<text class="crt" x="522" y="284" fill="#0dbc79">t</text>
+<text class="crt" x="531" y="284" fill="#0dbc79">V</text>
+<text class="crt" x="540" y="284" fill="#0dbc79">a</text>
+<text class="crt" x="549" y="284" fill="#0dbc79">l</text>
+<text class="crt" x="558" y="284" fill="#0dbc79">i</text>
+<text class="crt" x="567" y="284" fill="#0dbc79">d</text>
+<text class="crt" x="576" y="284" fill="#0dbc79">a</text>
+<text class="crt" x="585" y="284" fill="#0dbc79">t</text>
+<text class="crt" x="594" y="284" fill="#0dbc79">o</text>
+<text class="crt" x="603" y="284" fill="#0dbc79">r</text>
+<text class="crt" x="612" y="284" fill="#0dbc79">&lt;</text>
+<text class="crt" x="621" y="284" fill="#0dbc79">T</text>
+<text class="crt" x="630" y="284" fill="#0dbc79">&gt;</text>
+<text class="crt" x="810" y="284" fill="#f5f543">🔄</text>
+<text class="crt" x="882" y="284" fill="#9F9F9F">*</text>
+<text class="crt" x="999" y="284" fill="#9F9F9F">*</text>
+<text class="crt" x="1071" y="284" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="302" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="302" fill="#29b8db">I</text>
+<text class="crt" x="45" y="302" fill="#29b8db">M</text>
+<text class="crt" x="54" y="302" fill="#29b8db">e</text>
+<text class="crt" x="63" y="302" fill="#29b8db">s</text>
+<text class="crt" x="72" y="302" fill="#29b8db">s</text>
+<text class="crt" x="81" y="302" fill="#29b8db">a</text>
+<text class="crt" x="90" y="302" fill="#29b8db">g</text>
+<text class="crt" x="99" y="302" fill="#29b8db">e</text>
+<text class="crt" x="108" y="302" fill="#29b8db">S</text>
+<text class="crt" x="117" y="302" fill="#29b8db">e</text>
+<text class="crt" x="126" y="302" fill="#29b8db">r</text>
+<text class="crt" x="135" y="302" fill="#29b8db">v</text>
+<text class="crt" x="144" y="302" fill="#29b8db">i</text>
+<text class="crt" x="153" y="302" fill="#29b8db">c</text>
+<text class="crt" x="162" y="302" fill="#29b8db">e</text>
+<text class="crt" x="414" y="302" fill="#FFD7D7">C</text>
+<text class="crt" x="423" y="302" fill="#FFD7D7">o</text>
+<text class="crt" x="432" y="302" fill="#FFD7D7">m</text>
+<text class="crt" x="441" y="302" fill="#FFD7D7">p</text>
+<text class="crt" x="450" y="302" fill="#FFD7D7">o</text>
+<text class="crt" x="459" y="302" fill="#FFD7D7">s</text>
+<text class="crt" x="468" y="302" fill="#FFD7D7">i</text>
+<text class="crt" x="477" y="302" fill="#FFD7D7">t</text>
+<text class="crt" x="486" y="302" fill="#FFD7D7">e</text>
+<text class="crt" x="495" y="302" fill="#FFD7D7">M</text>
+<text class="crt" x="504" y="302" fill="#FFD7D7">e</text>
+<text class="crt" x="513" y="302" fill="#FFD7D7">s</text>
+<text class="crt" x="522" y="302" fill="#FFD7D7">s</text>
+<text class="crt" x="531" y="302" fill="#FFD7D7">a</text>
+<text class="crt" x="540" y="302" fill="#FFD7D7">g</text>
+<text class="crt" x="549" y="302" fill="#FFD7D7">e</text>
+<text class="crt" x="558" y="302" fill="#FFD7D7">S</text>
+<text class="crt" x="567" y="302" fill="#FFD7D7">e</text>
+<text class="crt" x="576" y="302" fill="#FFD7D7">r</text>
+<text class="crt" x="585" y="302" fill="#FFD7D7">v</text>
+<text class="crt" x="594" y="302" fill="#FFD7D7">i</text>
+<text class="crt" x="603" y="302" fill="#FFD7D7">c</text>
+<text class="crt" x="612" y="302" fill="#FFD7D7">e</text>
+<text class="crt" x="810" y="302" fill="#f5f543">🔄</text>
+<text class="crt" x="882" y="302" fill="#9F9F9F">*</text>
+<text class="crt" x="999" y="302" fill="#9F9F9F">*</text>
+<text class="crt" x="1071" y="302" fill="#0dbc79">│</text>
+<text class="crt" x="0" y="320" fill="#0dbc79">│</text>
+<text class="crt" x="36" y="320" fill="#29b8db">I</text>
+<text class="crt" x="45" y="320" fill="#29b8db">M</text>
+<text class="crt" x="54" y="320" fill="#29b8db">e</text>
+<text class="crt" x="63" y="320" fill="#29b8db">s</text>
+<text class="crt" x="72" y="320" fill="#29b8db">s</text>
+<text class="crt" x="81" y="320" fill="#29b8db">a</text>
+<text class="crt" x="90" y="320" fill="#29b8db">g</text>
+<text class="crt" x="99" y="320" fill="#29b8db">e</text>
+<text class="crt" x="108" y="320" fill="#29b8db">S</text>
+<text class="crt" x="117" y="320" fill="#29b8db">e</text>
+<text class="crt" x="126" y="320" fill="#29b8db">r</text>
+<text class="crt" x="135" y="320" fill="#29b8db">v</text>
+<text class="crt" x="144" y="320" fill="#29b8db">i</text>
+<text class="crt" x="153" y="320" fill="#29b8db">c</text>
+<text class="crt" x="162" y="320" fill="#29b8db">e</text>
+<text class="crt" x="414" y="320" fill="#0dbc79">E</text>
+<text class="crt" x="423" y="320" fill="#0dbc79">m</text>
+<text class="crt" x="432" y="320" fill="#0dbc79">a</text>
+<text class="crt" x="441" y="320" fill="#0dbc79">i</text>
+<text class="crt" x="450" y="320" fill="#0dbc79">l</text>
+<text class="crt" x="459" y="320" fill="#0dbc79">M</text>
+<text class="crt" x="468" y="320" fill="#0dbc79">e</text>
+<text class="crt" x="477" y="320" fill="#0dbc79">s</text>
+<text class="crt" x="486" y="320" fill="#0dbc79">s</text>
+<text class="crt" x="495" y="320" fill="#0dbc79">a</text>
+<text class="crt" x="504" y="320" fill="#0dbc79">g</text>
+<text class="crt" x="513" y="320" fill="#0dbc79">e</text>
+<text class="crt" x="522" y="320" fill="#0dbc79">S</text>
+<text class="crt" x="531" y="320" fill="#0dbc79">e</text>
+<text class="crt" x="540" y="320" fill="#0dbc79">r</text>
+<text class="crt" x="549" y="320" fill="#0dbc79">v</text>
+<text class="crt" x="558" y="320" fill="#0dbc79">i</text>
+<text class="crt" x="567" y="320" fill="#0dbc79">c</text>
+<text class="crt" x="576" y="320" fill="#0dbc79">e</text>
+<text class="crt" x="810" y="320" fill="#f5f543">🔄</text>
+<text class="crt" x="882" y="320" fill="#9F9F9F">*</text>
+<text class="crt" x="999" y="320" fill="#9F9F9F">*</text>
+<text class="crt" x="1071" y="320" fill="#0dbc79">│</text>
+</g>
+</svg>
